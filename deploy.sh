@@ -1,7 +1,12 @@
 #!/bin/bash
 # Set path to include /usr/bin where gh is located
 export PATH=$PATH:/usr/bin
-cd /home/krsreeram007/portfolio
+cd /home/krsreeram007_gmail_com/portfolio
+
+# 0. Force Git to match GitHub exactly 
+# This fixes the "refusing to sync" error
+git fetch origin main
+git reset --hard origin/main
 
 # 1. Get the latest Commit SHA from the Private Repo using GH API
 REMOTE_SHA=$(gh api repos/:owner/:repo/commits/main -q .sha)
