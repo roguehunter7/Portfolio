@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sreeram K R | Infrastructure Automation</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-main: #c9d1d9;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --border-color: #30363d;
+            --code-bg: #161b22;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin: 0 0 5px 0;
+            color: #ffffff;
+        }
+        h2 {
+            font-size: 1.2em;
+            font-weight: 400;
+            color: var(--accent-blue);
+            margin: 0 0 15px 0;
+        }
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: var(--accent-green);
+            text-decoration: underline;
+        }
+        .contact-links {
+            font-size: 0.95em;
+            color: #8b949e;
+        }
+        h3 {
+            font-size: 1.5em;
+            color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 40px;
+        }
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 5px;
+        }
+        .job-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #ffffff;
+        }
+        .job-date {
+            font-size: 0.9em;
+            color: #8b949e;
+        }
+        .company {
+            color: var(--accent-blue);
+            font-style: italic;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        ul {
+            padding-left: 20px;
+            margin-top: 0;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .tag {
+            display: inline-block;
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: var(--accent-blue);
+            margin: 2px;
+        }
+        .footer-status {
+            margin-top: 50px;
+            padding: 15px;
+            background: var(--code-bg);
+            border-left: 4px solid var(--accent-green);
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #8b949e;
+        }
+        .highlight {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <h1>Sreeram K R</h1>
+            <h2>Cloud Infrastructure & Automation Engineer</h2>
+            <div class="contact-links">
+                Pune, India | 
+                <a href="mailto:contact.sreeramkr@gmail.com">contact.sreeramkr@gmail.com</a> | 
+                <a href="https://github.com/roguehunter7" target="_blank">github.com/roguehunter7</a> | 
+                <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
+            </div>
+        </header>
+
+        <!-- SUMMARY -->
+        <section>
+            <p>Infrastructure Automation Engineer with hands-on experience specializing in Python, PowerShell, and enterprise endpoint management. Proven track record in automating security compliance across 1,000+ endpoints and optimizing network workflows. Actively expanding expertise into Linux administration, edge networking, and zero-trust cloud architectures.</p>
+        </section>
+
+        <!-- SKILLS -->
+        <section>
+            <h3>Technical Stack</h3>
+            <p>
+                <span class="tag">GCP</span>
+                <span class="tag">Cloudflare (CDN/WAF)</span>
+                <span class="tag">Linux (Ubuntu/RHEL)</span>
+                <span class="tag">Python</span>
+                <span class="tag">PowerShell</span>
+                <span class="tag">Bash</span>
+                <span class="tag">Active Directory</span>
+                <span class="tag">Tanium Deploy</span>
+                <span class="tag">Intune</span>
+                <span class="tag">Apache</span>
+                <span class="tag">Subnetting</span>
+            </p>
+        </section>
+
+        <!-- EXPERIENCE -->
+        <section>
+            <h3>Professional Experience</h3>
+
+            <div class="job">
+                <div class="job-header">
+                    <span class="job-title">IT Infrastructure Support Engineer</span>
+                    <span class="job-date">Mar 2026 – Present</span>
+                </div>
+                <p class="company">Iron Systems Global (Consultant at Honeywell) | Pune</p>
+                <ul>
+                    <li>Provide L1 infrastructure support, managing OS imaging, software provisioning, and hardware troubleshooting for enterprise end-users.</li>
+                    <li>Optimized the Windows Autopilot enrollment pipeline by replacing a bloated 3,000-line legacy script with a custom, zero-prompt <span class="highlight">PowerShell</span> script, instantly extracting hardware hashes to CSV for rapid Intune ingestion.</li>
+                </ul>
+            </div>
+
+            <div class="job">
+                <div class="job-header">
+                    <span class="job-title">Infrastructure Automation Engineer (Contract)</span>
+                    <span class="job-date">Jan 2025 – Feb 2026</span>
+                </div>
+                <p class="company">Iron Systems Global (Consultant at Honeywell) | Bangalore</p>
+                <ul>
+                    <li>Automated OS vulnerability patching and security hardening for 1,000+ endpoints using PowerShell and Tanium, eliminating configuration drift.</li>
+                    <li>Developed a <span class="highlight">Python</span> script to automate switch port surveys, reducing audit time by 50% and reclaiming 500+ unused IP addresses.</li>
+                    <li>Automated ServiceNow privileged account provisioning using PowerShell via WMI and RDP configurations, reducing execution time from 5 minutes to under 20 seconds.</li>
+                    <li>Defined firewall rules and executed asset discovery for an L3-to-L2 network migration across 70 subnets.</li>
+                </ul>
+            </div>
+
+            <div class="job">
+                <div class="job-header">
+                    <span class="job-title">Backend Developer Intern</span>
+                    <span class="job-date">Feb 2023 – Sep 2023</span>
+                </div>
+                <p class="company">Suyati Technologies Ltd | Kochi</p>
+                <ul>
+                    <li>Optimized MySQL database schemas for faster query performance and containerized the application using Docker to ensure consistent deployment environments.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- PROJECTS -->
+        <section>
+            <h3>Selected Projects</h3>
+
+            <div class="job">
+                <div class="job-header">
+                    <span class="job-title">Enterprise Cloud Infrastructure Portfolio</span>
+                    <span class="job-date">Live</span>
+                </div>
+                <p class="company">GCP, Linux, Cloudflare, Bash</p>
+                <ul>
+                    <li>Provisioned a headless Ubuntu VM on GCP and configured an Apache2 web server via the Linux CLI.</li>
+                    <li>Deployed a Cloudflare Zero Trust Tunnel (<code>cloudflared</code>), establishing a secure outbound connection and enabling the complete removal of inbound HTTP/HTTPS ingress rules on the GCP VPC Firewall.</li>
+                    <li>Enforced End-to-End (E2E) HTTPS encryption, enabled DNSSEC to prevent spoofing, and configured Cloudflare WAF to block malicious AI web crawlers.</li>
+                    <li>Actively monitoring Linux authentication logs via <code>journalctl</code> to verify the dropping of automated botnet SSH attacks.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- FOOTER / STATUS -->
+        <div class="footer-status">
+            $ root@sreeramkr:~# systemctl status infrastructure<br>
+            > Origin: Google Cloud Platform (us-central1)<br>
+            > Edge Security: Cloudflare WAF & DNSSEC Active<br>
+            > Routing: Zero Trust Egress Tunnel (Ingress Blocked)<br>
+            > Status: 200 OK
+        </div>
+    </div>
+
+</body>
+</html>
