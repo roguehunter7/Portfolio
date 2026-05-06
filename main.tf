@@ -77,7 +77,8 @@ resource "google_compute_instance" "vm_instance" {
     # 4. Clone GitHub Repo automatically using injected PAT
     git clone https://${var.github_pat}@github.com/roguehunter7/portfolio.git /opt/portfolio
     cd /opt/portfolio
-    chmod +x setup.sh
+    chmod +x setup.sh deploy.sh
+    ./deploy.sh
     ./setup.sh
   EOF
   , "\r", "")
