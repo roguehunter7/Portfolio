@@ -59,7 +59,7 @@ resource "google_compute_instance" "vm_instance" {
   # High-Performance Debian Startup Script
   metadata_startup_script = <<-EOF
     #!/bin/bash
-    # 1. Install Dependencies
+    # 1. OS Preparation
     apt-get update -y
     apt-get install -y docker.io git curl
     systemctl enable --now docker
@@ -74,18 +74,16 @@ resource "google_compute_instance" "vm_instance" {
     # 3. Authenticate Tunnel
     cloudflared service install ${var.cloudflare_tunnel_token}
     
-    # 4. Clone Repo to /opt/portfolio
+    # 4. Clone Repo
     rm -rf /opt/portfolio
     git clone https://${var.github_pat}@github.com/roguehunter7/portfolio.git /opt/portfolio
     
-    # 5. Fix Permissions (Debian specific hostname handling)
-    PRIMARY_USER=$(hostnamectl | grep "Static hostname" | awk '{print $3}')
-    chown -R $PRIMARY_USER:$PRIMARY_USER /opt/portfolio
-    usermod -aG docker $PRIMARY_USER
+    # 5. KILL THE WINDOWS GHOSTS IMMEDIATELY
+    find /opt/portfolio -name "*.sh" -exec sed -i 's/\r$//' {} +
+    chmod +x /opt/portfolio/*.sh
 
-    # 6. Final Provisioning & Deployment
+    # 6. Run Setup & Initial Deploy
     cd /opt/portfolio
-    chmod +x setup.sh deploy.sh
     ./setup.sh
     ./deploy.sh
   EOF
