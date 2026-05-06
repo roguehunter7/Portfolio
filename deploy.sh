@@ -1,4 +1,5 @@
 #!/bin/bash
+#  Deploy.sh
 # 1. Set explicit paths so systemd can find docker, git, and gh
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 

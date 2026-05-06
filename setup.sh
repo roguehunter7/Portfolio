@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Setup.sh
 # 1. Check if the script is run with sudo (required to create systemd files)
 if [ "$EUID" -ne 0 ]; then
   echo "Please run this script with sudo: sudo ./setup.sh"
