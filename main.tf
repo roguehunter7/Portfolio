@@ -77,6 +77,12 @@ resource "google_compute_instance" "vm_instance" {
     # 4. Clone GitHub Repo automatically using injected PAT
     git clone https://${var.github_pat}@github.com/roguehunter7/portfolio.git /opt/portfolio
     cd /opt/portfolio
+    # 5. Fix Permissions for the GitOps User
+    PRIMARY_USER=$(localectl status | grep "static hostname" | awk '{print $3}' | cut -d- -f1)
+    chown -R $PRIMARY_USER:$PRIMARY_USER /opt/portfolio
+    usermod -aG docker $PRIMARY_USER
+    
+    # 6. Run Setup & Initial Deploy
     chmod +x setup.sh deploy.sh
     ./deploy.sh
     ./setup.sh

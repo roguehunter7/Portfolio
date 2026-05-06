@@ -1,48 +1,45 @@
 #!/bin/bash
-# Setup.sh
-# 1. Check if the script is run with sudo (required to create systemd files)
+# setup.sh - Infrastructure Provisioner
+# This script sets up the Systemd Timer for native GitOps.
+
+# 1. Check for root privileges
 if [ "$EUID" -ne 0 ]; then
-  echo "Please run this script with sudo: sudo ./setup.sh"
+  echo "Please run as root: sudo ./setup.sh"
   exit 1
 fi
 
 echo "Starting automated GitOps pipeline setup..."
 
-# 2. Dynamically grab the current directory and the real user
-# (Even if run with sudo, SUDO_USER knows your actual username)
-CURRENT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REAL_USER=${SUDO_USER:-$(whoami)}
-# Get the actual home directory of that user dynamically
-USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
-
-echo "Detected User: $REAL_USER"
-echo "Detected Directory: $CURRENT_DIR"
+# 2. Define Explicit Paths (Aligning with Terraform and deploy.sh)
+TARGET_DIR="/opt/portfolio"
+SERVICE_FILE="/etc/systemd/system/portfolio-updater.service"
+TIMER_FILE="/etc/systemd/system/portfolio-updater.timer"
 
 # 3. Ensure deploy.sh is executable
-chmod +x "$CURRENT_DIR/deploy.sh"
+chmod +x "$TARGET_DIR/deploy.sh"
 
-# 4. Create the Service File dynamically
-SERVICE_FILE="/etc/systemd/system/portfolio-updater.service"
-echo "Creating Systemd Service at $SERVICE_FILE..."
-
+# 4. Create the Service File
+# Note: We run as 'root' to ensure seamless Docker and Git access
+echo "Creating Systemd Service..."
 cat <<EOF > $SERVICE_FILE
 [Unit]
-Description=Portfolio GitOps Puller Service
+Description=Portfolio GitOps Native Poller
+After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=$CURRENT_DIR/deploy.sh
-User=$REAL_USER
-Environment=GH_CONFIG_DIR=$USER_HOME/.config/gh
+WorkingDirectory=$TARGET_DIR
+ExecStart=$TARGET_DIR/deploy.sh
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
-# 5. Create the Timer File dynamically
-TIMER_FILE="/etc/systemd/system/portfolio-updater.timer"
-echo "Creating Systemd Timer at $TIMER_FILE..."
-
+# 5. Create the Timer File (2-minute intervals)
+echo "Creating Systemd Timer..."
 cat <<EOF > $TIMER_FILE
 [Unit]
-Description=Run Portfolio Updater every 2 mins
+Description=Run Portfolio GitOps Poller every 2 mins
 
 [Timer]
 OnBootSec=1min
@@ -52,12 +49,9 @@ OnUnitActiveSec=2min
 WantedBy=timers.target
 EOF
 
-# 6. Reload Systemd and Enable the Timer
-echo "Reloading systemd daemon..."
+# 6. Finalize and Enable
+echo "Reloading systemd and enabling timer..."
 systemctl daemon-reload
-
-echo "Enabling and starting the timer..."
 systemctl enable --now portfolio-updater.timer
 
-echo "Setup Complete! The server is now actively polling GitHub for changes."
-echo "Check status with: sudo systemctl status portfolio-updater.timer"
+echo "Setup Complete. Portfolio is now self-updating."
