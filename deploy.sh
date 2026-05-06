@@ -21,7 +21,7 @@ if[ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
     
     # 7. Rebuild and Restart Docker
     echo "Rebuilding Docker image..."
-    docker build --no-cache -t portfolio-site .
+    docker build --no-cache --pull -t portfolio-site .
     
     echo "Stopping old container..."
     docker stop my-website || true
