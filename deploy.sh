@@ -1,31 +1,36 @@
 #!/bin/bash
-# Set path to include /usr/bin where gh is located
-export PATH=$PATH:/usr/bin
-cd /home/krsreeram007_gmail_com/portfolio
+# 1. Set explicit paths so systemd can find docker, git, and gh
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# 0. Force Git to match GitHub exactly 
-# This fixes the "refusing to sync" error
-git fetch origin main
-git reset --hard origin/main
+# 2. Dynamically change to the script's directory
+cd "$(dirname "$0")" || exit 1
 
-# 1. Get the latest Commit SHA from the Private Repo using GH API
-REMOTE_SHA=$(gh api repos/:owner/:repo/commits/main -q .sha)
-# 2. Get the local Commit SHA
+# 3. Get Remote SHA via GH API
+REMOTE_SHA=$(gh api repos/roguehunter7/portfolio/commits/main -q .sha)
+
+# 4. Get Local SHA
 LOCAL_SHA=$(git rev-parse HEAD)
 
-if [ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
-    echo "New version detected on GitHub. Pulling changes..."
+# 5. Check for differences (Notice the spaces!)
+if[ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
+    echo "$(date): New version detected! Local: $LOCAL_SHA | Remote: $REMOTE_SHA"
     
-    # 3. Use GH to sync the repo (authenticated pull)
-    gh repo sync
+    # 6. Force the update to match GitHub perfectly
+    git fetch origin main
+    git reset --hard origin/main
     
-    # 4. Rebuild the Docker container
-    docker build -t portfolio-site .
+    # 7. Rebuild and Restart Docker
+    echo "Rebuilding Docker image..."
+    docker build --no-cache -t portfolio-site .
+    
+    echo "Stopping old container..."
     docker stop my-website || true
     docker rm my-website || true
+    
+    echo "Starting new container..."
     docker run -d --name my-website -p 80:80 --restart always portfolio-site
     
-    echo "Deployment successful: $(date)"
+    echo "$(date): Deployment successful."
 else
-    echo "No changes found: $(date)"
+    echo "$(date): No changes found."
 fi
