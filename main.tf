@@ -56,42 +56,43 @@ resource "google_compute_instance" "vm_instance" {
   machine_type = "e2-micro"
   zone         = "us-central1-a"
 
-  # DevSecOps: Injecting the secret variable securely
-  metadata_startup_script = replace(<<-EOF
+  # High-Performance Debian Startup Script
+  metadata_startup_script = <<-EOF
     #!/bin/bash
-    
-    # 1. Update OS and install dependencies
+    # 1. Install Dependencies
     apt-get update -y
     apt-get install -y docker.io git curl
+    systemctl enable --now docker
 
     # 2. Install Cloudflared
     mkdir -p --mode=0755 /usr/share/keyrings
     curl -fsSL https://pkg.cloudflare.com/cloudflare-public-v2.gpg | tee /usr/share/keyrings/cloudflare-public-v2.gpg >/dev/null
-    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-public-v2.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list
+    echo "deb [signed-by=/usr/share/keyrings/cloudflare-public-v2.gpg] https://pkg.cloudflare.com/cloudflared any main" | tee /etc/apt/sources.list.d/cloudflared.list
     apt-get update -y
     apt-get install -y cloudflared
 
-    # 3. Authenticate Cloudflared
+    # 3. Authenticate Tunnel
     cloudflared service install ${var.cloudflare_tunnel_token}
     
-    # 4. Clone GitHub Repo automatically using injected PAT
+    # 4. Clone Repo to /opt/portfolio
+    rm -rf /opt/portfolio
     git clone https://${var.github_pat}@github.com/roguehunter7/portfolio.git /opt/portfolio
-    cd /opt/portfolio
-    # 5. Fix Permissions for the GitOps User
-    PRIMARY_USER=$(localectl status | grep "static hostname" | awk '{print $3}' | cut -d- -f1)
+    
+    # 5. Fix Permissions (Debian specific hostname handling)
+    PRIMARY_USER=$(hostnamectl | grep "Static hostname" | awk '{print $3}')
     chown -R $PRIMARY_USER:$PRIMARY_USER /opt/portfolio
     usermod -aG docker $PRIMARY_USER
-    
-    # 6. Run Setup & Initial Deploy
+
+    # 6. Final Provisioning & Deployment
+    cd /opt/portfolio
     chmod +x setup.sh deploy.sh
-    ./deploy.sh
     ./setup.sh
+    ./deploy.sh
   EOF
-  , "\r", "")
 
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2604-lts-amd64"
+      image = "debian-cloud/debian-12"
     }
   }
 
