@@ -1,26 +1,25 @@
 #!/bin/bash
-#  Deploy.sh
-# 1. Set explicit paths so systemd can find docker, git, and gh
+# Deploy.sh - Native GitOps Poller
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# 2. Dynamically change to the script's directory
+# Dynamically change to the script's directory
 cd "$(dirname "$0")" || exit 1
 
-# 3. Get Remote SHA via GH API
-REMOTE_SHA=$(gh api repos/roguehunter7/portfolio/commits/main -q .sha)
+# Get Remote SHA natively via Git (This uses the PAT stored in origin)
+REMOTE_SHA=$(git ls-remote origin -h refs/heads/main | awk '{print $1}')
 
-# 4. Get Local SHA
+# Get Local SHA
 LOCAL_SHA=$(git rev-parse HEAD)
 
-# 5. Check for differences (Notice the spaces!)
-if [ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
+# Check for differences (and ensure REMOTE_SHA isn't empty)
+if [ "$REMOTE_SHA" != "$LOCAL_SHA" ] &&[ -n "$REMOTE_SHA" ]; then
     echo "$(date): New version detected! Local: $LOCAL_SHA | Remote: $REMOTE_SHA"
     
-    # 6. Force the update to match GitHub perfectly
+    # Force the update to match GitHub perfectly
     git fetch origin main
     git reset --hard origin/main
     
-    # 7. Rebuild and Restart Docker
+    # Rebuild and Restart Docker
     echo "Rebuilding Docker image..."
     docker build --no-cache --pull -t portfolio-site .
     
