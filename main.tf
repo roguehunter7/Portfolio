@@ -1,4 +1,8 @@
 terraform {
+  backend "gcs" {
+    bucket = "sreeram-terraform-state-bucket" # Use the exact name you created
+    prefix = "terraform/state"
+  }
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -53,14 +57,14 @@ resource "google_compute_instance" "vm_instance" {
   zone         = "us-central1-a"
 
   # DevSecOps: Injecting the secret variable securely
-  metadata_startup_script = <<-EOF
+  metadata_startup_script = replace(<<-EOF
     #!/bin/bash
     
     # 1. Update OS and install dependencies
     apt-get update -y
     apt-get install -y docker.io git curl
 
-    # 2. Install Cloudflared (Fixed APT space syntax)
+    # 2. Install Cloudflared
     mkdir -p --mode=0755 /usr/share/keyrings
     curl -fsSL https://pkg.cloudflare.com/cloudflare-public-v2.gpg | tee /usr/share/keyrings/cloudflare-public-v2.gpg >/dev/null
     echo 'deb [signed-by=/usr/share/keyrings/cloudflare-public-v2.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list
@@ -76,6 +80,7 @@ resource "google_compute_instance" "vm_instance" {
     chmod +x setup.sh
     ./setup.sh
   EOF
+  , "\r", "")
 
   boot_disk {
     initialize_params {
