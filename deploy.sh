@@ -12,7 +12,7 @@ REMOTE_SHA=$(gh api repos/roguehunter7/portfolio/commits/main -q .sha)
 LOCAL_SHA=$(git rev-parse HEAD)
 
 # 5. Check for differences (Notice the spaces!)
-if[ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
+if [ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
     echo "$(date): New version detected! Local: $LOCAL_SHA | Remote: $REMOTE_SHA"
     
     # 6. Force the update to match GitHub perfectly
