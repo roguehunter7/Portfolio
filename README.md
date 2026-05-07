@@ -1,0 +1,75 @@
+# 🛡️ Zero-Trust Cloud Infrastructure & Native GitOps Pipeline
+
+![GCP](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=GNU%20Bash&logoColor=white)
+
+## 📌 Overview
+This repository contains the Infrastructure as Code (IaC) and automation scripts for a highly secure, self-healing, zero-ingress personal portfolio architecture. 
+
+It is designed to run on a resource-constrained environment (GCP `e2-micro`) while maintaining enterprise-grade security and automated Continuous Deployment (CD).
+
+## 🏗️ Architecture Design
+
+    [Public Internet] 
+           │ (Strict HTTPS / DNSSEC)
+           ▼
+    [Cloudflare Edge / WAF] ─── (Blocks AI Scrapers & Botnets)
+           │
+           │ (Encrypted Outbound Egress Tunnel)
+           ▼
+    [GCP VPC Firewall] ─── (ALL Inbound HTTP/S Ingress Rules DROPPED)
+           │
+    [GCP e2-micro Ubuntu Node]
+           │
+           ├─ [cloudflared daemon] ── (Bridges Tunnel to Local Port)
+           ├─ [systemd.timer] ─── (Polls GitHub REST API every 2 mins)
+           └─ [Docker Engine] ─── (Runs nginx:alpine container)
+
+## 🧠 Core Engineering Decisions
+
+### 1. Zero Trust Edge Security
+Instead of exposing port `80` or `443` to the public internet, this server utilizes **Cloudflare Zero Trust Tunnels (`cloudflared`)**. The server establishes a secure *outbound* connection to the Cloudflare Edge. Consequently, the GCP VPC firewall drops 100% of inbound internet traffic. The origin server's IP address is entirely invisible to Shodan, port scanners, and direct-to-IP DDoS attacks.
+
+### 2. "Runner-less" GitOps Pipeline
+Running Jenkins, GitLab CI, or a GitHub Actions Runner on a 1GB RAM `e2-micro` instance reliably triggers the Linux Out-Of-Memory (OOM) killer. 
+To achieve native GitOps without the compute overhead, this architecture relies on **Systemd Timers** and the **GitHub REST API**. 
+* A `systemd.timer` wakes up every 2 minutes.
+* It securely queries the GitHub API (`gh api`) for the latest commit SHA.
+* If a delta is detected, it triggers a fully automated `git reset`, Docker image rebuild, and container swap.
+
+## 📂 Repository Structure
+
+* `main.html` : The frontend portfolio template.
+* `Dockerfile` : Utilizes `nginx:alpine` to serve the static frontend with minimal image footprint (~15MB).
+* `deploy.sh` : The core CD logic. Fetches remote SHAs, compares local state, and manages Docker lifecycles.
+* `setup.sh` : The bare-metal provisioning script. Dynamically maps user scopes and creates the necessary `systemd` service and timer files.
+
+## ⚙️ Automated Deployment Flow (`deploy.sh`)
+
+1. **State Check:** Extracts the latest remote commit SHA via `gh api`.
+2. **Comparison:** Evaluates against `git rev-parse HEAD`. Exits cleanly if no changes are found (saving CPU cycles).
+3. **Synchronization:** Executes a hard reset to match the remote state perfectly.
+4. **Containerization:** Builds the updated `nginx:alpine` image `(--no-cache --pull)`.
+5. **Orchestration:** Gracefully stops/removes the stale container and spins up the new iteration bound to port `80` (which is only accessible locally by `cloudflared`).
+
+## 🚀 Quick Start (Disaster Recovery)
+
+If the origin server is destroyed, the entire application stack can be restored in seconds:
+
+    # Clone the repository
+    git clone https://github.com/roguehunter7/portfolio.git
+    
+    # Navigate to directory
+    cd portfolio
+    
+    # Execute the Systemd Provisioner
+    sudo ./setup.sh
+    
+    # Verify the GitOps Timer is actively polling
+    systemctl status portfolio-updater.timer
+
+---
+*Architected and maintained by [Sreeram K R](https://sreeramkr.com).*
