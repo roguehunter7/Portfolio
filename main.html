@@ -3,246 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sreeram K R | Infrastructure & Cloud Automation</title>
+    <title>Sreeram K R | Cloud & Infrastructure Case Study</title>
     <style>
         :root {
             --bg-color: #0d1117;
+            --card-bg: #161b22;
             --text-main: #c9d1d9;
+            --text-dim: #8b949e;
             --accent-blue: #58a6ff;
             --accent-green: #3fb950;
             --border-color: #30363d;
-            --code-bg: #161b22;
+            --terminal-header: #21262d;
         }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             line-height: 1.6;
             margin: 0;
             padding: 0;
         }
+
         .container {
             max-width: 850px;
             margin: 40px auto;
             padding: 20px;
         }
-        header {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
         }
-        h1 {
-            font-size: 2.5em;
-            margin: 0 0 5px 0;
-            color: #ffffff;
+
+        h1 { font-size: 2.2em; color: #fff; margin: 0; }
+        h2 { font-size: 1.1em; color: var(--accent-blue); font-weight: 400; margin-bottom: 20px; }
+        h3 { font-size: 1.3em; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 30px; }
+        
+        .highlight { color: var(--accent-green); font-weight: bold; }
+        
+        .terminal-box {
+            background: #000;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            margin: 20px 0;
         }
-        h2 {
-            font-size: 1.2em;
-            font-weight: 400;
-            color: var(--accent-blue);
-            margin: 0 0 15px 0;
-        }
-        a {
-            color: var(--accent-blue);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        a:hover {
-            color: var(--accent-green);
-            text-decoration: underline;
-        }
-        .contact-links {
-            font-size: 0.95em;
-            color: #8b949e;
-        }
-        h3 {
-            font-size: 1.5em;
-            color: #ffffff;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            margin-top: 40px;
-        }
-        .job-header {
+
+        pre { padding: 15px; margin: 0; color: var(--accent-green); font-size: 0.85em; overflow-x: auto; }
+
+        .decision-block {
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 5px;
+            gap: 20px;
+            margin-top: 15px;
         }
-        .job-title {
-            font-weight: 600;
-            font-size: 1.1em;
-            color: #ffffff;
-        }
-        .job-date {
+
+        .decision-item {
+            flex: 1;
             font-size: 0.9em;
-            color: #8b949e;
+            background: rgba(88, 166, 255, 0.05);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(88, 166, 255, 0.1);
         }
-        .company {
-            color: var(--accent-blue);
-            font-style: italic;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        ul {
-            padding-left: 20px;
-            margin-top: 0;
-        }
-        li {
-            margin-bottom: 8px;
-        }
+
         .tag {
             display: inline-block;
-            background: var(--code-bg);
+            background: #21262d;
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            padding: 3px 8px;
-            font-family: monospace;
-            font-size: 0.85em;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            margin: 2px;
             color: var(--accent-blue);
-            margin: 3px;
         }
+
         .footer-status {
-            margin-top: 50px;
-            padding: 15px;
-            background: var(--code-bg);
-            border-left: 4px solid var(--accent-green);
             font-family: monospace;
-            font-size: 0.85em;
-            color: #8b949e;
+            font-size: 0.8em;
+            color: var(--text-dim);
+            margin-top: 40px;
+            border-left: 3px solid var(--accent-green);
+            padding-left: 15px;
         }
-        .highlight {
-            color: var(--accent-green);
-            font-weight: bold;
-        }
+
+        a { color: var(--accent-blue); text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- HEADER -->
-        <header>
-            <h1>Sreeram K R</h1>
-            <h2>Cloud & Infrastructure Automation Engineer</h2>
-            <div class="contact-links">
-                Pune, India | 
-                <a href="mailto:contact.sreeramkr@gmail.com">contact.sreeramkr@gmail.com</a> | 
-                <a href="https://github.com/roguehunter7" target="_blank">github.com/roguehunter7</a> | 
-                <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
-            </div>
-        </header>
+<div class="container">
+    <header>
+        <h1>Sreeram K R</h1>
+        <h2>Infrastructure & Automation Engineer</h2>
+        <p style="font-size: 0.9em;">
+            <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a> | 
+            <a href="https://github.com/roguehunter7" target="_blank">GitHub</a> | 
+            <a href="mailto:contact.sreeramkr@gmail.com">Email</a>
+        </p>
+    </header>
 
-        <!-- SUMMARY -->
-        <section>
-            <p>Infrastructure Engineer blending deep on-premise networking expertise (L2/L3, VLANs) with modern Cloud & DevOps architectures. Proven track record in automating enterprise infrastructure across 1,000+ nodes using Python and PowerShell. Adept at bridging the gap between physical networks, endpoint provisioning, and Zero-Trust cloud environments.</p>
-        </section>
+    <section class="card">
+        <p>I bridge the gap between <strong>Legacy IT Operations</strong> and <strong>Modern Cloud Engineering</strong>. This site is a live demonstration of an automated, Zero-Ingress architecture, provisioned via code and secured through a Zero-Trust edge.</p>
+    </section>
 
-        <!-- SKILLS -->
-        <section>
-            <h3>Technical Stack</h3>
-            <p>
-                <span class="tag">GCP</span>
-                <span class="tag">Docker</span>
-                <span class="tag">Systemd (GitOps)</span>
-                <span class="tag">Cloudflare Tunnels</span>
-                <span class="tag">Python (Netmiko/Pandas)</span>
-                <span class="tag">PowerShell</span>
-                <span class="tag">Bash</span>
-                <span class="tag">Active Directory</span>
-                <span class="tag">VLAN/Subnetting</span>
-                <span class="tag">Tanium Deploy</span>
-                <span class="tag">Linux</span>
-            </p>
-        </section>
+    <h3>The Journey of a Packet</h3>
+    <p style="font-size: 0.95em; color: var(--text-dim);">How you are currently viewing this page:</p>
+    
+    <div class="terminal-box">
+        <pre>
+[YOU] ----(Strict HTTPS/DNSSEC)----> [CLOUDFLARE EDGE]
+                                             │
+      (Encrypted Tunnel) <-------------------┘
+              │
+              ▼
+    [GCP VPC FIREWALL] ----> [DROPS ALL INBOUND]
+              │
+              ▼
+    [UBUNTU COMPUTE NODE]
+              │
+              ├─▶ [cloudflared] ----> [LOCALHOST:80]
+              │                            │
+              └─▶ [DOCKER ENGINE] <--------┘
+                       └─▶ [NGINX-ALPINE]
+        </pre>
+    </div>
 
-        <!-- EXPERIENCE -->
-        <section>
-            <h3>Professional Experience</h3>
+    <div style="font-size: 0.95em;">
+        <p><strong>1. The Protective Layer:</strong> Your request first hits the Cloudflare Global Edge. I have enforced <strong>DNSSEC, HSTS, and WAF rules</strong> to prevent spoofing and bot scraping before traffic ever touches my infrastructure.</p>
+        <p><strong>2. The Stealth Bridge:</strong> Most servers have "Open Ports" (80/443). Mine has <strong>Zero Inbound Ports</strong>. Instead, a <code>cloudflared</code> daemon creates an <i>outbound</i> connection to the edge. Traffic flows down this secure pipe directly to the container.</p>
+        <p><strong>3. The Hardened Payload:</strong> The site runs inside a <strong>Dockerized Nginx-Alpine</strong> container. I've injected <code>apk upgrade</code> into the build process to remediate upstream OS vulnerabilities at the image level.</p>
+    </div>
 
-            <div class="job">
-                <div class="job-header">
-                    <span class="job-title">IT Infrastructure Support (Endpoint Operations)</span>
-                    <span class="job-date">Mar 2026 – Present</span>
-                </div>
-                <p class="company">Iron Systems Global (Deployed at Honeywell) | Pune</p>
-                <ul>
-                    <li>Engineered a zero-prompt <span class="highlight">PowerShell automation script</span> to extract hardware hashes instantly, replacing a legacy 3,000-line script and optimizing the Windows Autopilot / Intune endpoint enrollment pipeline.</li>
-                    <li>Provide L1 enterprise support, executing bare-metal OS imaging, hardware provisioning, and system configuration for end-user deployments.</li>
-                </ul>
-            </div>
-
-            <div class="job">
-                <div class="job-header">
-                    <span class="job-title">Network & Automation Engineer (Contract)</span>
-                    <span class="job-date">Jan 2025 – Feb 2026</span>
-                </div>
-                <p class="company">Iron Systems Global (Deployed at Honeywell) | Bangalore</p>
-                <ul>
-                    <li>Developed a <span class="highlight">Python suite</span> (Netmiko/Pandas) to catalog 2,000+ network assets and architected a graphing engine to generate L1/L2 topology diagrams from CDP/LLDP data.</li>
-                    <li>Automated OS vulnerability patching for 1,000+ endpoints using PowerShell and Tanium.</li>
-                    <li>Slashed ServiceNow privileged account provisioning time by 95% (5 mins to <20 secs) by automating WMI and RDP access via custom PowerShell tooling.</li>
-                    <li>Facilitated L3-to-L2 network migrations across 50+ subnets by defining strict firewall rules and managing DNS Forwarders.</li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- PROJECTS -->
-        <section>
-            <h3>Selected Architecture & Projects</h3>
-
-            <div class="job">
-                <div class="job-header">
-                    <span class="job-title">Zero-Trust Cloud Infrastructure & GitOps Pipeline</span>
-                    <span class="job-date">Live Architecture</span>
-                </div>
-                <p class="company">GCP, Docker, Systemd, Terraform,GitHub API, Cloudflare Tunnels</p>
-                <ul>
-                    <li>Architected a zero-ingress origin server on GCP, utilizing <code>cloudflared</code> tunnels to fully mask the public IP from Shodan and drop all inbound firewall traffic.</li>
-                    <li>Enforced End-to-End (E2E) Strict HTTPS encryption and configured <strong>DNSSEC & HSTS</strong> at the Cloudflare edge to mitigate DNS spoofing, SSL stripping, and malicious AI crawler traffic.</li>
-                    <li>Engineered a custom Continuous Deployment (CD) pipeline using native Linux <code>systemd</code> timers and the GitHub REST API to securely poll commits and trigger automated Docker (<code>nginx:alpine</code>) rebuilds.</li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- LIVE ARCHITECTURE TOPOLOGY -->
-        <section>
-            <h3>System Architecture & Traffic Flow</h3>
-            <div class="job">
-                <div class="job-header">
-                    <span class="job-title" style="font-family: monospace; color: var(--accent-green);">$ cat /opt/infrastructure/topology.txt</span>
-                </div>
-                <p class="company">Real-time Traffic & GitOps Routing Map</p>
-                
-                <pre style="color: var(--accent-green); background: var(--code-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 5px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85em; line-height: 1.3;">
-  [PUBLIC INTERNET]
-         │ (Strict HTTPS + DNSSEC + HSTS)
-         ▼
-  [CLOUDFLARE EDGE] ─────▶ WAF (Drops Bad Bots & AI Scrapers)
-         │  
-         │   (Encrypted Zero-Trust Egress Tunnel)
-         ▼
-  [GCP VPC FIREWALL] ────▶ 100% Inbound HTTP/S Ports DROPPED
-         │[GCP e2-micro Ubuntu]
-         │
-         ├─▶[cloudflared daemon] ──▶ Routes to Localhost:80
-         │                                      │
-         └─▶ [Docker Engine] ◀──────────────────┘
-                 │    └─▶ (Running nginx:alpine)
-                 │
-                 │    (Triggers build & container swap if SHA changes)
-                 ▲[SYSTEMD TIMER] ──▶ Polls GitHub API every 2 mins via `gh api`
-                </pre>
-            </div>
-        </section>
-
-        <!-- FOOTER / STATUS -->
-        <div class="footer-status">
-            $ root@sreeramkr:~# systemctl status gitops-updater.timer<br>
-            > Infrastructure: Active (Running)<br>
-            > Origin: Google Cloud Platform (us-central1)<br>
-            > Edge Security: Cloudflare Zero Trust (Ingress: 0)<br>
-            > Deployment: Dockerized Nginx via Systemd Polling
+    <h3>Architectural Logic</h3>
+    <div class="decision-block">
+        <div class="decision-item">
+            <strong style="color: var(--accent-blue);">Why Terraform?</strong><br>
+            Manual clicks are errors waiting to happen. I use Terraform with a <strong>GCS Remote Backend</strong>. This ensures my infrastructure is version-controlled, idempotent, and recoverable in seconds.
+        </div>
+        <div class="decision-item">
+            <strong style="color: var(--accent-blue);">Why Systemd GitOps?</strong><br>
+            A GCP <code>e2-micro</code> has only 1GB RAM. Traditional CI/CD runners (Jenkins/GitHub Actions) would trigger an OOM crash. I wrote a <strong>native Bash + Systemd poller</strong> to handle GitOps with near-zero overhead.
         </div>
     </div>
+
+    <h3>Technical Stack</h3>
+    <div style="margin-top: 10px;">
+        <span class="tag">Terraform (IaC)</span> <span class="tag">GCP (GCS/Compute/VPC)</span>
+        <span class="tag">Docker</span> <span class="tag">Cloudflare Tunnels</span>
+        <span class="tag">Linux (Debian/Ubuntu/Fedora)</span> <span class="tag">Python (Netmiko/Pandas)</span>
+        <span class="tag">PowerShell (Automation)</span> <span class="tag">Bash</span>
+        <span class="tag">HSTS/DNSSEC</span> <span class="tag">Tanium</span>
+    </div>
+
+    <h3>Current Roadmap: Phase 2</h3>
+    <ul style="font-size: 0.95em; color: var(--text-dim);">
+        <li><span class="highlight">GitHub Actions Migration:</span> Transitioning from "Pull-based" Systemd polling to a "Push-based" CI/CD pipeline. GitHub Actions will build images, push to GHCR, and trigger deployment via SSH.</li>
+        <li><span class="highlight">Infrastructure CI:</span> Integrating <code>terraform plan</code> into GitHub Pull Requests for automated peer review.</li>
+    </ul>
+
+    <footer class="footer-status">
+        $ systemctl status portfolio-infrastructure<br>
+        > Provisioning: Terraform (Verified)<br>
+        > Remote State: GCS Active<br>
+        > Firewall: Deny-All-Ingress Active<br>
+        > Deployment: Self-Healing Docker via Systemd
+    </footer>
+</div>
 
 </body>
 </html>
