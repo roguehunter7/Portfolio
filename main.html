@@ -110,32 +110,33 @@
         <p>I bridge the gap between <strong>Legacy IT Operations</strong> and <strong>Modern Cloud Engineering</strong>. This site is a live demonstration of an automated, Zero-Ingress architecture, provisioned via code and secured through a Zero-Trust edge.</p>
     </section>
 
-    <h3>The Journey of a Packet</h3>
-    <p style="font-size: 0.95em; color: var(--text-dim);">How you are currently viewing this page:</p>
+    <h3>The Journey of a Request & Deployment</h3>
+    <p style="font-size: 0.95em; color: var(--text-dim);">How traffic reaches the container and how code reaches the server:</p>
     
     <div class="terminal-box">
         <pre>
+[TRAFFIC FLOW]
 [YOU] ----(Strict HTTPS/DNSSEC)----> [CLOUDFLARE EDGE]
                                              │
-      (Encrypted Tunnel) <-------------------┘
+      (Encrypted Egress Tunnel) <------------┘
               │
               ▼
-    [GCP VPC FIREWALL] ----> [DROPS ALL INBOUND]
+    [GCP VPC FIREWALL] ----> [DROPS ALL PUBLIC INBOUND]
               │
               ▼
-    [UBUNTU COMPUTE NODE]
-              │
-              ├─▶ [cloudflared] ----> [LOCALHOST:80]
-              │                            │
-              └─▶ [DOCKER ENGINE] <--------┘
-                       └─▶ [NGINX-ALPINE]
+    [UNPRIVILEGED DOCKER CONTAINER (Port 8080)]
+
+[DEPLOYMENT FLOW]
+[GITHUB PUSH] --▶ [GITHUB ACTIONS] --▶ [GCP IAP TUNNEL (Port 22)]
+                                             │
+      (Secure Push-Based Update) <-----------┘
         </pre>
     </div>
 
     <div style="font-size: 0.95em;">
-        <p><strong>1. The Protective Layer:</strong> Your request first hits the Cloudflare Global Edge. I have enforced <strong>DNSSEC, HSTS, and WAF rules</strong> to prevent spoofing and bot scraping before traffic ever touches my infrastructure.</p>
-        <p><strong>2. The Stealth Bridge:</strong> Most servers have "Open Ports" (80/443). Mine has <strong>Zero Inbound Ports</strong>. Instead, a <code>cloudflared</code> daemon creates an <i>outbound</i> connection to the edge. Traffic flows down this secure pipe directly to the container.</p>
-        <p><strong>3. The Hardened Payload:</strong> The site runs inside a <strong>Dockerized Nginx-Alpine</strong> container. I've injected <code>apk upgrade</code> into the build process to remediate upstream OS vulnerabilities at the image level.</p>
+        <p><strong>1. Stealth Origin:</strong> My infrastructure remains invisible. The VPC Firewall drops all public traffic. Connections are only established via <strong>Cloudflare Zero Trust</strong> (for users) and <strong>GCP Identity-Aware Proxy</strong> (for deployments).</p>
+        <p><strong>2. Hardened Runtime:</strong> The site runs on the official <code>nginxinc/nginx-unprivileged:alpine-slim</code> image. It executes as a <strong>non-root user (UID 101)</strong>, ensuring that even in the event of a process breach, the attacker has no system-level privileges.</p>
+        <p><strong>3. Push-Based CI/CD:</strong> I replaced the legacy polling model with a modern <strong>GitHub Actions</strong> pipeline. It securely tunnels through IAP to trigger atomic container updates only when code is merged to main.</p>
     </div>
 
     <h3>Architectural Logic</h3>
@@ -159,10 +160,10 @@
         <span class="tag">HSTS/DNSSEC</span> <span class="tag">Tanium</span>
     </div>
 
-    <h3>Current Roadmap: Phase 2</h3>
+<h3>Current Roadmap: Phase 3</h3>
     <ul style="font-size: 0.95em; color: var(--text-dim);">
-        <li><span class="highlight">GitHub Actions Migration:</span> Transitioning from "Pull-based" Systemd polling to a "Push-based" CI/CD pipeline. GitHub Actions will build images, push to GHCR, and trigger deployment via SSH.</li>
-        <li><span class="highlight">Infrastructure CI:</span> Integrating <code>terraform plan</code> into GitHub Pull Requests for automated peer review.</li>
+        <li><span class="highlight">AWS Hybrid Extension:</span> Expanding the architecture to AWS to practice cross-cloud networking (VPN/Direct Connect simulation).</li>
+        <li><span class="highlight">OIDC Authentication:</span> Removing long-lived GCP Service Account keys in favor of <strong>Workload Identity Federation</strong> for GitHub Actions.</li>
     </ul>
 
     <footer class="footer-status">

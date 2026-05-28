@@ -13,31 +13,26 @@ Unlike traditional "ClickOps" setups, this entire environment—from VPC network
 
 ## 🏗️ Architecture Design
 
-    [Public Internet] 
-           │ (Strict HTTPS / DNSSEC / HSTS)
-           ▼
-    [Cloudflare Edge / WAF] ─── (Blocks AI Scrapers & Botnets)
-           │
-           │ (Encrypted Outbound Egress Tunnel)
-           ▼
-    [GCP VPC Firewall] ─── (ALL Inbound Ingress Rules DROPPED)
-           │
-    [GCP e2-micro Node] ◀─── [Terraform Provisioned] ◀─── [GCS Remote State]
-           │
-           ├─ [cloudflared daemon] ── (Bridges Tunnel to Localhost:80)
-           ├─ [systemd.timer] ─── (Polls GitHub Native every 2 mins)
-           └─ [Docker Engine] ─── (Runs hardened nginx:alpine)
+    [USER] --- (HTTPS) --- [CLOUDFLARE EDGE]
+                                 │
+    [ACTIONS] --- (IAP) --- [GCP FIREWALL] (DENY ALL PUBLIC)
+                                 │
+                                 ▼
+                    [GCP DEBIAN COMPUTE NODE]
+                                 │
+                    ├─ [cloudflared] (Tunnel to Edge)
+                    └─ [Docker] (nginx-unprivileged:alpine-slim)
 
 ## 🧠 Core Engineering Decisions
 
-### 1. Infrastructure as Code (Terraform)
-The environment is provisioned using **Terraform**. To enable cross-platform collaboration (e.g., switching between Windows and Linux development machines), I implemented a **Remote Backend using Google Cloud Storage (GCS)** with object versioning. This prevents state loss and ensures architectural consistency.
+### 1. Push-Based CI/CD with IAP Tunneling
+To maintain a 100% closed-port security posture, I utilized **GCP Identity-Aware Proxy (IAP)**. GitHub Actions authenticates via a service account and establishes a temporary SSH tunnel through IAP's internal IP range (`35.235.240.0/20`). This allows for secure, automated deployments without ever opening Port 22 to the public internet.
 
-### 2. Zero Trust & Origin Masking
-The origin server is 100% invisible to the public internet. By utilizing **Cloudflare Zero Trust Tunnels**, the GCP VPC firewall is configured to drop all inbound TCP traffic. Reconnaissance tools like Shodan or automated port scanners see no open ports, mitigating direct-to-IP DDoS and brute-force vectors.
+### 2. Runtime Hardening (Non-Root)
+The application is deployed using the `nginx-unprivileged:alpine-slim` base image. The process runs as UID 101, preventing potential "Container Breakout" exploits from gaining root access to the host OS.
 
-### 3. Resource-Optimized "Native" GitOps
-Running heavy CI/CD runners (Jenkins/GitHub Actions) on a 1GB RAM micro-instance is inefficient. I engineered a **Native GitOps poller** using Linux `systemd` and `bash`. It uses `git ls-remote` to detect SHA deltas with minimal CPU/RAM overhead, triggering automated Docker rebuilds only when changes are merged.
+### 3. State-Locked IaC
+Infrastructure is managed via **Terraform** using a **GCS Remote Backend**. This ensures state consistency across different development environments and provides an audit trail of all infrastructure changes.
 
 ### 4. DevSecOps Image Hardening
 To remediate upstream vulnerabilities in the `nginx:alpine` base image, the build process injects an automated OS-level package patch (`apk upgrade`) during the containerization phase.
