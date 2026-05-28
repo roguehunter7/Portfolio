@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+env:
+  # Opt into Node.js 24 to suppress the deprecation warning
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,10 +26,11 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # 3. Securely Tunnel through IAP (Port 22) and deploy
+      # 3. Securely Tunnel through IAP (Port 22) and deploy (WITH --QUIET FLAG)
       - name: SSH via IAP and Execute deploy.sh
         run: |
           gcloud compute ssh portfolio-zero-trust-node \
             --zone="us-central1-a" \
+            --quiet \
             --tunnel-through-iap \
             --command="sudo /opt/portfolio/deploy.sh"
