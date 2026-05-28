@@ -96,7 +96,7 @@ resource "google_compute_instance" "vm_instance" {
     find /opt/portfolio -name "*.sh" -exec sed -i 's/\r$//' {} +
     chmod +x /opt/portfolio/*.sh
 
-    # 6. Run Initial Deploy (No setup.sh needed anymore!)
+    # 6. Run Initial Deploy 
     cd /opt/portfolio
     ./deploy.sh
   EOF

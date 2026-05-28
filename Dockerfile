@@ -1,11 +1,11 @@
-# Use the official Docker Hardened Image (DHI) for Nginx
-FROM dhi.io/nginx:1-alpine3.23-fips
+# Use the official, unprivileged Nginx Alpine Slim image as the base image
+FROM nginxinc/nginx-unprivileged:1.27.12-alpine-slim
 
-# Clear default Nginx html assets
+# Clean up default Nginx HTML placeholder assets
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy your frontend with explicit non-root ownership
+# Copy your frontend with explicit non-root ownership (nginx user is UID 101)
 COPY --chown=nginx:nginx main.html /usr/share/nginx/html/index.html
 
-# DHI Nginx binds to 8080 by default because it runs unprivileged
+# Expose the default unprivileged port (8080)
 EXPOSE 8080
