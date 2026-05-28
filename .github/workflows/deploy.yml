@@ -1,0 +1,31 @@
+name: Deploy Hardened Portfolio via GCP IAP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Authenticate with GCP via Service Account Key
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # 2. Setup Google Cloud SDK
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 3. Securely Tunnel through IAP (Port 22) and deploy
+      - name: SSH via IAP and Execute deploy.sh
+        run: |
+          gcloud compute ssh portfolio-zero-trust-node \
+            --zone="us-central1-a" \
+            --tunnel-through-iap \
+            --command="sudo /opt/portfolio/deploy.sh"
