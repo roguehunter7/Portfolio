@@ -61,7 +61,6 @@ resource "google_compute_instance" "vm_instance" {
     #!/bin/bash
     # 1. OS Preparation
     apt-get update -y
-    apt-get upgrade -y
     apt-get install -y docker.io git curl
     systemctl enable --now docker
 
