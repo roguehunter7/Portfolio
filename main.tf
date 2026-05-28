@@ -70,8 +70,8 @@ resource "google_compute_instance" "vm_instance" {
   machine_type = "e2-micro"
   zone         = "us-central1-a"
 
-  # High-Performance Debian Startup Script
-  metadata_startup_script = <<-EOF
+  # High-Performance Debian Startup Script with Windows CRLF Protection
+  metadata_startup_script = replace(<<-EOF
     #!/bin/bash
     # 1. OS Preparation
     apt-get update -y
@@ -96,10 +96,11 @@ resource "google_compute_instance" "vm_instance" {
     find /opt/portfolio -name "*.sh" -exec sed -i 's/\r$//' {} +
     chmod +x /opt/portfolio/*.sh
 
-    # 6. Run Setup & Initial Deploy
+    # 6. Run Initial Deploy (No setup.sh needed anymore!)
     cd /opt/portfolio
     ./deploy.sh
   EOF
+  , "\r", "")
 
   boot_disk {
     initialize_params {
