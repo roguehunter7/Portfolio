@@ -54,7 +54,7 @@ resource "google_compute_firewall" "deny_all_ingress" {
 resource "google_compute_firewall" "allow_iap_ssh" {
   name    = "allow-iap-ssh"
   network = google_compute_network.zero_trust_vpc.name
-
+  priority = 900
   allow {
     protocol = "tcp"
     ports    = ["22"]
