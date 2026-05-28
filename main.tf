@@ -50,6 +50,20 @@ resource "google_compute_firewall" "deny_all_ingress" {
   source_ranges = ["0.0.0.0/0"]
 }
 
+# Allow secure SSH access ONLY through Google Identity-Aware Proxy (IAP)
+resource "google_compute_firewall" "allow_iap_ssh" {
+  name    = "allow-iap-ssh"
+  network = google_compute_network.zero_trust_vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  # This IP range is owned exclusively by Google's secure IAP proxy [1]
+  source_ranges = ["35.235.240.0/20"] 
+}
+
 # 3. The Compute Instance
 resource "google_compute_instance" "vm_instance" {
   name         = "portfolio-zero-trust-node"
@@ -84,7 +98,6 @@ resource "google_compute_instance" "vm_instance" {
 
     # 6. Run Setup & Initial Deploy
     cd /opt/portfolio
-    ./setup.sh
     ./deploy.sh
   EOF
 
