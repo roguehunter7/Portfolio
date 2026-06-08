@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sreeram K R | Cloud & Infrastructure Case Study</title>
+    <title>Sreeram K R | Cloud Architect & Automation Engineer</title>
+    <!-- Load Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
     <style>
         :root {
             --bg-color: #0d1117;
@@ -12,8 +15,8 @@
             --text-dim: #8b949e;
             --accent-blue: #58a6ff;
             --accent-green: #3fb950;
+            --accent-orange: #f0883e;
             --border-color: #30363d;
-            --terminal-header: #21262d;
         }
 
         body {
@@ -25,72 +28,33 @@
             padding: 0;
         }
 
-        .container {
-            max-width: 850px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+        .container { max-width: 950px; margin: 40px auto; padding: 0 20px; }
 
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
+        header { margin-bottom: 60px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        h1 { font-size: 2.5em; color: #fff; margin: 0; }
+        .subtitle { color: var(--accent-blue); font-size: 1.1em; font-weight: 500; }
 
-        h1 { font-size: 2.2em; color: #fff; margin: 0; }
-        h2 { font-size: 1.1em; color: var(--accent-blue); font-weight: 400; margin-bottom: 20px; }
-        h3 { font-size: 1.3em; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 30px; }
+        .tag-row { margin-top: 15px; }
+        .tag { display: inline-block; background: #21262d; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; font-size: 0.85em; margin: 2px; color: var(--accent-blue); font-family: monospace; }
+
+        .evolution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 40px 0; }
+        .phase-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; position: relative; }
+        .phase-card h3 { margin-top: 0; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .badge { position: absolute; top: 15px; right: 20px; font-size: 0.7em; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+        .badge-p1 { background: rgba(240, 136, 62, 0.1); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+        .badge-p2 { background: rgba(63, 185, 80, 0.1); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+        .mermaid-container { background: #000; border-radius: 8px; padding: 20px; margin: 30px 0; border: 1px solid var(--border-color); }
+
+        .deep-dive { margin-top: 50px; }
+        .deep-dive h2 { color: #fff; font-size: 1.8em; }
+
+        .footer-status { font-family: monospace; font-size: 0.9em; color: var(--text-dim); margin-top: 60px; padding: 20px; border-top: 1px solid var(--border-color); text-align: center; }
         
-        .highlight { color: var(--accent-green); font-weight: bold; }
-        
-        .terminal-box {
-            background: #000;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-            margin: 20px 0;
-        }
-
-        pre { padding: 15px; margin: 0; color: var(--accent-green); font-size: 0.85em; overflow-x: auto; }
-
-        .decision-block {
-            display: flex;
-            gap: 20px;
-            margin-top: 15px;
-        }
-
-        .decision-item {
-            flex: 1;
-            font-size: 0.9em;
-            background: rgba(88, 166, 255, 0.05);
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid rgba(88, 166, 255, 0.1);
-        }
-
-        .tag {
-            display: inline-block;
-            background: #21262d;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-size: 0.8em;
-            margin: 2px;
-            color: var(--accent-blue);
-        }
-
-        .footer-status {
-            font-family: monospace;
-            font-size: 0.8em;
-            color: var(--text-dim);
-            margin-top: 40px;
-            border-left: 3px solid var(--accent-green);
-            padding-left: 15px;
-        }
-
         a { color: var(--accent-blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) { .evolution-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -98,80 +62,113 @@
 <div class="container">
     <header>
         <h1>Sreeram K R</h1>
-        <h2>Infrastructure & Automation Engineer</h2>
-        <p style="font-size: 0.9em;">
+        <div class="subtitle">Infrastructure Automation & DevSecOps Engineer</div>
+        <div class="tag-row">
+            <span class="tag">Terraform</span> <span class="tag">GCP</span> <span class="tag">GitHub Actions</span> 
+            <span class="tag">Docker</span> <span class="tag">Zero Trust</span> <span class="tag">Python</span>
+        </div>
+        <p style="margin-top: 20px;">
             <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a> | 
             <a href="https://github.com/roguehunter7" target="_blank">GitHub</a> | 
-            <a href="mailto:contact.sreeramkr@gmail.com">Email</a>
+            <a href="mailto:contact.sreeramkr@gmail.com">Contact</a>
         </p>
     </header>
 
-    <section class="card">
-        <p>I bridge the gap between <strong>Legacy IT Operations</strong> and <strong>Modern Cloud Engineering</strong>. This site is a live demonstration of an automated, Zero-Ingress architecture, provisioned via code and secured through a Zero-Trust edge.</p>
+    <section>
+        <p style="font-size: 1.1em;">
+            I don't just "deploy code"—I build <strong>bulletproof environments</strong>. This site is a live demonstration of how I migrated a resource-constrained GCP micro-node from a clever "hack" to a hardened, enterprise-standard CI/CD pipeline.
+        </p>
     </section>
 
-    <h3>The Journey of a Request & Deployment</h3>
-    <p style="font-size: 0.95em; color: var(--text-dim);">How traffic reaches the container and how code reaches the server:</p>
-    
-    <div class="terminal-box">
-        <pre>
-[TRAFFIC FLOW]
-[YOU] ----(Strict HTTPS/DNSSEC)----> [CLOUDFLARE EDGE]
-                                             │
-      (Encrypted Egress Tunnel) <------------┘
-              │
-              ▼
-    [GCP VPC FIREWALL] ----> [DROPS ALL PUBLIC INBOUND]
-              │
-              ▼
-    [UNPRIVILEGED DOCKER CONTAINER (Port 8080)]
-
-[DEPLOYMENT FLOW]
-[GITHUB PUSH] --▶ [GITHUB ACTIONS] --▶ [GCP IAP TUNNEL (Port 22)]
-                                             │
-      (Secure Push-Based Update) <-----------┘
-        </pre>
-    </div>
-
-    <div style="font-size: 0.95em;">
-        <p><strong>1. Stealth Origin:</strong> My infrastructure remains invisible. The VPC Firewall drops all public traffic. Connections are only established via <strong>Cloudflare Zero Trust</strong> (for users) and <strong>GCP Identity-Aware Proxy</strong> (for deployments).</p>
-        <p><strong>2. Hardened Runtime:</strong> The site runs on the official <code>nginxinc/nginx-unprivileged:alpine-slim</code> image. It executes as a <strong>non-root user (UID 101)</strong>, ensuring that even in the event of a process breach, the attacker has no system-level privileges.</p>
-        <p><strong>3. Push-Based CI/CD:</strong> I replaced the legacy polling model with a modern <strong>GitHub Actions</strong> pipeline. It securely tunnels through IAP to trigger atomic container updates only when code is merged to main.</p>
-    </div>
-
-    <h3>Architectural Logic</h3>
-    <div class="decision-block">
-        <div class="decision-item">
-            <strong style="color: var(--accent-blue);">Why Terraform?</strong><br>
-            Manual clicks are errors waiting to happen. I use Terraform with a <strong>GCS Remote Backend</strong>. This ensures my infrastructure is version-controlled, idempotent, and recoverable in seconds.
+    <div class="evolution-grid">
+        <!-- PHASE 1 -->
+        <div class="phase-card">
+            <span class="badge badge-p1">PHASE 1: THE MVP</span>
+            <h3>Native Resource Polling</h3>
+            <p style="font-size: 0.9em; color: var(--text-dim);">
+                <strong>Problem:</strong> Running GitHub Actions runners or Jenkins on a 1GB RAM GCP <code>e2-micro</code> instance is a suicide mission for the Linux OOM-killer.
+            </p>
+            <p style="font-size: 0.9em;">
+                <strong>Decision:</strong> I built a "Runner-less" GitOps loop using a <code>systemd.timer</code> and a Bash script. It polled the GitHub API every 2 minutes for SHA changes.
+            </p>
+            <p style="font-size: 0.9em; font-style: italic; color: var(--accent-orange);">
+                Result: 0MB extra RAM used, but 2-minute latency and high API overhead.
+            </p>
         </div>
-        <div class="decision-item">
-            <strong style="color: var(--accent-blue);">Why Systemd GitOps?</strong><br>
-            A GCP <code>e2-micro</code> has only 1GB RAM. Traditional CI/CD runners (Jenkins/GitHub Actions) would trigger an OOM crash. I wrote a <strong>native Bash + Systemd poller</strong> to handle GitOps with near-zero overhead.
+
+        <!-- PHASE 2 -->
+        <div class="phase-card">
+            <span class="badge badge-p2">PHASE 2: MODERNIZED</span>
+            <h3>Push-Based IAP Tunneling</h3>
+            <p style="font-size: 0.9em; color: var(--text-dim);">
+                <strong>Problem:</strong> Pull-based polling is inefficient and security was "root-heavy." I needed an enterprise-grade pipeline without opening public ports.
+            </p>
+            <p style="font-size: 0.9em;">
+                <strong>Decision:</strong> Replaced the poller with <strong>GitHub Actions</strong>. Used <strong>GCP Identity-Aware Proxy (IAP)</strong> to tunnel deployments via Port 22 while keeping the public firewall closed.
+            </p>
+            <p style="font-size: 0.9em; font-style: italic; color: var(--accent-green);">
+                Result: Instant deployments, zero open public ports, and unprivileged Docker runtimes.
+            </p>
         </div>
     </div>
 
-    <h3>Technical Stack</h3>
-    <div style="margin-top: 10px;">
-        <span class="tag">Terraform (IaC)</span> <span class="tag">GCP (GCS/Compute/VPC)</span>
-        <span class="tag">Docker</span> <span class="tag">Cloudflare Tunnels</span>
-        <span class="tag">Linux (Debian/Ubuntu/Fedora)</span> <span class="tag">Python (Netmiko/Pandas)</span>
-        <span class="tag">PowerShell (Automation)</span> <span class="tag">Bash</span>
-        <span class="tag">HSTS/DNSSEC</span> <span class="tag">Tanium</span>
+    <div class="deep-dive">
+        <h2>Live System Architecture</h2>
+        <p style="color: var(--text-dim);">The current state of <code>sreeramkr.com</code>. Everything you see here was provisioned via <strong>Terraform</strong> using a <strong>GCS Remote Backend</strong> for idempotent state management.</p>
+        
+        <div class="mermaid-container">
+            <div class="mermaid">
+                graph TD
+                User((User)) -->|Strict HTTPS/DNSSEC| CF[Cloudflare Edge / WAF]
+                CF -->|Encrypted Egress Tunnel| Tunnel[Cloudflare daemon]
+                
+                subgraph GCP_VPC [GCP Isolated VPC]
+                    direction LR
+                    Tunnel -->|Localhost:80| Docker[Docker Engine]
+                    subgraph Container [Hardened Runtime]
+                        Docker -->|Non-root UID 101| Nginx[nginx-unprivileged:alpine-slim]
+                    end
+                end
+
+                subgraph CI_CD [Secure Pipeline]
+                    Dev[Local Push] --> GH[GitHub Actions]
+                    GH -->|IAP Tunneling| VM_SSH[GCP Node Port 22]
+                    VM_SSH -->|Trigger| DeployScript[deploy.sh]
+                end
+
+                DeployScript -.->|Restarts| Docker
+                style GCP_VPC fill:#161b22,stroke:#30363d
+                style CI_CD fill:#161b22,stroke:#30363d
+                style Nginx fill:#000,stroke:#3fb950,stroke-width:2px
+            </div>
+        </div>
     </div>
 
-<h3>Current Roadmap: Phase 3</h3>
-    <ul style="font-size: 0.95em; color: var(--text-dim);">
-        <li><span class="highlight">AWS Hybrid Extension:</span> Expanding the architecture to AWS to practice cross-cloud networking (VPN/Direct Connect simulation).</li>
-        <li><span class="highlight">OIDC Authentication:</span> Removing long-lived GCP Service Account keys in favor of <strong>Workload Identity Federation</strong> for GitHub Actions.</li>
-    </ul>
+    <div class="deep-dive">
+        <h2>Why I Built It This Way</h2>
+        <ul style="padding-left: 20px;">
+            <li>
+                <strong>Stealth Origin:</strong> I hate open ports. By using <strong>Cloudflare Tunnels</strong> for traffic and <strong>IAP</strong> for deployments, my server doesn't exist on the public internet. If you scan my IP, you get nothing.
+            </li>
+            <li>
+                <strong>Unprivileged Runtimes:</strong> Most people run Docker as root. I switched to the <code>nginx-unprivileged</code> image to ensure that even if the container is breached, the attacker is stuck in a sandbox with no system permissions.
+            </li>
+            <li>
+                <strong>Infrastructure as Code:</strong> Every firewall rule, VPC subnet, and compute node is in my <code>main.tf</code>. I can destroy this entire project and bring it back to life in 45 seconds with 100% parity.
+            </li>
+        </ul>
+    </div>
+
+    <div class="deep-dive" style="border: 1px dashed var(--accent-blue); padding: 20px; border-radius: 8px;">
+        <h2 style="margin-top: 0;">Moving Forward: Phase 3</h2>
+        <p>I'm currently working on <strong>Workload Identity Federation</strong>. My goal is to delete my GCP Service Account JSON keys from GitHub Secrets and use OIDC tokens instead—eliminating "long-lived secrets" entirely. Multi-cloud extension to AWS is next.</p>
+    </div>
 
     <footer class="footer-status">
-        $ systemctl status portfolio-infrastructure<br>
-        > Provisioning: Terraform (Verified)<br>
-        > Remote State: GCS Active<br>
-        > Firewall: Deny-All-Ingress Active<br>
-        > Deployment: Self-Healing Docker via Systemd
+        $ last_deploy --status<br>
+        <span style="color: var(--accent-green);">PROVISIONING: Terraform Verified</span> | 
+        <span style="color: var(--accent-green);">SECURITY: IAP Tunnel Active</span> | 
+        <span style="color: var(--accent-blue);">UPTIME: 100% (Since Phase 2)</span>
     </footer>
 </div>
 
