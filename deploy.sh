@@ -13,6 +13,12 @@ git reset --hard origin/main
 if [ -f /tmp/resume.pdf ]; then
   echo "Found compiled resume.pdf in /tmp, copying to build context..."
   cp /tmp/resume.pdf /opt/portfolio/resume.pdf
+else
+  echo "resume.pdf not found in /tmp, checking build context..."
+  if [ ! -f /opt/portfolio/resume.pdf ]; then
+    echo "Creating dummy resume.pdf to prevent Nginx build failure..."
+    touch /opt/portfolio/resume.pdf
+  fi
 fi
 
 echo "Rebuilding and restarting services via Docker Compose..."
