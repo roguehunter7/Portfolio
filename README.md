@@ -44,16 +44,18 @@ Configured Nginx's native `stub_status` module to securely expose real-time metr
 
 * `main.tf` : Terraform configuration for VPC, Firewalls, and Compute.
 * `main.html` : The frontend portfolio case study.
+* `resume.tex` : The LaTeX source file for Sreeram's professional resume.
 * `Dockerfile` : Nginx-Alpine configuration with integrated security patching.
-* `deploy.sh` : The core CD logic. Uses native Git to poll SHAs and manage Docker lifecycles.
+* `deploy.sh` : The core CD logic. Pulls repository code, copies the compiled PDF resume, and runs Docker Compose.
 
-## ⚙️ Automated Deployment Flow (`deploy.sh`)
+## ⚙️ Automated Deployment Flow
 
-1. **State Check:** Queries the remote origin natively via `git ls-remote` (using a secure PAT).
-2. **Evaluation:** Compares remote SHA against `git rev-parse HEAD`.
-3. **Synchronization:** Executes a `git reset --hard` if a delta is detected.
-4. **Hardened Build:** Rebuilds the Docker image with fresh OS patches (`--no-cache`).
-5. **Orchestration:** Seamlessly swaps the container bound to `localhost:80`.
+1. **LaTeX Compilation:** The GitHub Actions runner compiles `resume.tex` into `resume.pdf` natively using LaTeX-engine actions.
+2. **Secure SCP Transfer:** The compiled `resume.pdf` is copied to `/tmp/resume.pdf` on the GCP VM via `gcloud compute scp` using an Identity-Aware Proxy (IAP) tunnel.
+3. **VM Synchronization:** GitHub Actions SSHs into the VM and runs `deploy.sh`, which performs a repository fetch and hard reset.
+4. **Build Context Staging:** The deploy script copies `/tmp/resume.pdf` into the local `/opt/portfolio` workspace.
+5. **Hardened Build:** Rebuilds the Nginx container, copying `main.html` to the web root and injecting `resume.pdf` with non-root ownership (`--chown=nginx:nginx`).
+6. **Orchestration:** Restarts the multi-container stack via Docker Compose.
 
 ## 🚀 Quick Start (IaC Deployment)
 

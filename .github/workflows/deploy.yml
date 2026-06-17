@@ -26,7 +26,21 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # 3. Securely Tunnel through IAP (Port 22) and deploy (WITH --QUIET FLAG)
+      # 3. Compile LaTeX document
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: resume.tex
+
+      # 4. Copy resume.pdf to VM via IAP
+      - name: Copy resume.pdf to VM via IAP
+        run: |
+          gcloud compute scp resume.pdf portfolio-zero-trust-node:/tmp/resume.pdf \
+            --zone="us-central1-a" \
+            --quiet \
+            --tunnel-through-iap
+
+      # 5. Securely Tunnel through IAP (Port 22) and deploy (WITH --QUIET FLAG)
       - name: SSH via IAP and Execute deploy.sh
         run: |
           gcloud compute ssh portfolio-zero-trust-node \

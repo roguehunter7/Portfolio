@@ -1,0 +1,136 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[default]{sourcesanspro} 
+\usepackage[margin=0.85in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fontawesome5} 
+
+% ----- COLORS -----
+\definecolor{primarycolor}{RGB}{30, 30, 30} 
+\definecolor{sectioncolor}{RGB}{0, 82, 156}    
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=sectioncolor,
+    linkcolor=sectioncolor,
+}
+
+% ----- SECTION FORMATTING -----
+\titleformat{\section}{\color{sectioncolor}\large\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{14pt}{10pt}
+
+\pagestyle{empty} 
+\setlength{\parindent}{0pt} 
+
+% ----- DOCUMENT START -----
+\begin{document}
+\color{primarycolor}
+
+% --- HEADER ---
+\begin{center}
+    {\Huge\bfseries Sreeram K R}\\
+    \medskip
+    {\large Cloud \& Infrastructure Automation Engineer}\\
+    \medskip
+    \small
+    \faPhone\ +91-7293280942 \quad\textbar\quad 
+    \faEnvelope\ \href{mailto:contact.sreeramkr@gmail.com}{contact.sreeramkr@gmail.com} \quad\textbar\quad
+    \faGlobe\ \href{https://sreeramkr.com}{sreeramkr.com}\\
+    \faGithub\ \href{https://github.com/roguehunter7}{github.com/roguehunter7} \quad\textbar\quad
+    \faLinkedin\ \href{https://linkedin.com/in/sreeram-k-r}{linkedin.com/in/sreeram-k-r}
+\end{center}
+
+% --- PROFESSIONAL SUMMARY ---
+\section{Professional Summary}
+
+Infrastructure \& Automation Engineer blending deep on-premise networking expertise (L2/L3, Active Directory, VLANs) with modern Cloud \& DevOps architectures. Passionate about leveraging AI-assisted engineering tools to accelerate infrastructure deployment, eliminate manual operations, and scale systems. Adept at bridging the gap between physical networks, endpoint provisioning, and Zero-Trust cloud environments.
+
+% --- TECHNICAL SKILLS ---
+\section{Technical Skills}
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Infrastructure \& SRE:} GCP (Compute, VPC, GCS), Site Reliability Engineering (SRE), Terraform (IaC), GCS (Remote State), Docker, GitHub Actions (CI/CD), GCP IAP, Windows Autopilot.
+    \item \textbf{Networking \& Edge:} DNSSEC, HSTS, Cloudflare Zero Trust Tunnels, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.
+    \item \textbf{Automation \& Scripting:} Python (Netmiko, Pandas, NetworkX), PowerShell (Advanced SDK), Bash Scripting, GitHub CLI.
+    \item \textbf{Enterprise Tools:} Tanium Deploy, ServiceNow API, Microsoft Defender Endpoint Onboarding, Nginx Reverse Proxy, GitOps Workflows.
+\end{itemize}
+
+% --- PROFESSIONAL EXPERIENCE ---
+\section{Professional Experience}
+
+\textbf{Honeywell Enterprise Operations (via Iron Systems)} \hfill \textbf{Jan 2025 -- Present}\\
+\textit{IT Infrastructure Support (Endpoint Operations)} \hfill \textit{Pune | Mar 2026 -- Present}
+\begin{itemize}[itemsep=3pt]
+    \item \textbf{Process Innovation:} Engineered a zero-prompt PowerShell automation script to extract hardware hashes instantly, replacing a legacy 3,000-line manual workflow and accelerating the Windows Autopilot / Intune enrollment pipeline.
+    \item \textbf{Provisioning:} Provide L1/L2 enterprise support, executing bare-metal OS imaging, hardware provisioning, and complex system configuration for high-priority end-user deployments.
+\end{itemize}
+
+\textit{Network \& Automation Engineer (Contract)} \hfill \textit{Bangalore | Jan 2025 -- Feb 2026}
+\begin{itemize}[itemsep=3pt]
+    \item \textbf{Security Hardening:} Automated OS vulnerability patching for 1,000+ endpoints via Tanium and PowerShell; achieved \textbf{98\% compliance} on targeted vulnerabilities and eliminated manual configuration drift.
+    \item \textbf{Network Optimization:} Developed a Python automation suite (Netmiko) that reduced a 4-month manual switch survey timeline by \textbf{50\%}, resulting in the reclamation of \textbf{500+ unused IP addresses}.
+    \item \textbf{Identity \& Access:} Slashed ServiceNow privileged account provisioning time by \textbf{95\%} (5 mins to <20 secs) by automating WMI and RDP access via custom PowerShell tooling.
+    \item \textbf{Enterprise Migrations:} Facilitated critical L3-to-L2 network migrations across 70 subnets by defining firewall rules (ports/URLs) and managing DNS Forwarders within AD environments.
+\end{itemize}
+
+\textbf{Suyati Technologies Ltd} \hfill \textbf{Feb 2023 -- Sep 2023}\\
+\textit{Backend Developer Intern} \hfill \textit{Kochi}
+\begin{itemize}
+    \item Developed flight delay prediction logic using Python/Django and containerized MySQL database environments using Docker to ensure development-to-production consistency.
+\end{itemize}
+
+
+% --- PROJECTS ---
+\section{Technical Projects}
+
+\textbf{Zero-Trust Cloud Infrastructure \& GitOps Pipeline} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
+\begin{itemize}[itemsep=3pt]
+\item Leveraged AI-assisted development methodologies to rapidly orchestrate idempotent provisioning of GCP resources using \textbf{Terraform} with a \textbf{GCS Remote Backend} for centralized state management.
+\item Engineered a \textbf{Push-Based CI/CD pipeline} using \textbf{GitHub Actions} and \textbf{GCP Identity-Aware Proxy (IAP)} to securely update containers without exposing SSH ports to the public internet.
+\item Hardened the application layer by utilizing \textbf{Unprivileged Docker Images} (Non-root UID 101), significantly reducing the container attack surface.
+\item Enforced E2E Strict HTTPS, DNSSEC, and HSTS at the Cloudflare edge to mitigate spoofing and bot-driven reconnaissance.
+\end{itemize}
+
+\textbf{CornerSentinel: IoT Safety System (Li-Fi Communication)} \hfill \textit{Python, YOLOv8, OpenCV}
+\begin{itemize}
+    \item Developed a real-time computer vision warning system on Raspberry Pi to prevent accidents at blind corners.
+    \item Achieved a \textbf{1ms warning signal latency} by implementing **Li-Fi (Visible Light Communication)** protocols, leveraging principles of optical data transmission and signal modulation.
+\end{itemize}
+
+% --- EDUCATION ---
+\section{Education}
+
+\textbf{Bachelor of Technology, Electronics \& Communication} \hfill \textbf{2020 -- 2024}\\
+Adi Shankara Institute of Engineering \& Technology \hfill \textit{Ernakulam, Kerala}
+\begin{itemize}[itemsep=2pt]
+    \item \textbf{Relevant Coursework:} Computer Communication \& Networks, Operating Systems, Fiber Optic Communication, Digital Signal Processing, and Embedded Systems.
+    \item \textbf{Key Focus:} Applied theoretical knowledge of optical data transmission to capstone project (Li-Fi), focusing on signal integrity and low-latency hardware-software interfacing.
+    \item \textbf{Additional Coursework:} Completed certified addon coursework in \textbf{Fiber Optics Technology}, covering optical transmission principles and network infrastructure.
+\end{itemize}
+
+% --- CERTIFICATIONS ---
+\section{Certifications \& Awards}
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{GATE Qualified (2023):} Successfully passed the Graduate Aptitude Test in Engineering in the Electronics \& Communication stream.
+    \item \textbf{Google IT Support Professional:} Certified by Coursera for foundational systems administration, OS management, and enterprise network protocols.
+\end{itemize}
+
+% --- LANGUAGES & INTERESTS ---
+\section{Languages \& Technical Interests}
+
+\textbf{Languages:} English (Fluent), Malayalam (Native), Tamil (Native), Hindi (Conversational).
+
+\medskip
+
+\textbf{Technical Interests:} 
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Cloud Architecture:} Transitioning workloads to serverless and containerized environments using Infrastructure as Code (Terraform).
+    \item \textbf{Biohacking \& Fitness:} Passionate about high-protein nutrition and fitness routines, applying a data-driven "optimization mindset" to health and longevity.
+    \item \textbf{Self-Hosting:} Experimenting with network security, encrypted tunnels, and private cloud management.
+\end{itemize}
+
+\end{document}
