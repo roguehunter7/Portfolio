@@ -1,5 +1,5 @@
 # Use the official, unprivileged Nginx Alpine Slim image (No Auth Required)
-FROM nginxinc/nginx-unprivileged:alpine-slim
+FROM nginxinc/nginx-unprivileged:1.27.0-alpine-slim
 
 # Copy custom Nginx configuration to expose /status
 COPY --chown=nginx:nginx default.conf /etc/nginx/conf.d/default.conf

@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy.sh - Push-Based Deployment Script (Docker Compose Edition)
+# deploy.sh - Push-Based Deployment Script (Cloud-Native Image Edition)
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 TARGET_DIR="/opt/portfolio"
@@ -9,20 +9,28 @@ echo "Syncing repository to latest main branch..."
 git fetch origin main
 git reset --hard origin/main
 
-# Copy the compiled resume from /tmp into the build context
-if [ -f /tmp/resume.pdf ]; then
-  echo "Found compiled resume.pdf in /tmp, copying to build context..."
-  cp /tmp/resume.pdf /opt/portfolio/resume.pdf
-else
-  echo "resume.pdf not found in /tmp, checking build context..."
-  if [ ! -f /opt/portfolio/resume.pdf ]; then
-    echo "Creating dummy resume.pdf to prevent Nginx build failure..."
-    touch /opt/portfolio/resume.pdf
-  fi
-fi
+# Extract git Remote token to authenticate local docker pulls from private GHCR
+TOKEN=$(git config --get remote.origin.url | sed -E 's|https://([^@]+)@github.com.*|\1|' | cut -d':' -f2)
+echo "$TOKEN" | docker login ghcr.io -u roguehunter7 --password-stdin
 
-echo "Rebuilding and restarting services via Docker Compose..."
-docker-compose down || true
-docker-compose up -d --build
+# Define target image
+REPO_LOWER="roguehunter7/portfolio"
+IMAGE_NAME="ghcr.io/${REPO_LOWER}/portfolio-web:${IMAGE_TAG}"
 
-echo "Deployment of zero-trust portfolio and metrics daemon successful."
+echo "Pulling $IMAGE_NAME from GHCR..."
+docker pull "$IMAGE_NAME"
+
+echo "Tearing down stale web container..."
+docker stop portfolio-web || true
+docker rm portfolio-web || true
+
+echo "Launching unprivileged Nginx container..."
+docker run -d \
+  --name portfolio-web \
+  -p 80:8080 \
+  --add-host=host.docker.internal:host-gateway \
+  --restart always \
+  "$IMAGE_NAME"
+
+# Restart host daemon
+systemctl restart metrics-daemon || true

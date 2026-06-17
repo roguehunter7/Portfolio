@@ -75,7 +75,7 @@ resource "google_compute_instance" "vm_instance" {
     #!/bin/bash
     # 1. OS Preparation
     apt-get update -y
-    apt-get install -y docker.io docker-compose git curl
+    apt-get install -y docker.io git curl
     systemctl enable --now docker
 
     # 2. Install Cloudflared
@@ -92,13 +92,14 @@ resource "google_compute_instance" "vm_instance" {
     rm -rf /opt/portfolio
     git clone https://${var.github_pat}@github.com/roguehunter7/portfolio.git /opt/portfolio
     
-    # 5. KILL THE WINDOWS GHOSTS IMMEDIATELY
+    # 5. Setup host systemd metrics daemon
+    cp /opt/portfolio/metrics-daemon.service /etc/systemd/system/metrics-daemon.service
+    systemctl daemon-reload
+    systemctl enable --now metrics-daemon
+
+    # 6. KILL THE WINDOWS GHOSTS IMMEDIATELY
     find /opt/portfolio -name "*.sh" -exec sed -i 's/\r$//' {} +
     chmod +x /opt/portfolio/*.sh
-
-    # 6. Run Initial Deploy 
-    cd /opt/portfolio
-    ./deploy.sh
   EOF
   , "\r", "")
 

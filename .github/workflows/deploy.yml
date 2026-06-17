@@ -32,19 +32,26 @@ jobs:
         with:
           root_file: resume.tex
 
-      # 4. Copy resume.pdf to VM via IAP
-      - name: Copy resume.pdf to VM via IAP
-        run: |
-          gcloud compute scp resume.pdf portfolio-zero-trust-node:/tmp/resume.pdf \
-            --zone="us-central1-a" \
-            --quiet \
-            --tunnel-through-iap
+      # 4. Log in to GitHub Container Registry
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Securely Tunnel through IAP (Port 22) and deploy (WITH --QUIET FLAG)
+      # 5. Build and Push Nginx Image (with pinned SHA tag)
+      - name: Build and Push Nginx Image
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/${REPO_LOWER}/portfolio-web:${{ github.sha }} .
+          docker push ghcr.io/${REPO_LOWER}/portfolio-web:${{ github.sha }}
+
+      # 6. Securely Tunnel through IAP (Port 22) and deploy
       - name: SSH via IAP and Execute deploy.sh
         run: |
           gcloud compute ssh portfolio-zero-trust-node \
             --zone="us-central1-a" \
             --quiet \
             --tunnel-through-iap \
-            --command="sudo /opt/portfolio/deploy.sh"
+            --command="sudo IMAGE_TAG=${{ github.sha }} /opt/portfolio/deploy.sh"
