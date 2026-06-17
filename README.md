@@ -37,6 +37,9 @@ Infrastructure is managed via **Terraform** using a **GCS Remote Backend**. This
 ### 4. DevSecOps Image Hardening
 To remediate upstream vulnerabilities in the `nginx:alpine` base image, the build process injects an automated OS-level package patch (`apk upgrade`) during the containerization phase.
 
+### 5. Native Live Server Telemetry
+Configured Nginx's native `stub_status` module to securely expose real-time metrics (`/status`) over the Cloudflare tunnel. The frontend page performs periodic client-side polling to dynamically display active connection counts and total processed requests in the footer without requiring heavy third-party tracking or monitoring agents.
+
 ## 📂 Repository Structure
 
 * `main.tf` : Terraform configuration for VPC, Firewalls, and Compute.
