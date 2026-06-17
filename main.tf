@@ -106,6 +106,8 @@ resource "google_compute_instance" "vm_instance" {
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-12"
+      type  = "pd-standard"
+      size  = 20
     }
   }
 
