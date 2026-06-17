@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+# Create the telemetry database directory
+RUN mkdir -p /opt/portfolio
+
+# Copy the metrics daemon script
+COPY metrics_daemon.py /app/metrics_daemon.py
+
+WORKDIR /app
+
+# Run python in unbuffered mode to capture logs instantly
+CMD ["python", "-u", "metrics_daemon.py"]
