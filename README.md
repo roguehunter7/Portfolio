@@ -45,17 +45,16 @@ Configured Nginx's native `stub_status` module to securely expose real-time metr
 * `main.tf` : Terraform configuration for VPC, Firewalls, and Compute.
 * `main.html` : The frontend portfolio case study.
 * `resume.tex` : The LaTeX source file for Sreeram's professional resume.
-* `Dockerfile` : Nginx-Alpine configuration with integrated security patching.
-* `deploy.sh` : The core CD logic. Pulls repository code, copies the compiled PDF resume, and runs Docker Compose.
+* `Dockerfile` : Hardened Nginx-Alpine configuration with pinned version `nginxinc/nginx-unprivileged:1.27.0-alpine-slim`.
+* `deploy.sh` : The core CD logic. Authenticates with GHCR, pulls the latest image, starts the unprivileged container, and restarts the host metrics daemon.
+* `metrics-daemon.service` : Systemd configuration file to run the python telemetry daemon natively on the VM host.
 
 ## ⚙️ Automated Deployment Flow
 
 1. **LaTeX Compilation:** The GitHub Actions runner compiles `resume.tex` into `resume.pdf` natively using LaTeX-engine actions.
-2. **Secure SCP Transfer:** The compiled `resume.pdf` is copied to `/tmp/resume.pdf` on the GCP VM via `gcloud compute scp` using an Identity-Aware Proxy (IAP) tunnel.
-3. **VM Synchronization:** GitHub Actions SSHs into the VM and runs `deploy.sh`, which performs a repository fetch and hard reset.
-4. **Build Context Staging:** The deploy script copies `/tmp/resume.pdf` into the local `/opt/portfolio` workspace.
-5. **Hardened Build:** Rebuilds the Nginx container, copying `main.html` to the web root and injecting `resume.pdf` with non-root ownership (`--chown=nginx:nginx`).
-6. **Orchestration:** Restarts the multi-container stack via Docker Compose.
+2. **Hardened Containerization:** The runner builds the custom unprivileged Nginx image, baking the compiled `resume.pdf` and `main.html` directly into it, and pushes it to GitHub Container Registry (GHCR) tagged with the commit SHA.
+3. **VM Deployment Trigger:** The runner SSHs into the private GCP VM via Identity-Aware Proxy (IAP), passing `IMAGE_TAG=${{ github.sha }}` to `/opt/portfolio/deploy.sh`.
+4. **Execution:** The VM's `deploy.sh` script authenticates with GHCR, pulls the newly built image, starts it as a standalone container, and restarts the host-native systemd telemetry daemon.
 
 ## 🚀 Quick Start (IaC Deployment)
 

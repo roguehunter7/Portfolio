@@ -149,13 +149,13 @@
 
         <!-- PHASE 3 -->
         <div class="phase-card">
-            <span class="badge badge-p3">Phase 3: Telemetry</span>
-            <h3>Native Status Polling</h3>
+            <span class="badge badge-p3">Phase 3: Registry & Telemetry</span>
+            <h3>GHCR & Native systemd</h3>
             <p style="font-size: 0.9em; color: var(--text-dim);">
-                <strong>Requirement:</strong> Real-time observability into connection metrics without adding external monitoring heavy agents.
+                <strong>Optimization:</strong> Building on the VM caused OOM crashes. Real-time telemetry was constrained inside the docker container network boundaries.
             </p>
             <p style="font-size: 0.9em;">
-                <strong>Architecture:</strong> Configured Nginx's native <code>stub_status</code> module on <code>/status</code>. Frontend performs client-side polling every 5 seconds to show active connections and request count in real time.
+                <strong>Architecture:</strong> Built and pushed unprivileged Nginx image to **GHCR** in CI. Telemetry daemon runs natively on the host under **systemd**, proxied via the host bridge.
             </p>
         </div>
     </div>
@@ -168,27 +168,28 @@
     <div class="mermaid-container">
         <div class="mermaid">
             graph TD
-            User((User)) -->|HTTPS/HSTS/DNSSEC| CF[Cloudflare Edge / WAF]
-            CF -->|Encrypted Egress Tunnel| Tunnel[Cloudflare daemon]
+            User((User)) -->|HTTPS| CF[Cloudflare Edge]
+            CF -->|Egress Tunnel| Tunnel[Cloudflare daemon]
             
             subgraph GCP_VPC [GCP Private VPC]
-                direction LR
-                Tunnel -->|Localhost:80| Docker[Docker Engine]
-                subgraph Container [Hardened Runtime]
-                    Docker -->|Non-root UID 101| Nginx[nginx-unprivileged:alpine-slim]
-                end
+                direction TB
+                Tunnel -->|Localhost:80| Nginx[Nginx Container :8080]
+                Nginx -->|Host Gateway Bridge| Daemon[Systemd Daemon on Host :5000]
             end
 
             subgraph CI_CD [Deployment Pipeline]
                 Dev[Local Push] --> GH[GitHub Actions]
-                GH -->|IAP Tunneling| VM_SSH[GCP Node Port 22]
-                VM_SSH -->|Trigger| DeployScript[deploy.sh]
+                GH -->|Compile LaTeX| PDF[resume.pdf]
+                GH -->|Bake & Push Image| GHCR[GHCR Registry]
+                GH -->|SSH via IAP| VM[GCP Node]
+                VM -->|deploy.sh| Pull[Pull Image & Run]
+                GHCR -.-> Pull
             end
-
-            DeployScript -.->|Restarts| Docker
+            
             style GCP_VPC fill:#161b22,stroke:#30363d
             style CI_CD fill:#161b22,stroke:#30363d
             style Nginx fill:#000,stroke:#3fb950,stroke-width:2px
+            style Daemon fill:#000,stroke:#58a6ff,stroke-width:2px
         </div>
     </div>
 
@@ -198,13 +199,16 @@
             <strong>Stealth Origin:</strong> The origin server is entirely unreachable via public IP. By utilizing <strong>Cloudflare Zero Trust Tunnels</strong> for egress and <strong>IAP</strong> for management, the attack surface is minimized to the edge layer.
         </li>
         <li>
-            <strong>Runtime Hardening:</strong> The application runs as a <strong>non-root user (UID 101)</strong> inside an unprivileged container. This prevents a compromised service from gaining escalated privileges on the host Debian OS.
+            <strong>Runtime Hardening:</strong> The application runs as a <strong>non-root user (UID 101)</strong> inside a version-pinned unprivileged container. This prevents a compromised service from gaining escalated privileges on the host Debian OS.
+        </li>
+        <li>
+            <strong>Registry Staging (CI/CD):</strong> Docker images are built and packages staged directly inside the GitHub Actions runner and published to **GitHub Container Registry (GHCR)**. The VM only pulls pre-built images, preventing local build memory spikes and avoiding Out-Of-Memory (OOM) failures on the 1GB GCP node.
+        </li>
+        <li>
+            <strong>Host-Native Telemetry:</strong> The real-time SRE telemetry daemon runs natively on the host OS managed by <strong>systemd</strong> for direct access to <code>/proc</code> and SQLite, proxying metrics requests from the container via the host bridge gateway (<code>host.docker.internal</code>).
         </li>
         <li>
             <strong>Idempotency:</strong> Infrastructure is managed as code. Every firewall rule and network configuration is version-controlled, allowing for deterministic redeployments.
-        </li>
-        <li>
-            <strong>Native Telemetry:</strong> Nginx's native <code>stub_status</code> is exposed securely on <code>/status</code> over the Cloudflare tunnel. The UI polls this endpoint to present live connection and request counts directly in the footer, providing zero-overhead service observability.
         </li>
     </ul>
 
