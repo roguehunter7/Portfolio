@@ -43,7 +43,6 @@ To remediate upstream vulnerabilities in the `nginx:alpine` base image, the buil
 * `main.html` : The frontend portfolio case study.
 * `Dockerfile` : Nginx-Alpine configuration with integrated security patching.
 * `deploy.sh` : The core CD logic. Uses native Git to poll SHAs and manage Docker lifecycles.
-* `setup.sh` : Provisioning script that bootstraps the native Systemd GitOps timer.
 
 ## ⚙️ Automated Deployment Flow (`deploy.sh`)
 
