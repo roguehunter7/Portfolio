@@ -1,60 +1,43 @@
-name: Deploy Hardened Portfolio via GCP IAP
+name: Deploy Portfolio
 
 on:
   push:
     branches:
       - main
 
-env:
-  # Opt into Node.js 24 to suppress the deprecation warning
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+permissions:
+  contents: 'read'
+  id-token: 'write'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. Authenticate with GCP via Service Account Key
-      - name: Google Auth
-        uses: google-github-actions/auth@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
-      # 2. Setup Google Cloud SDK
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate Docker
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
-      # 3. Compile LaTeX document
-      - name: Compile LaTeX document
-        uses: xu-cheng/latex-action@v3
-        with:
-          root_file: resume.tex
-
-      # 4. Log in to GitHub Container Registry
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # 5. Build and Push Nginx Image (with pinned SHA tag)
-      - name: Build and Push Nginx Image
+      - name: Build, Tag, and Push Docker Image
+        env:
+          IMAGE_TAG: us-central1-docker.pkg.dev/main-project-402906/portfolio-registry/portfolio-app:${{ github.sha }}
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t ghcr.io/${REPO_LOWER}/portfolio-web:${{ github.sha }} .
-          docker push ghcr.io/${REPO_LOWER}/portfolio-web:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
 
-      # 6. Securely Tunnel through IAP (Port 22) and deploy
-      - name: SSH via IAP and Execute deploy.sh
-        run: |
-          gcloud compute ssh portfolio-zero-trust-node \
-            --zone="us-central1-a" \
-            --quiet \
-            --tunnel-through-iap \
-            --command="sudo IMAGE_TAG=${{ github.sha }} /opt/portfolio/deploy.sh"
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var="container_image_tag=us-central1-docker.pkg.dev/main-project-402906/portfolio-registry/portfolio-app:${{ github.sha }}"
