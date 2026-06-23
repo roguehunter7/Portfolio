@@ -16,6 +16,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Cache Resume PDF
+        id: cache-resume
+        uses: actions/cache@v4
+        with:
+          path: resume.pdf
+          key: resume-pdf-${{ hashFiles('resume.tex') }}
+
+      - name: Compile LaTeX document
+        if: steps.cache-resume.outputs.cache-hit != 'true'
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: resume.tex
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
