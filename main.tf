@@ -41,6 +41,6 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   project  = google_cloud_run_v2_service.portfolio_app.project
   location = google_cloud_run_v2_service.portfolio_app.location
   name     = google_cloud_run_v2_service.portfolio_app.name
-  role     = "roles/run.viewer"
+  role     = "roles/run.invoker"
   member   = "allUsers"
 }
