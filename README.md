@@ -65,20 +65,4 @@ The portfolio is served using `nginxinc/nginx-unprivileged:1.27.0-alpine-slim` r
 
 ---
 
-## 🚀 Quick Start (IaC Deployment)
-
-To configure or modify the infrastructure locally, authenticate with `gcloud` and run:
-
-```bash
-# 1. Initialize and connect to Remote GCS State
-terraform init -reconfigure
-
-# 2. Review the plan
-terraform plan -var="container_image_tag=us-central1-docker.pkg.dev/main-project-402906/portfolio-registry/portfolio-app:latest"
-
-# 3. Provision modifications
-terraform apply -var="container_image_tag=us-central1-docker.pkg.dev/main-project-402906/portfolio-registry/portfolio-app:latest"
-```
-
----
 *Architected and maintained by [Sreeram K R](https://sreeramkr.com).*
