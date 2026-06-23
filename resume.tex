@@ -48,33 +48,33 @@
 % --- PROFESSIONAL SUMMARY ---
 \section{Professional Summary}
 
-Infrastructure \& Automation Engineer blending deep on-premise networking expertise (L2/L3, Active Directory, VLANs) with modern Cloud \& DevOps architectures. Passionate about leveraging AI-assisted engineering tools to accelerate infrastructure deployment, eliminate manual operations, and scale systems. Adept at bridging the gap between physical networks, endpoint provisioning, and Zero-Trust cloud environments.
+Infrastructure \& Automation Engineer combining on-premise network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments.
 
 % --- TECHNICAL SKILLS ---
 \section{Technical Skills}
 \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
-    \item \textbf{Infrastructure \& SRE:} GCP (Compute, VPC, GCS), Site Reliability Engineering (SRE), Terraform (IaC), GCS (Remote State), Docker, GitHub Actions (CI/CD), GCP IAP, Windows Autopilot.
+    \item \textbf{Infrastructure \& SRE:} GCP (Compute, VPC, GCS), Terraform (IaC), Docker, GitHub Actions (CI/CD), GCP IAP, Kubernetes (Manifest Design, Local Cluster Testing).
     \item \textbf{Networking \& Edge:} DNSSEC, HSTS, Cloudflare Zero Trust Tunnels, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.
-    \item \textbf{Automation \& Scripting:} Python (Netmiko, Pandas, NetworkX), PowerShell (Advanced SDK), Bash Scripting, GitHub CLI.
-    \item \textbf{Enterprise Tools:} Tanium Deploy, ServiceNow API, Microsoft Defender Endpoint Onboarding, Nginx Reverse Proxy, GitOps Workflows.
+    \item \textbf{Automation \& Scripting:} Python (Netmiko, Pandas, NetworkX), PowerShell, Bash Scripting, GitHub CLI.
+    \item \textbf{Enterprise Tools:} ServiceNow API, Nginx Reverse Proxy, GitOps Workflows, Linux System Administration.
 \end{itemize}
 
 % --- PROFESSIONAL EXPERIENCE ---
 \section{Professional Experience}
 
 \textbf{Honeywell Enterprise Operations (via Iron Systems)} \hfill \textbf{Jan 2025 -- Present}\\
-\textit{IT Infrastructure Support (Endpoint Operations)} \hfill \textit{Pune | Mar 2026 -- Present}
+\textit{Systems \& Infrastructure Engineer} \hfill \textit{Pune | Mar 2026 -- Present}
 \begin{itemize}[itemsep=3pt]
-    \item \textbf{Process Innovation:} Engineered a zero-prompt PowerShell automation script to extract hardware hashes instantly, replacing a legacy 3,000-line manual workflow and accelerating the Windows Autopilot / Intune enrollment pipeline.
-    \item \textbf{Provisioning:} Provide L1/L2 enterprise support, executing bare-metal OS imaging, hardware provisioning, and complex system configuration for high-priority end-user deployments.
+    \item \textbf{Process Innovation:} Engineered zero-prompt PowerShell automation scripts to streamline configuration deployments, replacing a legacy 3,000-line manual workflow and accelerating the automated provisioning pipeline.
+    \item \textbf{Infrastructure Operations:} Managed enterprise infrastructure operations, executing automated system configurations, network access control, and platform reliability engineering for high-priority deployments.
 \end{itemize}
 
 \textit{Network \& Automation Engineer (Contract)} \hfill \textit{Bangalore | Jan 2025 -- Feb 2026}
 \begin{itemize}[itemsep=3pt]
-    \item \textbf{Security Hardening:} Automated OS vulnerability patching for 1,000+ endpoints via Tanium and PowerShell; achieved \textbf{98\% compliance} on targeted vulnerabilities and eliminated manual configuration drift.
+    \item \textbf{Security Hardening:} Automated configuration management and vulnerability patching across 1,000+ distributed systems; achieved \textbf{98\% compliance} and eliminated manual configuration drift.
     \item \textbf{Network Optimization:} Developed a Python automation suite (Netmiko) that reduced a 4-month manual switch survey timeline by \textbf{50\%}, resulting in the reclamation of \textbf{500+ unused IP addresses}.
-    \item \textbf{Identity \& Access:} Slashed ServiceNow privileged account provisioning time by \textbf{95\%} (5 mins to <20 secs) by automating WMI and RDP access via custom PowerShell tooling.
-    \item \textbf{Enterprise Migrations:} Facilitated critical L3-to-L2 network migrations across 70 subnets by defining firewall rules (ports/URLs) and managing DNS Forwarders within AD environments.
+    \item \textbf{Identity \& Access:} Slashed ServiceNow privileged account provisioning time by \textbf{95\%} (5 mins to <20 secs) by automating configuration access and remote desktop protocols via custom PowerShell tooling.
+    \item \textbf{Enterprise Migrations:} Facilitated critical L3-to-L2 network migrations across 70 subnets by defining firewall rules (ports/URLs) and managing DNS Forwarders within Active Directory environments.
 \end{itemize}
 
 \textbf{Suyati Technologies Ltd} \hfill \textbf{Feb 2023 -- Sep 2023}\\
@@ -89,17 +89,9 @@ Infrastructure \& Automation Engineer blending deep on-premise networking expert
 
 \textbf{Zero-Trust Cloud Infrastructure \& GitOps Pipeline} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
 \begin{itemize}[itemsep=3pt]
-\item Leveraged AI-assisted development methodologies to rapidly orchestrate idempotent provisioning of GCP resources using \textbf{Terraform} with a \textbf{GCS Remote Backend} for centralized state management.
-\item Engineered a \textbf{Push-Based CI/CD pipeline} using \textbf{GitHub Actions} to compile LaTeX, build/push hardened unprivileged Nginx images to \textbf{GitHub Container Registry (GHCR)}, and securely trigger SSH deployment via \textbf{GCP Identity-Aware Proxy (IAP)}.
-\item Hardened the application layer by utilizing \textbf{Unprivileged Docker Images} (Non-root UID 101) deployed as a standalone container to eliminate Compose overhead.
-\item Optimized host resource efficiency on a 1GB VM by migrating the real-time telemetry daemon to run natively under \textbf{systemd}.
-\item Enforced E2E Strict HTTPS, DNSSEC, and HSTS at the Cloudflare edge to mitigate spoofing and bot-driven reconnaissance.
-\end{itemize}
-
-\textbf{CornerSentinel: IoT Safety System (Li-Fi Communication)} \hfill \textit{Python, YOLOv8, OpenCV}
-\begin{itemize}
-    \item Developed a real-time computer vision warning system on Raspberry Pi to prevent accidents at blind corners.
-    \item Achieved a \textbf{1ms warning signal latency} by implementing **Li-Fi (Visible Light Communication)** protocols, leveraging principles of optical data transmission and signal modulation.
+\item Orchestrated idempotent provisioning of GCP resources (Compute Engine, VPC, GCS) using \textbf{Terraform} with a secure \textbf{GCS Remote Backend} for centralized state management.
+\item Engineered a secure \textbf{CI/CD pipeline} using \textbf{GitHub Actions} and \textbf{GCP Identity-Aware Proxy (IAP)} to automate secure container updates without exposing public SSH ports.
+\item Hardened application deployments by using rootless, unprivileged Docker containers and enforcing E2E strict HTTPS, DNSSEC, and HSTS policies at the Cloudflare Edge to minimize the system attack surface.
 \end{itemize}
 
 % --- EDUCATION ---
@@ -109,7 +101,7 @@ Infrastructure \& Automation Engineer blending deep on-premise networking expert
 Adi Shankara Institute of Engineering \& Technology \hfill \textit{Ernakulam, Kerala}
 \begin{itemize}[itemsep=2pt]
     \item \textbf{Relevant Coursework:} Computer Communication \& Networks, Operating Systems, Fiber Optic Communication, Digital Signal Processing, and Embedded Systems.
-    \item \textbf{Key Focus:} Applied theoretical knowledge of optical data transmission to capstone project (Li-Fi), focusing on signal integrity and low-latency hardware-software interfacing.
+    \item \textbf{Key Focus:} Applied theoretical knowledge of optical data transmission to capstone project, focusing on signal integrity and low-latency hardware-software interfacing.
     \item \textbf{Additional Coursework:} Completed certified addon coursework in \textbf{Fiber Optics Technology}, covering optical transmission principles and network infrastructure.
 \end{itemize}
 
@@ -117,7 +109,6 @@ Adi Shankara Institute of Engineering \& Technology \hfill \textit{Ernakulam, Ke
 \section{Certifications \& Awards}
 \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
     \item \textbf{GATE Qualified (2023):} Successfully passed the Graduate Aptitude Test in Engineering in the Electronics \& Communication stream.
-    \item \textbf{Google IT Support Professional:} Certified by Coursera for foundational systems administration, OS management, and enterprise network protocols.
 \end{itemize}
 
 % --- LANGUAGES & INTERESTS ---
@@ -130,7 +121,6 @@ Adi Shankara Institute of Engineering \& Technology \hfill \textit{Ernakulam, Ke
 \textbf{Technical Interests:} 
 \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
     \item \textbf{Cloud Architecture:} Transitioning workloads to serverless and containerized environments using Infrastructure as Code (Terraform).
-    \item \textbf{Biohacking \& Fitness:} Passionate about high-protein nutrition and fitness routines, applying a data-driven "optimization mindset" to health and longevity.
     \item \textbf{Self-Hosting:} Experimenting with network security, encrypted tunnels, and private cloud management.
 \end{itemize}
 
