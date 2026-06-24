@@ -89,9 +89,9 @@ Infrastructure \& Automation Engineer combining on-premise network routing (L2/L
 
 \textbf{Zero-Trust Cloud Infrastructure \& GitOps Pipeline} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
 \begin{itemize}[itemsep=3pt]
-\item Orchestrated idempotent provisioning of GCP resources (Compute Engine, VPC, GCS) using \textbf{Terraform} with a secure \textbf{GCS Remote Backend} for centralized state management.
-\item Engineered a secure \textbf{CI/CD pipeline} using \textbf{GitHub Actions} and \textbf{GCP Identity-Aware Proxy (IAP)} to automate secure container updates without exposing public SSH ports.
-\item Hardened application deployments by using rootless, unprivileged Docker containers and enforcing E2E strict HTTPS, DNSSEC, and HSTS policies at the Cloudflare Edge to minimize the system attack surface.
+\item Orchestrated declarative, state-locked provisioning of serverless \textbf{Google Cloud Run} services and public IAM configurations using \textbf{Terraform} backed by a \textbf{GCS Remote Backend}.
+\item Engineered a secure, keyless \textbf{CI/CD pipeline} via \textbf{GitHub Actions} using \textbf{Workload Identity Federation (WIF)} and OIDC to authenticate and build/push containers to GCP Artifact Registry.
+\item Hardened application deployments by using rootless, unprivileged Nginx Docker containers, enforcing E2E HTTPS, and optimizing deployment times via LaTeX compilation caching.
 \end{itemize}
 
 \textbf{Serverless Visitor Tracker \& Session Analytics API} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
