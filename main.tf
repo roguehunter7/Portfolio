@@ -45,10 +45,17 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   member   = "allUsers"
 }
 
+resource "google_project_service" "firestore" {
+  project            = "main-project-402906"
+  service            = "firestore.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_firestore_database" "default" {
   name        = "(default)"
   location_id = "us-central1"
   type        = "FIRESTORE_NATIVE"
+  depends_on  = [google_project_service.firestore]
 }
 
 resource "google_cloud_run_v2_service" "portfolio_tracker_api" {
@@ -64,6 +71,7 @@ resource "google_cloud_run_v2_service" "portfolio_tracker_api" {
           cpu    = "1000m"
           memory = "128Mi"
         }
+        cpu_idle = true
       }
     }
     scaling {
@@ -79,10 +87,4 @@ resource "google_cloud_run_v2_service_iam_member" "tracker_public_access" {
   name     = google_cloud_run_v2_service.portfolio_tracker_api.name
   role     = "roles/run.invoker"
   member   = "allUsers"
-}
-
-resource "google_project_iam_member" "deployer_datastore_user" {
-  project = "main-project-402906"
-  role    = "roles/datastore.user"
-  member  = "serviceAccount:github-actions-deployer@main-project-402906.iam.gserviceaccount.com"
 }
