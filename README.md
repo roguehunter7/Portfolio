@@ -33,25 +33,31 @@ Originally designed as a zero-ingress VM-based setup (using Cloudflare tunnels a
 ## 🧠 Core Engineering Decisions
 
 ### 1. Keyless CI/CD with Workload Identity Federation (WIF)
+
 We eliminated all long-lived Google Cloud Service Account JSON keys from GitHub Secrets. The deployment pipeline authenticates securely using short-lived OpenID Connect (OIDC) tokens through GCP Workload Identity Federation, drastically reducing the security risk profile.
 
 ### 2. Fully Managed Serverless Hosting
+
 Migrated from a self-managed `e2-micro` VM to **Google Cloud Run**. Both the static web app and the visitor tracker microservice are hosted on Cloud Run. The services scale down to zero instances when idle, removing host OS maintenance and daemon service monitoring.
 
 ### 3. Serverless Go & Firestore Visitor Analytics
+
 Implemented a custom visitor and active session tracker API in **Go (Golang)**. It connects to **Google Cloud Firestore (Native Mode)** to record live session metadata and atomically increment unique site views.
 - **Resource Footprint Optimization:** The Go microservice runs within a resource-restricted container limited to `128Mi` memory, utilizing `cpu_idle = true` to throttle CPU during inactivity, reducing idle container costs to zero.
 - **Session Lifecycle & Bloat Prevention:** The API writes ephemeral active session documents and executes auto-eviction queries to delete sessions older than 5 minutes, preventing Firestore database bloat.
 - **Cache Control & CORS:** Sends strict no-cache headers to ensure metrics remain fresh, and includes proper CORS configuration for seamless client integration.
 
 ### 4. State-Locked Declarative IaC
+
 The infrastructure (Cloud Run services and public IAM invoker bindings) is defined declaratively using **Terraform** with state locked in a **GCS Remote Backend**. The pipeline automatically applies modifications on push to the `main` branch.
 
 ### 5. LaTeX Resume Automation with Caching
+
 The pipeline compiles `resume.tex` to `resume.pdf` during the workflow run. To optimize deployment speed, `actions/cache` is used to cache `resume.pdf` based on the hash of `resume.tex`.
 - **Deployment Optimization:** If `resume.tex` has not changed, the LaTeX setup and compilation step are skipped completely, saving ~1.5 minutes per run.
 
 ### 6. Runtime Hardening
+
 The portfolio frontend is served using `nginxinc/nginx-unprivileged:1.27.0-alpine-slim` running on non-root UID 101, safeguarding the environment against container-escape vulnerabilities.
 
 ---
