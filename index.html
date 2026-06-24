@@ -241,7 +241,37 @@
         </p>
     </div>
 
-    
+    <div class="footer-status">
+        Uptime: 100% | Active Users: <span id="active-count">...</span> | Total Views: <span id="view-count">...</span>
+    </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const activeCount = document.getElementById("active-count");
+        const viewCount = document.getElementById("view-count");
+        
+        // 3-second timeout for the API call
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        fetch("https://portfolio-tracker-api-lcv43xl32q-uc.a.run.app/api/tracker", { signal: controller.signal })
+            .then(res => {
+                if (!res.ok) throw new Error("API returned non-200 status");
+                return res.json();
+            })
+            .then(data => {
+                clearTimeout(timeoutId);
+                activeCount.textContent = data.active_now;
+                viewCount.textContent = data.total_views;
+            })
+            .catch(err => {
+                clearTimeout(timeoutId);
+                console.error("Tracker API failed, displaying default values:", err);
+                activeCount.textContent = "1";
+                viewCount.textContent = "N/A";
+            });
+    });
+</script>
 </body>
 </html>
