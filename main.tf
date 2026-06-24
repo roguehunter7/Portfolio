@@ -45,17 +45,10 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   member   = "allUsers"
 }
 
-resource "google_project_service" "firestore" {
-  project            = "main-project-402906"
-  service            = "firestore.googleapis.com"
-  disable_on_destroy = false
-}
-
 resource "google_firestore_database" "default" {
   name        = "(default)"
   location_id = "us-central1"
   type        = "FIRESTORE_NATIVE"
-  depends_on  = [google_project_service.firestore]
 }
 
 resource "google_cloud_run_v2_service" "portfolio_tracker_api" {
