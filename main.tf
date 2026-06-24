@@ -45,12 +45,6 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   member   = "allUsers"
 }
 
-resource "google_firestore_database" "default" {
-  name        = "(default)"
-  location_id = "us-central1"
-  type        = "FIRESTORE_NATIVE"
-}
-
 resource "google_cloud_run_v2_service" "portfolio_tracker_api" {
   name     = "portfolio-tracker-api"
   location = "us-central1"
