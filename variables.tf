@@ -1,9 +1,5 @@
-variable "container_image_tag" {
+variable "cloudflare_tunnel_token" {
+  description = "The Cloudflare Zero Trust Tunnel Token"
   type        = string
-  description = "The Docker image tag for the portfolio application"
-}
-
-variable "tracker_image_tag" {
-  type        = string
-  description = "The Docker image tag for the tracker-api service"
+  sensitive   = true
 }

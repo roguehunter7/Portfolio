@@ -1,20 +1,127 @@
-# 🛡️ Serverless Cloud Infrastructure & GitOps Pipeline
+# 🛡️ Zero-Ingress Cloud Infrastructure & GitOps Pipeline
 
 ![GCP](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
 ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
 
-## 📌 Overview
-This repository contains the **Infrastructure as Code (IaC)** and deployment workflow for a secure, serverless, keyless cloud portfolio site. 
+## 📌 Professional Overview
+This repository serves as a live, evolving systems engineering case study. It showcases the design, implementation, and deployment of a secure, production-grade personal portfolio website.
 
-Originally designed as a zero-ingress VM-based setup (using Cloudflare tunnels and custom systemd metrics daemons), the project has evolved into a fully managed, stateless serverless application on **Google Cloud Run**, deployed via **GitHub Actions** using keyless authentication (**Workload Identity Federation**).
+Designed with a **Zero-Ingress / Zero-Trust posture**, the architecture exposes no public ports to the internet and has evolved through multiple phases to achieve maximum availability, high security, and strict **cost optimization** ($0/month) within the GCP Always Free Tier.
 
 ---
 
-## 🏗️ Architecture Design
+## 🏗️ Architectural Evolution
 
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 1: Bash GitOps Polling (Host VM, e2-micro, Pull-based)              │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 2: Push-based IAP Tunneling (GitHub Actions, SSH Tunneling via IAP)  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 3: Telemetry & GHCR (Unprivileged Nginx in Docker, Host systemd)     │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 4: Serverless Migration (Cloud Run, Go API Tracker, Firestore DB)    │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 5: Cost-Optimized Zero-Ingress VM (Docker Compose, Cloudflare Tunnel)│
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏁 Phase 5: Current Production Architecture (Cost Optimization)
+To bring monthly operating costs strictly down to **$0**, the infrastructure was migrated from Google Cloud Run back to an `e2-micro` Virtual Machine (fully covered under Google's Always Free Tier). The tracker API and its Firestore database dependencies were retired to avoid storage and API request charges.
+
+### Zero-Ingress Docker Compose Setup
+The host VM does not map Nginx's ports (`80` or `8080`) to the host interface, nor are there any open inbound firewall rules from the public internet. Instead:
+1. **Cloudflared Container**: Connects outwards to Cloudflare Zero Trust via a secure outbound tunnel.
+2. **Private Docker Network**: The `cloudflared` container proxies incoming traffic directly to the `web` container over an isolated, internal Docker bridge network.
+3. **No Ingress Ports**: The VM remains a closed box to all incoming traffic except secure SSH management proxied via Identity-Aware Proxy.
+
+---
+
+## ⚙️ Step-by-Step Build & Deployment Pipeline (CI/CD)
+
+The push-based deployment is fully automated using GitHub Actions. Below is a detailed, step-by-step explanation of the execution flow:
+
+```
+[Developer Push] 
+       │
+       ▼
+ 1. Cache Check  ──(Hit)──► [Skip LaTeX Build]
+       │
+    (Miss)
+       ▼
+ 2. LaTeX Build  ─────────► [Generate resume.pdf]
+       │
+       ▼
+ 3. Docker Build ─────────► [Push to GHCR (Public Package)]
+       │
+       ▼
+ 4. OIDC Auth    ─────────► [Authenticate via WIF to GCP]
+       │
+       ▼
+ 5. IaC Check    ─────────► [Terraform Apply (VPC, Firewall, VM)]
+       │
+       ▼
+ 6. IAP SSH Push ─────────► [gcloud compute ssh via Port 22 Tunnel]
+       │
+       ▼
+ 7. VM Deploy    ─────────► [deploy.sh runs Docker Compose up]
+```
+
+### 1. LaTeX Resume Cache & Compilation
+* The workflow checks if `resume.tex` has been updated since the last build.
+* If a cache hit occurs, it retrieves the compiled `resume.pdf` from the GitHub Actions Cache, saving about 1.5 minutes of runner run time.
+* If it is a cache miss, it spins up a LaTeX compilation action (`xu-cheng/latex-action`) to compile `resume.tex` into a fresh PDF.
+
+### 2. Hardened Container Build & Push
+* The runner builds a Docker image based on `nginxinc/nginx-unprivileged:1.27.0-alpine-slim`.
+* This image packages `index.html`, the custom `default.conf` (which exposes the Nginx `/status` endpoint), and the newly compiled `resume.pdf`.
+* The container runs under non-root user `nginx` (UID 101) to mitigate container-escape risks.
+* The image is tagged with the unique Git commit SHA (`github.sha`) and pushed to **GitHub Container Registry (GHCR)**.
+
+### 3. Federated Authentication via OIDC/WIF
+* Rather than storing long-lived GCP service account keys in GitHub Secrets, the runner authenticates using **Workload Identity Federation (WIF)**.
+* The workflow exchanges a short-lived GitHub OIDC token for a federated GCP credential.
+
+### 4. Declarative Infrastructure Provisioning (Terraform)
+* The runner initializes and applies the Terraform configuration (`main.tf`).
+* The state is stored and locked in a Google Cloud Storage (GCS) bucket.
+* Terraform provisions/updates the **Zero-Trust VPC**, the **IAP SSH firewall rule**, and the **e2-micro VM instance**.
+
+### 5. Secure Push-Based VM Deployment (IAP Tunneling)
+* Once the infrastructure is ready, the runner executes a secure `gcloud compute ssh` command to connect to the GCE VM.
+* Because all ingress ports are blocked, the runner tunnels through GCP **Identity-Aware Proxy (IAP)**, which acts as a secure bastion. IAP traffic is restricted to Google's specific range (`35.235.240.0/20`).
+* The runner passes the new `IMAGE_TAG` and the `CLOUDFLARE_TUNNEL_TOKEN` repository secret as environment variables across the SSH tunnel.
+
+### 6. Orchestration on the Host VM
+* The command executes `/opt/portfolio/deploy.sh` on the VM.
+* The script writes the new container tag and tunnel token to a local `.env` file.
+* It pulls the new public image from GHCR.
+* It launches the Docker Compose services:
+  ```bash
+  docker-compose up -d --remove-orphans
+  ```
+* The Nginx server starts up, and the Cloudflare tunnel establishes an outbound connection, bringing the website update live.
+
+---
+
+## 🏛️ Historical Case Study: Phase 4 (Serverless Architecture)
+Before the cost-saving migration in Phase 5, the website was architected as a fully managed serverless application.
+
+### Phase 4 Architecture Diagram
 ```
   [USER] ─── (HTTPS) ───► [PORTFOLIO FRONTEND] ───► [UNPRIVILEGED NGINX]
                                                         (index.html & resume.pdf)
@@ -25,63 +132,32 @@ Originally designed as a zero-ingress VM-based setup (using Cloudflare tunnels a
                                            (us-central1, 128Mi, CPU Idle)
                                                                     ▲
                                                                     │ (Deploy)
-[GITHUB ACTIONS] ─── (OIDC/WIF) ───► [GCP ARTIFACT REGISTRY] ──────┘
+ [GITHUB ACTIONS] ─── (OIDC/WIF) ───► [GCP ARTIFACT REGISTRY] ──────┘
 ```
 
----
-
-## 🧠 Core Engineering Decisions
-
-### 1. Keyless CI/CD with Workload Identity Federation (WIF)
-
-We eliminated all long-lived Google Cloud Service Account JSON keys from GitHub Secrets. The deployment pipeline authenticates securely using short-lived OpenID Connect (OIDC) tokens through GCP Workload Identity Federation, drastically reducing the security risk profile.
-
-### 2. Fully Managed Serverless Hosting
-
-Migrated from a self-managed `e2-micro` VM to **Google Cloud Run**. Both the static web app and the visitor tracker microservice are hosted on Cloud Run. The services scale down to zero instances when idle, removing host OS maintenance and daemon service monitoring.
-
-### 3. Serverless Go & Firestore Visitor Analytics
-
-Implemented a custom visitor and active session tracker API in **Go (Golang)**. It connects to **Google Cloud Firestore (Native Mode)** to record live session metadata and atomically increment unique site views.
-- **Resource Footprint Optimization:** The Go microservice runs within a resource-restricted container limited to `128Mi` memory, utilizing `cpu_idle = true` to throttle CPU during inactivity, reducing idle container costs to zero.
-- **Session Lifecycle & Bloat Prevention:** The API writes ephemeral active session documents and executes auto-eviction queries to delete sessions older than 5 minutes, preventing Firestore database bloat.
-- **Cache Control & CORS:** Sends strict no-cache headers to ensure metrics remain fresh, and includes proper CORS configuration for seamless client integration.
-
-### 4. State-Locked Declarative IaC
-
-The infrastructure (Cloud Run services and public IAM invoker bindings) is defined declaratively using **Terraform** with state locked in a **GCS Remote Backend**. The pipeline automatically applies modifications on push to the `main` branch.
-
-### 5. LaTeX Resume Automation with Caching
-
-The pipeline compiles `resume.tex` to `resume.pdf` during the workflow run. To optimize deployment speed, `actions/cache` is used to cache `resume.pdf` based on the hash of `resume.tex`.
-- **Deployment Optimization:** If `resume.tex` has not changed, the LaTeX setup and compilation step are skipped completely, saving ~1.5 minutes per run.
-
-### 6. Runtime Hardening
-
-The portfolio frontend is served using `nginxinc/nginx-unprivileged:1.27.0-alpine-slim` running on non-root UID 101, safeguarding the environment against container-escape vulnerabilities.
+### Serverless Go & Firestore Visitor Analytics
+To track visitor analytics serverlessly, we engineered a custom visitor and active session tracker microservice:
+* **Go Microservice**: Written in Go using the official Firestore SDK. It listened for HTTP requests, verified CORS, and incremented global view counters.
+* **Firestore Native Integration**: Used Firestore to atomically increment the total view count. To track live users, it wrote short-lived session documents.
+* **Auto-Eviction & Memory Management**: To keep Firestore database storage minimal, the API executed background query routines to delete session documents older than 5 minutes.
+* **Cloud Run Resource Limits**: The Go container was locked to `128Mi` memory limits with `cpu_idle = true` enabled, ensuring that when the API scaled down or sat idle, Google charged $0 for runtime execution.
+* **Artifact Registry Fee Pivot**: Despite the Go service itself being free, maintaining container images in GCP Artifact Registry and Firestore data reads/writes incurred small monthly fees. This led to the cost-driven pivot of Phase 5.
 
 ---
 
-## 📂 Repository Structure
+## 📂 Core Engineering Decisions & Takeaways
 
-* `main.tf` : Terraform configuration for both the frontend and tracker API Cloud Run services, including public access bindings (`roles/run.invoker` for `allUsers`).
-* `variables.tf` : Declarative input variables for container tags.
-* `Dockerfile` : Configured to optionally copy `resume.pdf` using wildcards to protect local/dev builds if the PDF hasn't been compiled locally.
-* `index.html` : The main web page detailing the 4-phase architectural evolution and displaying live session stats in the footer.
-* `resume.tex` : The LaTeX source file for the professional resume.
-* `tracker-api/` : Go API microservice codebase.
-  - `main.go` : The Go listener with Firestore SDK integrations, CORS, and cleanup routines.
-  - `Dockerfile` : Multi-stage build (`golang:alpine` to `alpine:latest`) to produce a highly-minimized execution image.
-* `.github/workflows/deploy.yml` : Secure CI/CD workflow utilizing OIDC auth, LaTeX caching, Docker builds for both containers, and Terraform apply.
+### 1. Keyless Auth (WIF) over Service Account Keys
+Using OIDC authentication removes the risk of compromised secrets. There are no static JSON credentials that can leak.
 
----
+### 2. Zero-Ingress Network Security
+By utilizing Cloudflare Zero Trust Tunnels and Google IAP, the VM is entirely isolated from internet scanners. There is no public-facing port `22` or `80` to probe.
 
-## ⚙️ Automated Deployment Flow
+### 3. Container Isolation vs. Host systemd
+Migrating from native host-level daemons (Phase 3) to Docker Compose (Phase 5) isolates the Nginx runtime and the tunneling client. The host OS remains pristine, easy to patch, and free from custom system configuration drift.
 
-1. **Change Detection & Cache Check:** GitHub Actions checks if `resume.tex` has changed. If unchanged, it restores `resume.pdf` from the cache.
-2. **LaTeX Compilation (Conditional):** If the cache is missed, it compiles `resume.tex` into `resume.pdf`.
-3. **Hardened Containerization:** The runner builds the unprivileged Nginx frontend image and the compiled Go tracker API image, pushing both to GCP Artifact Registry using OIDC authentication.
-4. **Declarative Deploy:** Runs `terraform init` and `terraform apply` using the new image tags, deploying/updating both Cloud Run services and ensuring public web ingress access.
+### 4. Caching at the Pipeline Level
+Automating LaTeX document builds saves developer overhead, but caching the compiled PDFs prevents pipeline bottlenecks, cutting deployment times by **75%** on typical code-only pushes.
 
 ---
 
