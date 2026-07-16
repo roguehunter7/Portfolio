@@ -1,12 +1,12 @@
 services:
   web:
-    image: ghcr.io/roguehunter7/portfolio-web:${IMAGE_TAG}
+    image: ghcr.io/roguehunter7/portfolio-web:latest
     restart: always
     # No ports exposed to the host VM to maintain a Zero-Ingress architecture.
     # The Cloudflare tunnel handles routing traffic directly inside this Docker network.
 
   tunnel:
-    image: cloudflare/cloudflared:2025.7.0
+    image: cloudflare/cloudflared:latest
     restart: always
     command: tunnel --no-autoupdate run
     environment:
