@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     image: ghcr.io/roguehunter7/portfolio-web:${IMAGE_TAG}
@@ -8,7 +6,7 @@ services:
     # The Cloudflare tunnel handles routing traffic directly inside this Docker network.
 
   tunnel:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2025.7.0
     restart: always
     command: tunnel --no-autoupdate run
     environment:

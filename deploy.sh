@@ -1,5 +1,6 @@
 #!/bin/bash
 # deploy.sh - Push-based zero-ingress deployment orchestrator
+set -e
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 TARGET_DIR="/opt/portfolio"
@@ -14,9 +15,9 @@ echo "IMAGE_TAG=${IMAGE_TAG}" > .env
 echo "CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}" >> .env
 
 echo "Pulling latest portfolio-web container..."
-docker-compose pull web
+docker compose pull web
 
 echo "Deploying Docker Compose services..."
-docker-compose up -d --remove-orphans
+docker compose up -d --remove-orphans
 
 echo "Deployment complete!"

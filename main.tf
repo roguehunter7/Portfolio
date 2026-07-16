@@ -16,13 +16,6 @@ provider "google" {
   region  = "us-central1"
 }
 
-# --- VARIABLES ---
-variable "cloudflare_tunnel_token" {
-  description = "The Cloudflare Zero Trust Tunnel Token"
-  type        = string
-  sensitive   = true
-}
-
 # --- INFRASTRUCTURE ---
 
 # 1. Custom Zero-Trust VPC Network
@@ -64,12 +57,21 @@ resource "google_compute_instance" "vm_instance" {
   machine_type = "e2-micro"
   zone         = "us-central1-a"
 
-  # VM Startup Script to install Docker, Docker Compose, Git, and clone the repository
+  # VM Startup Script: installs Docker Compose v2, clones the repo, and bootstraps
+  # the Compose stack on first boot using the injected Cloudflare tunnel token.
   metadata_startup_script = replace(<<-EOF
     #!/bin/bash
-    # 1. Install Docker, Docker Compose, Git and Curl
+    set -e
+
+    # 1. Install Docker (CE) with Compose v2 plugin, Git, and Curl
     apt-get update -y
-    apt-get install -y docker.io docker-compose git curl
+    apt-get install -y ca-certificates curl gnupg
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+    apt-get update -y
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin git
     systemctl enable --now docker
 
     # 2. Clone the public portfolio repository
@@ -79,6 +81,14 @@ resource "google_compute_instance" "vm_instance" {
     # 3. Clean line endings and ensure scripts are executable
     find /opt/portfolio -name "*.sh" -exec sed -i 's/\r$//' {} +
     chmod +x /opt/portfolio/*.sh
+
+    # 4. Bootstrap Compose stack on first boot using the Terraform-supplied token.
+    # Subsequent deployments are handled by GitHub Actions via deploy.sh.
+    cd /opt/portfolio
+    echo "IMAGE_TAG=latest" > .env
+    echo "CLOUDFLARE_TUNNEL_TOKEN=${var.cloudflare_tunnel_token}" >> .env
+    docker compose pull web 2>/dev/null || true
+    docker compose up -d
   EOF
   , "\r", "")
 

@@ -70,4 +70,4 @@ jobs:
             --zone="us-central1-a" \
             --quiet \
             --tunnel-through-iap \
-            --command="sudo IMAGE_TAG=${{ github.sha }} CLOUDFLARE_TUNNEL_TOKEN=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }} /opt/portfolio/deploy.sh"
+            --command="sudo IMAGE_TAG=${{ github.sha }} CLOUDFLARE_TUNNEL_TOKEN='${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}' /opt/portfolio/deploy.sh"
