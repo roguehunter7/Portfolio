@@ -1,9 +1,9 @@
-\documentclass[11pt,letterpaper]{article}
+\documentclass[10pt,letterpaper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[default]{sourcesanspro} 
-\usepackage[margin=0.85in]{geometry}
+\usepackage[margin=0.55in]{geometry}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{xcolor}
@@ -22,7 +22,7 @@
 
 % ----- SECTION FORMATTING -----
 \titleformat{\section}{\color{sectioncolor}\large\bfseries\uppercase}{}{0em}{}[\titlerule]
-\titlespacing{\section}{0pt}{14pt}{10pt}
+\titlespacing{\section}{0pt}{8pt}{4pt}
 
 \pagestyle{empty} 
 \setlength{\parindent}{0pt} 
@@ -34,29 +34,39 @@
 % --- HEADER ---
 \begin{center}
     {\Huge\bfseries Sreeram K R}\\
-    \medskip
+    \smallskip
     {\large Cloud \& Infrastructure Automation Engineer}\\
-    \medskip
+    \smallskip
     \small
     \faPhone\ +91-7293280942 \quad\textbar\quad 
     \faEnvelope\ \href{mailto:contact.sreeramkr@gmail.com}{contact.sreeramkr@gmail.com} \quad\textbar\quad
-    \faGlobe\ \href{https://sreeramkr.com}{sreeramkr.com}\\
+    \faGlobe\ \href{https://sreeramkr.com}{sreeramkr.com} \quad\textbar\quad
     \faGithub\ \href{https://github.com/roguehunter7}{github.com/roguehunter7} \quad\textbar\quad
     \faLinkedin\ \href{https://linkedin.com/in/sreeram-k-r}{linkedin.com/in/sreeram-k-r}
 \end{center}
 
 % --- PROFESSIONAL SUMMARY ---
 \section{Professional Summary}
-
 Infrastructure \& Automation Engineer combining on-premise network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments.
 
 % --- TECHNICAL SKILLS ---
 \section{Technical Skills}
-\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
-    \item \textbf{Infrastructure \& SRE:} GCP (Cloud Run, Firestore, Compute Engine, VPC, GCS), Terraform (IaC), Docker, GitHub Actions (CI/CD), GCP IAP.
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+    \item \textbf{Infrastructure \& SRE:} GCP (Compute Engine, VPC, GCS, Cloud Run), Terraform (IaC), Docker, Docker Compose, GitHub Actions (CI/CD), GCP IAP.
     \item \textbf{Networking \& Edge:} DNSSEC, HSTS, Cloudflare Zero Trust Tunnels, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.
-    \item \textbf{Automation \& Scripting:} Go (Golang), Python (Netmiko, Pandas, NetworkX), PowerShell, Bash Scripting, GitHub CLI.
-    \item \textbf{Enterprise Tools:} ServiceNow API, Nginx Reverse Proxy, GitOps Workflows, Linux System Administration.
+    \item \textbf{Automation \& Scripting:} Python (Netmiko, Pandas, NetworkX), PowerShell, Bash Scripting, GitHub CLI, Linux System Administration.
+    \item \textbf{Enterprise Tools:} ServiceNow API, Nginx Reverse Proxy, GitOps Workflows, Active Directory.
+\end{itemize}
+
+% --- PROJECTS (Moved to Front) ---
+\section{Technical Projects}
+
+\textbf{Zero-Trust Cloud Infrastructure \& GitOps Pipeline} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+\item Orchestrated declarative, state-locked provisioning of private VPC networks, firewalls, and Compute instances using \textbf{Terraform}.
+\item Engineered a secure, keyless \textbf{CI/CD pipeline} via \textbf{GitHub Actions} using \textbf{Workload Identity Federation (WIF)} and OIDC.
+\item Implemented secure push-based SSH deployments over GCP **Identity-Aware Proxy (IAP)** to run containerized stacks.
+\item Isolated services inside a private **Docker Compose** network routed via **Cloudflare Tunnels**, exposing zero host ports.
 \end{itemize}
 
 % --- PROFESSIONAL EXPERIENCE ---
@@ -64,71 +74,40 @@ Infrastructure \& Automation Engineer combining on-premise network routing (L2/L
 
 \textbf{Honeywell Enterprise Operations (via Iron Systems)} \hfill \textbf{Jan 2025 -- Present}\\
 \textit{Systems \& Infrastructure Engineer} \hfill \textit{Pune | Mar 2026 -- Present}
-\begin{itemize}[itemsep=3pt]
-    \item \textbf{Process Innovation:} Engineered zero-prompt PowerShell automation scripts to streamline configuration deployments, replacing a legacy 3,000-line manual workflow and accelerating the automated provisioning pipeline.
-    \item \textbf{Infrastructure Operations:} Managed enterprise infrastructure operations, executing automated system configurations, network access control, and platform reliability engineering for high-priority deployments.
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+    \item Engineered zero-prompt PowerShell automation scripts to streamline configuration deployments, replacing a legacy 3,000-line manual workflow and accelerating the automated provisioning pipeline.
+    \item Managed enterprise infrastructure operations, executing automated system configurations, network access control, and platform reliability engineering for high-priority deployments.
 \end{itemize}
 
 \textit{Network \& Automation Engineer (Contract)} \hfill \textit{Bangalore | Jan 2025 -- Feb 2026}
-\begin{itemize}[itemsep=3pt]
-    \item \textbf{Security Hardening:} Automated configuration management and vulnerability patching across 1,000+ distributed systems; achieved \textbf{98\% compliance} and eliminated manual configuration drift.
-    \item \textbf{Network Optimization:} Developed a Python automation suite (Netmiko) that reduced a 4-month manual switch survey timeline by \textbf{50\%}, resulting in the reclamation of \textbf{500+ unused IP addresses}.
-    \item \textbf{Identity \& Access:} Slashed ServiceNow privileged account provisioning time by \textbf{95\%} (5 mins to <20 secs) by automating configuration access and remote desktop protocols via custom PowerShell tooling.
-    \item \textbf{Enterprise Migrations:} Facilitated critical L3-to-L2 network migrations across 70 subnets by defining firewall rules (ports/URLs) and managing DNS Forwarders within Active Directory environments.
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+    \item Automated configuration management and vulnerability patching across 1,000+ distributed systems, achieving \textbf{98\% compliance}.
+    \item Developed a Python automation suite (Netmiko) that reduced switch survey timelines by \textbf{50\%}, reclaiming \textbf{500+ unused IPs}.
+    \item Slashed ServiceNow privileged account provisioning time by \textbf{95\%} (5 mins to <20 secs) by automating remote protocols.
+    \item Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets.
 \end{itemize}
 
 \textbf{Suyati Technologies Ltd} \hfill \textbf{Feb 2023 -- Sep 2023}\\
 \textit{Backend Developer Intern} \hfill \textit{Kochi}
-\begin{itemize}
-    \item Developed flight delay prediction logic using Python/Django and containerized MySQL database environments using Docker to ensure development-to-production consistency.
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+    \item Developed flight delay prediction logic using Python/Django and containerized MySQL database environments using Docker.
 \end{itemize}
 
-
-% --- PROJECTS ---
-\section{Technical Projects}
-
-\textbf{Zero-Trust Cloud Infrastructure \& GitOps Pipeline} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
-\begin{itemize}[itemsep=3pt]
-\item Orchestrated declarative, state-locked provisioning of serverless \textbf{Google Cloud Run} services and public IAM configurations using \textbf{Terraform} backed by a \textbf{GCS Remote Backend}.
-\item Engineered a secure, keyless \textbf{CI/CD pipeline} via \textbf{GitHub Actions} using \textbf{Workload Identity Federation (WIF)} and OIDC to authenticate and build/push containers to GCP Artifact Registry.
-\item Hardened application deployments by using rootless, unprivileged Nginx Docker containers, enforcing E2E HTTPS, and optimizing deployment times via LaTeX compilation caching.
-\end{itemize}
-
-\textbf{Serverless Visitor Tracker \& Session Analytics API} \hfill \href{https://sreeramkr.com}{sreeramkr.com}
-\begin{itemize}[itemsep=3pt]
-\item Developed a lightweight, low-latency API in \textbf{Go (Golang)} to track live website sessions and unique page views, running on an optimized \textbf{Google Cloud Run} container.
-\item Integrated \textbf{Google Cloud Firestore (Native Mode)} for transactional state storage, implementing atomic increment operations and concurrent query aggregations.
-\item Designed automated database bloat prevention to clean up expired sessions and enforced strict HTTP Cache-Control headers to deliver real-time metrics dynamically.
+% --- CERTIFICATIONS & LANGUAGES ---
+\section{Certifications \& Languages}
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+    \item \textbf{AWS Certified Solutions Architect -- Associate (SAA-C03):} Pending (Exam scheduled for September 5, 2026).
+    \item \textbf{GATE Qualified (2023):} Passed the Graduate Aptitude Test in Engineering in the Electronics \& Communication stream.
+    \item \textbf{Languages:} English (Fluent), Malayalam (Native), Tamil (Native), Hindi (Conversational).
 \end{itemize}
 
 % --- EDUCATION ---
 \section{Education}
 
 \textbf{Bachelor of Technology, Electronics \& Communication} \hfill \textbf{2020 -- 2024}\\
-Adi Shankara Institute of Engineering \& Technology \hfill \textit{Ernakulam, Kerala}
-\begin{itemize}[itemsep=2pt]
-    \item \textbf{Relevant Coursework:} Computer Communication \& Networks, Operating Systems, Fiber Optic Communication, Digital Signal Processing, and Embedded Systems.
-    \item \textbf{Key Focus:} Applied theoretical knowledge of optical data transmission to capstone project, focusing on signal integrity and low-latency hardware-software interfacing.
-    \item \textbf{Additional Coursework:} Completed certified addon coursework in \textbf{Fiber Optics Technology}, covering optical transmission principles and network infrastructure.
-\end{itemize}
-
-% --- CERTIFICATIONS ---
-\section{Certifications \& Awards}
-\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
-    \item \textbf{GATE Qualified (2023):} Successfully passed the Graduate Aptitude Test in Engineering in the Electronics \& Communication stream.
-\end{itemize}
-
-% --- LANGUAGES & INTERESTS ---
-\section{Languages \& Technical Interests}
-
-\textbf{Languages:} English (Fluent), Malayalam (Native), Tamil (Native), Hindi (Conversational).
-
-\medskip
-
-\textbf{Technical Interests:} 
-\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
-    \item \textbf{Cloud Architecture:} Transitioning workloads to serverless and containerized environments using Infrastructure as Code (Terraform).
-    \item \textbf{Self-Hosting:} Experimenting with network security, encrypted tunnels, and private cloud management.
+Adi Shankar Institute of Engineering \& Technology \hfill \textit{Ernakulam, Kerala}
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, parsep=0pt]
+    \item \textbf{Relevant Coursework:} Computer Communication \& Networks, Operating Systems, Fiber Optic Communication, DSP.
 \end{itemize}
 
 \end{document}

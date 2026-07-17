@@ -66,6 +66,20 @@ jobs:
 
       - name: SSH via IAP and Execute deploy.sh on VM
         run: |
+          echo "Waiting for VM startup script to finish setup..."
+          for i in {1..35}; do
+            if gcloud compute ssh portfolio-zero-trust-node \
+              --zone="us-central1-a" \
+              --quiet \
+              --tunnel-through-iap \
+              --command="test -f /opt/portfolio/deploy.sh" 2>/dev/null; then
+                echo "VM is ready!"
+                break
+            fi
+            echo "Waiting for VM initialization... ($i/35)"
+            sleep 10
+          done
+
           gcloud compute ssh portfolio-zero-trust-node \
             --zone="us-central1-a" \
             --quiet \
