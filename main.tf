@@ -89,12 +89,13 @@ resource "google_compute_instance" "vm_instance" {
     echo "CLOUDFLARE_TUNNEL_TOKEN=${var.cloudflare_tunnel_token}" >> .env
     docker compose pull web 2>/dev/null || true
     docker compose up -d
+    touch /var/log/startup_script_complete
   EOF
   , "\r", "")
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = "debian-cloud/debian-13"
       type  = "pd-standard"
       size  = 20
     }

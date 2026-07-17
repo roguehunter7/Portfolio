@@ -66,22 +66,9 @@ jobs:
 
       - name: SSH via IAP and Execute deploy.sh on VM
         run: |
-          echo "Waiting for VM startup script to finish setup..."
-          for i in {1..35}; do
-            if gcloud compute ssh portfolio-zero-trust-node \
-              --zone="us-central1-a" \
-              --quiet \
-              --tunnel-through-iap \
-              --command="test -f /opt/portfolio/deploy.sh" 2>/dev/null; then
-                echo "VM is ready!"
-                break
-            fi
-            echo "Waiting for VM initialization... ($i/35)"
-            sleep 10
-          done
-
+          echo "Connecting to VM and waiting for startup script to finish..."
           gcloud compute ssh portfolio-zero-trust-node \
             --zone="us-central1-a" \
             --quiet \
             --tunnel-through-iap \
-            --command="sudo CLOUDFLARE_TUNNEL_TOKEN='${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}' /opt/portfolio/deploy.sh"
+            --command="timeout 350 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done' && sudo CLOUDFLARE_TUNNEL_TOKEN='${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}' /opt/portfolio/deploy.sh"
