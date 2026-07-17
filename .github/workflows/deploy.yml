@@ -72,7 +72,7 @@ jobs:
               --zone="us-central1-a" \
               --quiet \
               --tunnel-through-iap \
-              --command="test -f /opt/portfolio/deploy.sh" 2>/dev/null; then
+              --command="test -f /var/log/startup_script_complete" 2>/dev/null; then
                 echo "VM is ready!"
                 break
             fi
