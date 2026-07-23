@@ -22,7 +22,7 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
-
+package*.json
 # Ignore compiled resume PDF
 resume.pdf
 reasonix.toml

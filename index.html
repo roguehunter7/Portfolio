@@ -9,199 +9,377 @@
     <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
     <style>
         :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --text-main: #c9d1d9;
-            --text-dim: #8b949e;
-            --accent-blue: #58a6ff;
-            --accent-green: #3fb950;
-            --accent-orange: #f0883e;
-            --border-color: #30363d;
+            --bg: #0b0f19;
+            --bg-alt: #111827;
+            --card: #1a2332;
+            --card-hover: #1f2a3d;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --blue: #60a5fa;
+            --green: #4ade80;
+            --orange: #fb923c;
+            --purple: #a78bfa;
+            --red: #f87171;
+            --border: #1e293b;
+            --radius: 12px;
         }
 
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
             margin: 0;
             padding: 0;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
 
-        header {
-            margin-bottom: 50px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
+        /* ── Hero ── */
+        .hero {
+            padding: 80px 0 48px;
+            position: relative;
+            overflow: hidden;
         }
 
-        h1 {
-            font-size: 2.2em;
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            right: -120px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-size: 2.8em;
+            font-weight: 800;
             color: #fff;
             margin: 0;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
         }
 
-        .subtitle {
-            color: var(--accent-blue);
-            font-size: 1.1em;
+        .hero .subtitle {
+            font-size: 1.2em;
+            color: var(--blue);
             font-weight: 500;
-            margin-top: 5px;
+            margin: 8px 0 16px;
+        }
+
+        .hero .tagline {
+            font-size: 1em;
+            color: var(--text-dim);
+            max-width: 680px;
+            line-height: 1.7;
         }
 
         .tag-row {
-            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 20px 0;
         }
 
         .tag {
             display: inline-block;
-            background: #21262d;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-size: 0.8em;
-            margin: 2px;
-            color: var(--accent-blue);
-            font-family: monospace;
+            background: rgba(96, 165, 250, 0.08);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.78em;
+            font-weight: 500;
+            color: var(--blue);
+            font-family: 'SF Mono', Monaco, monospace;
+            transition: all 0.2s;
         }
 
+        .tag:hover {
+            background: rgba(96, 165, 250, 0.15);
+            border-color: var(--blue);
+            transform: translateY(-1px);
+        }
+
+        .links-bar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .links-bar a {
+            color: var(--text-dim);
+            font-size: 0.92em;
+            font-weight: 500;
+            transition: color 0.2s;
+            text-decoration: none;
+        }
+
+        .links-bar a:hover { color: var(--blue); text-decoration: none; }
+
+        .links-bar .sep { color: var(--border); font-size: 0.85em; }
+
+        .btn-resume {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(96, 165, 250, 0.06));
+            color: var(--blue) !important;
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.88em;
+            font-weight: 600;
+            transition: all 0.25s;
+        }
+
+        .btn-resume:hover {
+            background: var(--blue) !important;
+            color: #0b0f19 !important;
+            border-color: var(--blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.25);
+        }
+
+        /* ── Section Titles ── */
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #fff;
+            margin: 56px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--border), transparent);
+        }
+
+        .section-sub {
+            color: var(--text-dim);
+            font-size: 0.92em;
+            margin: 0 0 28px;
+        }
+
+        /* ── Phase Grid ── */
         .evolution-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
         }
 
         .phase-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
             position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
         }
 
-        .phase-card h3 {
-            margin-top: 0;
-            color: #fff;
-            font-size: 1.1em;
+        .phase-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
         }
+
+        .phase-card:hover {
+            background: var(--card-hover);
+            border-color: rgba(255, 255, 255, 0.08);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .phase-card.p1::before { background: linear-gradient(90deg, var(--orange), rgba(251, 146, 60, 0.3)); }
+        .phase-card.p2::before { background: linear-gradient(90deg, var(--green), rgba(74, 222, 128, 0.3)); }
+        .phase-card.p3::before { background: linear-gradient(90deg, var(--blue), rgba(96, 165, 250, 0.3)); }
+        .phase-card.p4::before { background: linear-gradient(90deg, var(--purple), rgba(167, 139, 250, 0.3)); }
+        .phase-card.p5::before { background: linear-gradient(90deg, var(--red), rgba(248, 113, 113, 0.3)); }
 
         .badge {
             display: inline-block;
             font-size: 0.65em;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-weight: bold;
+            font-weight: 700;
             text-transform: uppercase;
-            margin-bottom: 12px;
+            letter-spacing: 0.04em;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 14px;
         }
 
-        .badge-p1 {
-            background: rgba(240, 136, 62, 0.1);
-            color: var(--accent-orange);
-            border: 1px solid var(--accent-orange);
+        .badge-p1 { background: rgba(251, 146, 60, 0.1); color: var(--orange); border: 1px solid rgba(251, 146, 60, 0.25); }
+        .badge-p2 { background: rgba(74, 222, 128, 0.1); color: var(--green); border: 1px solid rgba(74, 222, 128, 0.25); }
+        .badge-p3 { background: rgba(96, 165, 250, 0.1); color: var(--blue); border: 1px solid rgba(96, 165, 250, 0.25); }
+        .badge-p4 { background: rgba(167, 139, 250, 0.1); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.25); }
+        .badge-p5 { background: rgba(248, 113, 113, 0.1); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.25); }
+
+        .phase-card h3 {
+            margin: 0 0 8px;
+            color: #fff;
+            font-size: 1.05em;
+            font-weight: 600;
         }
 
-        .badge-p2 {
-            background: rgba(63, 185, 80, 0.1);
-            color: var(--accent-green);
-            border: 1px solid var(--accent-green);
+        .phase-card .phase-desc {
+            font-size: 0.88em;
+            color: var(--text-dim);
+            line-height: 1.65;
+            margin: 0;
         }
 
-        .badge-p3 {
-            background: rgba(88, 166, 255, 0.1);
-            color: var(--accent-blue);
-            border: 1px solid var(--accent-blue);
+        .phase-card .phase-desc strong {
+            color: var(--text);
         }
 
-        .badge-p4 {
-            background: rgba(163, 113, 247, 0.1);
-            color: #a371f7;
-            border: 1px solid #a371f7;
+        .phase-card .phase-desc code {
+            font-size: 0.9em;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: 'SF Mono', Monaco, monospace;
         }
 
-        .badge-p5 {
-            background: rgba(248, 81, 73, 0.1);
-            color: #f85149;
-            border: 1px solid #f85149;
+        /* ── Architecture Docs ── */
+        .arch-heading {
+            font-size: 1.15em;
+            font-weight: 600;
+            margin: 32px 0 8px;
+        }
+
+        .arch-heading.orange { color: var(--orange); }
+        .arch-heading.blue { color: var(--blue); }
+        .arch-heading.green { color: var(--green); }
+
+        .arch-text {
+            font-size: 0.92em;
+            color: var(--text-dim);
+            line-height: 1.7;
+            margin: 0 0 16px;
         }
 
         .mermaid-container {
-            background: #000;
-            border-radius: 8px;
+            background: #0a0e14;
+            border-radius: var(--radius);
             padding: 20px;
-            margin: 25px 0;
-            border: 1px solid var(--border-color);
+            margin: 16px 0 24px;
+            border: 1px solid var(--border);
         }
 
-        .section-title {
-            color: #fff;
-            font-size: 1.5em;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            margin-top: 40px;
+        /* ── Rationale Section ── */
+        .rationale-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin: 20px 0;
         }
 
-        .footer-status {
-            font-family: monospace;
-            font-size: 0.85em;
+        .rationale-box h3 {
+            margin: 28px 0 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+        }
+
+        .rationale-box h3:first-child { margin-top: 0; }
+
+        .rationale-box p {
+            font-size: 0.92em;
             color: var(--text-dim);
-            margin-top: 60px;
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-            text-align: center;
+            line-height: 1.7;
+            margin: 0 0 12px;
         }
 
-        .highlight {
-            color: var(--accent-green);
-            font-weight: bold;
-        }
+        .rationale-box ul { padding-left: 20px; }
 
-        a {
-            color: var(--accent-blue);
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .btn-resume {
-            display: inline-block;
-            background: rgba(88, 166, 255, 0.15);
-            color: var(--accent-blue) !important;
-            border: 1px solid var(--accent-blue);
-            border-radius: 4px;
-            padding: 3px 10px;
-            font-size: 0.85em;
-            font-weight: bold;
-            text-decoration: none;
-            margin-left: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-resume:hover {
-            background: var(--accent-blue);
-            color: #0d1117 !important;
-            text-decoration: none !important;
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        li {
+        .rationale-box li {
+            font-size: 0.9em;
+            color: var(--text-dim);
             margin-bottom: 10px;
+            line-height: 1.6;
         }
 
+        .rationale-box li strong { color: var(--text); }
+
+        /* ── Footer ── */
+        .footer-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.82em;
+            color: var(--text-dim);
+            margin-top: 64px;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 16px 0 0;
+            font-size: 0.85em;
+        }
+
+        .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover { color: var(--blue); }
+
+        /* ── Utility ── */
+        a { color: var(--blue); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .highlight { color: var(--green); font-weight: 600; }
+        code { font-family: 'SF Mono', Monaco, monospace; }
+
+        /* ── Responsive ── */
         @media (max-width: 768px) {
-            .evolution-grid {
-                grid-template-columns: 1fr;
-            }
+            .hero { padding: 48px 0 32px; }
+            .hero h1 { font-size: 2em; }
+            .hero .subtitle { font-size: 1em; }
+            .evolution-grid { grid-template-columns: 1fr; }
+            .links-bar { gap: 8px; }
+            .links-bar .sep { display: none; }
         }
     </style>
 </head>
@@ -209,115 +387,115 @@
 <body>
 
     <div class="container">
-        <header>
+        <!-- HERO -->
+        <header class="hero">
             <h1>Sreeram K R</h1>
-            <div class="subtitle">Cloud & Infrastructure Automation Engineer</div>
-            <div class="tag-row">
-                <span class="tag">Terraform</span> <span class="tag">GCP</span> <span class="tag">GitHub Actions</span>
-                <span class="tag">Docker Compose</span> <span class="tag">Zero Trust</span> <span
-                    class="tag">Cloudflare</span>
-            </div>
-            <p style="margin-top: 15px; font-size: 0.95em; display: flex; align-items: center; gap: 8px;">
-                <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a> |
-                <a href="https://github.com/roguehunter7" target="_blank">GitHub</a> |
-                <a href="mailto:contact.sreeramkr@gmail.com">Email</a> |
-                <a href="/resume.pdf" target="_blank" class="btn-resume">📄 Download PDF Resume</a>
+            <div class="subtitle">Cloud &amp; Infrastructure Automation Engineer</div>
+            <p class="tagline">
+                Architecting secure, automated infrastructure at scale. This site is a live case study of a zero-ingress
+                cloud environment — spanning bare-metal constraints, serverless migration, and cost optimization.
             </p>
+            <div class="tag-row">
+                <span class="tag">Terraform</span>
+                <span class="tag">GCP</span>
+                <span class="tag">GitHub Actions</span>
+                <span class="tag">Docker Compose</span>
+                <span class="tag">Zero Trust</span>
+                <span class="tag">Cloudflare</span>
+                <span class="tag">Go</span>
+                <span class="tag">Firestore</span>
+                <span class="tag">Nginx</span>
+            </div>
+            <div class="links-bar">
+                <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
+                <span class="sep">|</span>
+                <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
+                <span class="sep">|</span>
+                <a href="mailto:contact.sreeramkr@gmail.com">Email</a>
+                <span class="sep">|</span>
+                <a href="/resume.pdf" target="_blank" class="btn-resume">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download PDF Resume
+                </a>
+            </div>
         </header>
 
-        <section>
-            <p>
-                I specialize in architecting secure, automated infrastructure. This site serves as a live case study for
-                a zero-ingress cloud environment, demonstrating the transition from initial resource constraints,
-                serverless migration, and cost optimization.
-            </p>
-        </section>
+        <!-- ARCHITECTURAL EVOLUTION -->
+        <h2 class="section-title">Architectural Evolution</h2>
+        <p class="section-sub">Five phases of infrastructure design — from bare-metal polling to zero-ingress serverless and back to a hardened VM.</p>
 
         <div class="evolution-grid">
-            <!-- PHASE 1 -->
-            <div class="phase-card">
+            <div class="phase-card p1">
                 <span class="badge badge-p1">Phase 1: Bootstrapping</span>
                 <h3>Native Resource Polling</h3>
-                <p style="font-size: 0.9em; color: var(--text-dim);">
-                    <strong>Constraint:</strong> The GCP <code>e2-micro</code> instance is limited to 1GB of RAM.
-                    Standard CI/CD runners posed a high risk of triggering Out-Of-Memory (OOM) events.
+                <p class="phase-desc">
+                    <strong>Constraint:</strong> GCP <code>e2-micro</code> with 1GB RAM. CI/CD runners risk OOM.
                 </p>
-                <p style="font-size: 0.9em;">
-                    <strong>Architecture:</strong> A pull-based GitOps loop using <code>systemd.timer</code> and a
-                    native Bash script. The system polled the GitHub API every 2 minutes for SHA deltas, minimizing
-                    memory overhead.
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Pull-based GitOps loop via <code>systemd.timer</code> + Bash script.
+                    Polled GitHub API every 2 min for SHA deltas — minimal memory overhead.
                 </p>
             </div>
 
-            <!-- PHASE 2 -->
-            <div class="phase-card">
+            <div class="phase-card p2">
                 <span class="badge badge-p2">Phase 2: Refactored</span>
                 <h3>Push-Based IAP Tunneling</h3>
-                <p style="font-size: 0.9em; color: var(--text-dim);">
-                    <strong>Requirement:</strong> Transition to an instant, push-based model while maintaining a
-                    zero-ingress security posture (no public open ports).
+                <p class="phase-desc">
+                    <strong>Requirement:</strong> Instant push-based deploys while keeping zero-ingress security.
                 </p>
-                <p style="font-size: 0.9em;">
-                    <strong>Architecture:</strong> Replaced polling with <strong>GitHub Actions</strong>. Utilized
-                    <strong>GCP Identity-Aware Proxy (IAP)</strong> to securely tunnel SSH deployments via Port 22
-                    without exposing the port to the public internet.
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Replaced polling with <strong>GitHub Actions</strong>. Used
+                    <strong>GCP IAP</strong> to tunnel SSH deploys over port 22 — no public port exposed.
                 </p>
             </div>
 
-            <!-- PHASE 3 -->
-            <div class="phase-card">
-                <span class="badge badge-p3">Phase 3: Registry & Telemetry</span>
-                <h3>GHCR & Native systemd</h3>
-                <p style="font-size: 0.9em; color: var(--text-dim);">
-                    <strong>Optimization:</strong> Building on the VM caused OOM crashes. Real-time telemetry was
-                    constrained inside the docker container network boundaries.
+            <div class="phase-card p3">
+                <span class="badge badge-p3">Phase 3: Registry &amp; Telemetry</span>
+                <h3>GHCR &amp; Native systemd</h3>
+                <p class="phase-desc">
+                    <strong>Optimization:</strong> Building on the VM triggered OOM. Telemetry confined inside container
+                    network boundaries.
                 </p>
-                <p style="font-size: 0.9em;">
-                    <strong>Architecture:</strong> Built and pushed unprivileged Nginx image to <strong>GHCR</strong> in
-                    CI. Telemetry daemon runs natively on the host under <strong>systemd</strong>, proxied via the host
-                    bridge.
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Unprivileged Nginx image built &amp; pushed to <strong>GHCR</strong>
+                    in CI. Telemetry daemon runs natively on host under <strong>systemd</strong>, proxied via bridge.
                 </p>
             </div>
 
-            <!-- PHASE 4 -->
-            <div class="phase-card">
+            <div class="phase-card p4">
                 <span class="badge badge-p4">Phase 4: Serverless</span>
-                <h3>Cloud Run & WIF</h3>
-                <p style="font-size: 0.9em; color: var(--text-dim);">
-                    <strong>Optimization:</strong> Managing a VM, Cloudflare tunnels, and OS-level systemd daemons added
-                    unnecessary operational overhead.
+                <h3>Cloud Run &amp; WIF</h3>
+                <p class="phase-desc">
+                    <strong>Optimization:</strong> VM + Cloudflare tunnel + systemd daemons added operational overhead.
                 </p>
-                <p style="font-size: 0.9em;">
-                    <strong>Architecture:</strong> Transitioned to <strong>Google Cloud Run</strong> (Serverless).
-                    Implemented <strong>Workload Identity Federation (WIF)</strong> for keyless GitHub Actions
-                    deployments via Artifact Registry.
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Transitioned to <strong>Cloud Run</strong> (serverless).
+                    <strong>Workload Identity Federation</strong> for keyless GitHub Actions deploys via Artifact
+                    Registry.
                 </p>
             </div>
 
-            <!-- PHASE 5 -->
-            <div class="phase-card">
+            <div class="phase-card p5">
                 <span class="badge badge-p5">Phase 5: Cost Optimization</span>
                 <h3>Zero-Ingress Docker Compose</h3>
-                <p style="font-size: 0.9em; color: var(--text-dim);">
-                    <strong>Constraint:</strong> Cloud Run, Artifact Registry, and Firestore accumulated unwanted
-                    storage and access costs.
+                <p class="phase-desc">
+                    <strong>Constraint:</strong> Cloud Run + Artifact Registry + Firestore storage costs accumulated.
                 </p>
-                <p style="font-size: 0.9em;">
-                    <strong>Architecture:</strong> Moved back to a free-tier GCE <code>e2-micro</code> VM. Deployed
-                    Nginx and Cloudflared in a private <strong>Docker Compose</strong> stack. Kept WIF for secure push
-                    deployments via IAP SSH.
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Returned to free-tier <code>e2-micro</code> VM. Nginx + Cloudflared
+                    in private <strong>Docker Compose</strong> stack. Retained WIF for IAP SSH deploys.
                 </p>
             </div>
         </div>
 
-        <h2 class="section-title">System Architecture Evolution</h2>
+        <!-- CURRENT ARCHITECTURE DIAGRAM -->
+        <h2 class="section-title" style="margin-top: 48px;">System Architecture</h2>
+        <p class="section-sub">Current production topology and how code reaches production.</p>
 
-        <h3 style="color: var(--accent-orange); margin-top: 25px;">Current Cost-Optimized VM Architecture (Phase 5)</h3>
-        <p style="font-size: 0.9em; color: var(--text-dim);">
-            Our current production environment uses **Terraform** to provision a Zero-Ingress VPC. Deployments are
-            executed by compiling resume PDFs and building containers in GitHub Actions, pushing the package to GHCR,
-            and securely running a push-based SSH deployment over GCP Identity-Aware Proxy (IAP) to run a Docker Compose
-            stack.
+        <h3 class="arch-heading orange">Current Cost-Optimized VM (Phase 5)</h3>
+        <p class="arch-text">
+            Terraform provisions a zero-ingress VPC. GitHub Actions compiles the resume PDF, builds the Nginx container,
+            pushes to GHCR, then runs a push-based SSH deploy over GCP IAP to <code>docker compose up</code> on the VM.
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
@@ -341,17 +519,17 @@
                 GHCR -.-> Compose
                 end
 
-                style GCP_VPC fill:#161b22,stroke:#30363d
-                style CI_CD fill:#161b22,stroke:#30363d
-                style Nginx fill:#000,stroke:#3fb950,stroke-width:2px
-                style Tunnel fill:#000,stroke:#f0883e,stroke-width:2px
+                style GCP_VPC fill:#1a2332,stroke:#1e293b
+                style CI_CD fill:#1a2332,stroke:#1e293b
+                style Nginx fill:#000,stroke:#4ade80,stroke-width:2px
+                style Tunnel fill:#000,stroke:#fb923c,stroke-width:2px
             </div>
         </div>
 
-        <h3 style="color: var(--accent-blue); margin-top: 35px;">Historical Serverless Architecture (Phase 4)</h3>
-        <p style="font-size: 0.9em; color: var(--text-dim);">
-            A serverless configuration using Google Cloud Run for hosting the frontend Nginx container and a Go
-            microservice which connected to Firestore Native to store visitor and session telemetry.
+        <h3 class="arch-heading blue">Historical Serverless Architecture (Phase 4)</h3>
+        <p class="arch-text">
+            Serverless configuration using Cloud Run for frontend Nginx + Go microservice connected to Firestore for
+            visitor and session telemetry.
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
@@ -372,54 +550,57 @@
                 GH -->|Terraform Apply| Nginx
                 end
 
-                style GCP fill:#161b22,stroke:#30363d
-                style CI_CD fill:#161b22,stroke:#30363d
-                style Nginx fill:#000,stroke:#3fb950,stroke-width:2px
-                style GoAPI fill:#000,stroke:#58a6ff,stroke-width:2px
+                style GCP fill:#1a2332,stroke:#1e293b
+                style CI_CD fill:#1a2332,stroke:#1e293b
+                style Nginx fill:#000,stroke:#4ade80,stroke-width:2px
+                style GoAPI fill:#000,stroke:#60a5fa,stroke-width:2px
             </div>
         </div>
 
-        <h2 class="section-title">The VM Reversion Rationale (Phase 5)</h2>
-        <div
-            style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-top: 20px;">
-            <h3 style="color: var(--accent-orange); margin-top: 0;">Evaluating Cloud Run Costs</h3>
+        <!-- RATIONALE -->
+        <h2 class="section-title">The VM Reversion Rationale</h2>
+        <p class="section-sub">Why Phase 5 exists, what it costs, and how it stays secure.</p>
+
+        <div class="rationale-box">
+            <h3 style="color: var(--orange);">Evaluating Cloud Run Costs</h3>
             <p>
-                While the serverless architecture in Phase 4 eliminated VM maintenance and cloud tunnels, it introduced
-                unexpected cost vectors. Sustained usage of Artifact Registry storage for hosting multiple Docker image
-                tags, along with Firestore reads/writes from the visitor tracker microservice, accumulated charges. For
-                a low-traffic personal portfolio, these costs represented a step back from our original "100% Free Tier"
+                While serverless (Phase 4) eliminated VM maintenance and tunnels, it introduced unexpected cost vectors.
+                Artifact Registry storage for multiple Docker image tags plus Firestore reads/writes from the visitor
+                tracker accumulated charges. For a low-traffic personal portfolio, this defeated our "100% Free Tier"
                 objective.
             </p>
 
-            <h3 style="color: var(--accent-green); margin-top: 30px;">The Phase 5 Zero-Ingress Docker Compose Design
-            </h3>
+            <h3 style="color: var(--green);">The Phase 5 Zero-Ingress Design</h3>
             <p>
-                To bring our maintenance costs strictly back to $0/month, we retired the Cloud Run and Firestore
-                resources and returned to a single <strong>GCP e2-micro VM</strong> instance, which is fully covered
-                under the GCP Always Free program.
+                We retired Cloud Run + Firestore and returned to a single <strong>GCP e2-micro VM</strong> — fully
+                covered under the Always Free program.
             </p>
             <ul>
-                <li><strong>Docker Compose Isolation:</strong> Instead of managing Nginx and Cloudflare tunnels directly
-                    on the host OS (which previously caused OOM crashes), they run in isolated Docker containers in a
-                    unified Docker Compose stack.</li>
-                <li><strong>Zero Exposed Ports:</strong> The Nginx frontend exposes no ports to the host VM or the
-                    public internet. It resides exclusively on a private Docker bridge network, communicating only with
-                    the Cloudflared container which securely tunnels traffic.</li>
-                <li><strong>Public GHCR Packages:</strong> Since the codebase is public, we publish our Nginx container
-                    to GitHub Container Registry publicly, allowing the VM to pull it anonymously without managing
-                    registry secrets.</li>
-                <li><strong>Preserving Security:</strong> We retained Workload Identity Federation (WIF) and
-                    Identity-Aware Proxy (IAP) SSH tunneling. GitHub Actions keylessly logs in via Port 22 (restricted
-                    only to Google's IAP proxy IPs) to execute automated push deployments.</li>
+                <li><strong>Docker Compose Isolation:</strong> Nginx and Cloudflared run in isolated containers under a
+                    unified Compose stack — no more OOM crashes from host-level daemons.</li>
+                <li><strong>Zero Exposed Ports:</strong> Nginx binds only to a private Docker bridge network. The
+                    Cloudflared container handles all ingress via outbound tunnel.</li>
+                <li><strong>Public GHCR Packages:</strong> Public repo → public container images. VM pulls anonymously
+                    — no registry secrets to manage.</li>
+                <li><strong>Preserved Security:</strong> Retained WIF + IAP SSH tunneling. GitHub Actions authenticates
+                    keylessly via port 22 (locked to Google's IAP proxy IPs only).</li>
             </ul>
             <p>
-                <strong>The Result:</strong> Zero monthly cost, zero open ports on the VM host, container-isolated
-                networking, and automated keyless push deployments.
+                <strong>Result:</strong> $0/month, zero open ports, container-isolated networking, automated keyless
+                deployments.
             </p>
         </div>
 
+        <!-- FOOTER -->
         <div class="footer-status">
-            Uptime: 100% | Hosted on GCP Free Tier via Docker Compose & Cloudflare Tunnel
+            <span class="status-dot"></span>
+            Uptime: 100% &middot; GCP Free Tier &middot; Docker Compose &middot; Cloudflare Tunnel
+        </div>
+        <div class="footer-links">
+            <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
+            <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
+            <a href="mailto:contact.sreeramkr@gmail.com">Email</a>
+            <a href="/resume.pdf" target="_blank">Resume (PDF)</a>
         </div>
     </div>
 </body>
