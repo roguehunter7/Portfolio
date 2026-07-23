@@ -71,4 +71,4 @@ jobs:
             --zone="us-central1-a" \
             --quiet \
             --tunnel-through-iap \
-            --command="timeout 350 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done' && sudo CLOUDFLARE_TUNNEL_TOKEN='${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}' /opt/portfolio/deploy.sh"
+            --command="timeout 350 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done' && sudo bash -c 'if [ ! -f /opt/portfolio/deploy.sh ]; then rm -rf /opt/portfolio && git clone https://github.com/roguehunter7/Portfolio.git /opt/portfolio; fi && chmod +x /opt/portfolio/*.sh && CLOUDFLARE_TUNNEL_TOKEN=\"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\" /opt/portfolio/deploy.sh'"

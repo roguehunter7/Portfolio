@@ -7,6 +7,7 @@ TARGET_DIR="/opt/portfolio"
 cd "$TARGET_DIR" || exit 1
 
 echo "Syncing repository to latest main branch..."
+git config --global --add safe.directory "$TARGET_DIR"
 git fetch origin main
 git reset --hard origin/main
 
