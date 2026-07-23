@@ -67,23 +67,27 @@ The push-based deployment is fully automated using GitHub Actions. Below is a de
  1. Cache Check  ──(Hit)──► [Skip LaTeX Build]
        │
     (Miss)
+       │
        ▼
  2. LaTeX Build  ─────────► [Generate resume.pdf]
        │
        ▼
- 3. Docker Build ─────────► [Push to GHCR (Public Package)]
+ 3. OIDC Auth    ─────────► [Authenticate via WIF to GCP]
        │
        ▼
- 4. OIDC Auth    ─────────► [Authenticate via WIF to GCP]
+ 4. Login GHCR   ─────────► [Authenticate to GitHub Container Registry]
        │
        ▼
- 5. IaC Check    ─────────► [Terraform Apply (VPC, Firewall, VM)]
+ 5. Docker Build ─────────► [Push to GHCR (Public Package)]
        │
        ▼
- 6. IAP SSH Push ─────────► [gcloud compute ssh via Port 22 Tunnel]
+ 6. IaC Check    ─────────► [Terraform Apply (VPC, Firewall, VM)]
        │
        ▼
- 7. VM Deploy    ─────────► [deploy.sh runs Docker Compose up]
+ 7. IAP SSH Push ─────────► [gcloud compute ssh via Port 22 Tunnel]
+       │
+       ▼
+ 8. VM Deploy    ─────────► [deploy.sh runs Docker Compose up]
 ```
 
 ### 1. LaTeX Resume Cache & Compilation
@@ -94,10 +98,10 @@ The push-based deployment is fully automated using GitHub Actions. Below is a de
 
 ### 2. Hardened Container Build & Push
 
-* The runner builds a Docker image based on `nginxinc/nginx-unprivileged:1.27.0-alpine-slim`.
+* The runner builds a Docker image based on `nginxinc/nginx-unprivileged:alpine-slim`.
 * This image packages `index.html`, the custom `default.conf` (which exposes the Nginx `/status` endpoint), and the newly compiled `resume.pdf`.
 * The container runs under non-root user `nginx` (UID 101) to mitigate container-escape risks.
-* The image is tagged with the unique Git commit SHA (`github.sha`) and pushed to **GitHub Container Registry (GHCR)**.
+* The image is tagged as `latest` and pushed to **GitHub Container Registry (GHCR)**.
 
 ### 3. Federated Authentication via OIDC/WIF
 
@@ -114,17 +118,18 @@ The push-based deployment is fully automated using GitHub Actions. Below is a de
 
 * Once the infrastructure is ready, the runner executes a secure `gcloud compute ssh` command to connect to the GCE VM.
 * Because all ingress ports are blocked, the runner tunnels through GCP **Identity-Aware Proxy (IAP)**, which acts as a secure bastion. IAP traffic is restricted to Google's specific range (`35.235.240.0/20`).
-* The runner passes the new `IMAGE_TAG` and the `CLOUDFLARE_TUNNEL_TOKEN` repository secret as environment variables across the SSH tunnel.
+* The runner passes the `CLOUDFLARE_TUNNEL_TOKEN` repository secret as an environment variable across the SSH tunnel.
 
 ### 6. Orchestration on the Host VM
 
 * The command executes `/opt/portfolio/deploy.sh` on the VM.
-* The script writes the new container tag and tunnel token to a local `.env` file.
-* It pulls the new public image from GHCR.
+* The script syncs the repository to the latest `main` branch via `git fetch && git reset --hard origin/main`.
+* It writes the `CLOUDFLARE_TUNNEL_TOKEN` to a local `.env` file.
+* It pulls the latest public image from GHCR.
 * It launches the Docker Compose services:
 
   ```bash
-  docker-compose up -d --remove-orphans
+  docker compose up -d --remove-orphans
   ```
 
 * The Nginx server starts up, and the Cloudflare tunnel establishes an outbound connection, bringing the website update live.
