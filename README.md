@@ -1,5 +1,6 @@
 # 🛡️ Zero-Ingress Cloud Infrastructure & GitOps Pipeline
 
+[![Live Site](https://img.shields.io/badge/Live-sreeramkr.com-60a5fa?style=for-the-badge&logo=google-chrome&logoColor=white)](https://sreeramkr.com)
 ![GCP](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
 ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
