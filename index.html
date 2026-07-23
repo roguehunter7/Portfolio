@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sreeram K R | Cloud & Infrastructure Engineering</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <script>
+        const saved = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = saved;
+        mermaid.initialize({ startOnLoad: true, theme: saved === 'light' ? 'default' : 'dark' });
+    </script>
     <style>
         :root {
             --bg: #0b0f19;
@@ -22,6 +26,37 @@
             --red: #f87171;
             --border: #1e293b;
             --radius: 12px;
+            --heading: #ffffff;
+            --card-code-bg: rgba(255, 255, 255, 0.04);
+            --tag-bg: rgba(96, 165, 250, 0.08);
+            --tag-border: rgba(96, 165, 250, 0.2);
+            --hero-glow: rgba(96, 165, 250, 0.06);
+            --mermaid-bg: #1a2332;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --btn-hover-text: #0b0f19;
+        }
+
+        [data-theme="light"] {
+            --bg: #ffffff;
+            --bg-alt: #f8fafc;
+            --card: #ffffff;
+            --card-hover: #f1f5f9;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --blue: #2563eb;
+            --green: #16a34a;
+            --orange: #ea580c;
+            --purple: #7c3aed;
+            --red: #dc2626;
+            --border: #e2e8f0;
+            --heading: #0f172a;
+            --card-code-bg: rgba(0, 0, 0, 0.04);
+            --tag-bg: rgba(37, 99, 235, 0.06);
+            --tag-border: rgba(37, 99, 235, 0.2);
+            --hero-glow: rgba(37, 99, 235, 0.04);
+            --mermaid-bg: #f8fafc;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --btn-hover-text: #ffffff;
         }
 
         * { box-sizing: border-box; }
@@ -58,14 +93,14 @@
             right: -120px;
             width: 400px;
             height: 400px;
-            background: radial-gradient(circle, rgba(96, 165, 250, 0.06) 0%, transparent 70%);
+            background: radial-gradient(circle, var(--hero-glow) 0%, transparent 70%);
             pointer-events: none;
         }
 
         .hero h1 {
             font-size: 2.8em;
             font-weight: 800;
-            color: #fff;
+            color: var(--heading);
             margin: 0;
             letter-spacing: -0.02em;
             line-height: 1.15;
@@ -94,8 +129,8 @@
 
         .tag {
             display: inline-block;
-            background: rgba(96, 165, 250, 0.08);
-            border: 1px solid rgba(96, 165, 250, 0.2);
+            background: var(--tag-bg);
+            border: 1px solid var(--tag-border);
             border-radius: 6px;
             padding: 4px 10px;
             font-size: 0.78em;
@@ -147,17 +182,17 @@
 
         .btn-resume:hover {
             background: var(--blue) !important;
-            color: #0b0f19 !important;
+            color: var(--btn-hover-text) !important;
             border-color: var(--blue);
             transform: translateY(-1px);
-            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.25);
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
         }
 
         /* ── Section Titles ── */
         .section-title {
             font-size: 1.5em;
             font-weight: 700;
-            color: #fff;
+            color: var(--heading);
             margin: 56px 0 8px;
             display: flex;
             align-items: center;
@@ -206,9 +241,9 @@
 
         .phase-card:hover {
             background: var(--card-hover);
-            border-color: rgba(255, 255, 255, 0.08);
+            border-color: var(--border);
             transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 30px var(--shadow);
         }
 
         .phase-card.p1::before { background: linear-gradient(90deg, var(--orange), rgba(251, 146, 60, 0.3)); }
@@ -236,7 +271,7 @@
 
         .phase-card h3 {
             margin: 0 0 8px;
-            color: #fff;
+            color: var(--heading);
             font-size: 1.05em;
             font-weight: 600;
         }
@@ -254,7 +289,7 @@
 
         .phase-card .phase-desc code {
             font-size: 0.9em;
-            background: rgba(255, 255, 255, 0.04);
+            background: var(--card-code-bg);
             padding: 1px 5px;
             border-radius: 3px;
             font-family: 'SF Mono', Monaco, monospace;
@@ -279,7 +314,7 @@
         }
 
         .mermaid-container {
-            background: #1a2332;
+            background: var(--mermaid-bg);
             border-radius: var(--radius);
             padding: 20px;
             margin: 16px 0 24px;
@@ -365,6 +400,37 @@
         }
 
         .footer-links a:hover { color: var(--blue); }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 1.1em;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--blue);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .icon-light { display: none; }
+        .theme-toggle .icon-dark { display: block; }
+        [data-theme="light"] .theme-toggle .icon-light { display: block; }
+        [data-theme="light"] .theme-toggle .icon-dark { display: none; }
 
         /* ── Utility ── */
         a { color: var(--blue); text-decoration: none; }
@@ -596,6 +662,25 @@ graph TD
             <a href="/resume.pdf" target="_blank">Resume (PDF)</a>
         </div>
     </div>
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+    <span class="icon-light">&#9728;</span>
+    <span class="icon-dark">&#9790;</span>
+</button>
+
+<script>
+    function toggleTheme() {
+        const html = document.documentElement;
+        const next = html.dataset.theme === 'light' ? 'dark' : 'light';
+        html.dataset.theme = next;
+        localStorage.setItem('theme', next);
+        mermaid.initialize({ startOnLoad: false, theme: next === 'light' ? 'default' : 'dark' });
+        document.querySelectorAll('.mermaid').forEach(el => {
+            el.removeAttribute('data-processed');
+            mermaid.run({ nodes: [el] });
+        });
+    }
+</script>
+
 </body>
 
 </html>
