@@ -566,25 +566,19 @@
         <div class="mermaid-container">
             <div class="mermaid">
 graph TD
-    User((&#127760; User)) -->|HTTPS| CF[Cloudflare Edge]
-    CF -->|Outbound Tunnel| Tunnel[Cloudflared Container]
-
-    subgraph GCP_VPC [GCP Zero-Ingress VPC]
-    direction TB
-    Tunnel -->|Docker Bridge| Nginx[Unprivileged Nginx :8080]
-    end
-
-    subgraph CI_CD [CI/CD Deployment Pipeline]
-    direction LR
+    User((User)) -->|HTTPS| CF[Cloudflare Edge]
+    CF -->|Tunnel| Cloudflared
+    Cloudflared --> Nginx[Nginx :8080]
     Dev[git push] --> GH[GitHub Actions]
-    GH -->|Compile| PDF[Resume PDF]
-    GH -->|Build &amp; Push| GHCR[GHCR]
-    GH -->|OIDC Login| WIF[Workload Identity Federation]
-    WIF -->|Terraform| VM[GCP e2-micro VM]
+    GH -->|Compile LaTeX| PDF[Resume PDF]
+    GH -->|Docker Build & Push| GHCR
+    GHCR -.->|Image Pull| Nginx
+    GH -->|OIDC Auth| WIF
+    WIF -->|Terraform Apply| VM[e2-micro VM]
     GH -->|SSH via IAP| VM
-    VM -->|deploy.sh| Compose[Docker Compose up]
-    GHCR -.->|Pull Image| Compose
-    end
+    VM -->|deploy.sh| Compose[Docker Compose]
+    Compose --> Nginx
+    Compose --> Cloudflared
             </div>
         </div>
 
