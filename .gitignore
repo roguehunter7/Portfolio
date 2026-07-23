@@ -23,6 +23,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 package*.json
+repomix-output.xml
 # Ignore compiled resume PDF
 resume.pdf
 reasonix.toml
