@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sreeram K R | Cloud & Infrastructure Engineering</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: 'base' });</script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
     <style>
         :root {
             --bg: #0b0f19;
@@ -279,7 +279,7 @@
         }
 
         .mermaid-container {
-            background: #0a0e14;
+            background: #1a2332;
             border-radius: var(--radius);
             padding: 20px;
             margin: 16px 0 24px;
@@ -499,42 +499,26 @@
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize':'14px', 'fontFamily': '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }, 'flowchart': { 'nodeSpacing': 60, 'rankSpacing': 50, 'curve': 'basis', 'defaultRenderer': 'elk' } } }%%
 graph TD
-    User((&#127760; User)) -->|HTTPS| CF[&#9729; Cloudflare Edge]
-    CF -->|Outbound Tunnel| Tunnel[&#128274; Cloudflared Container]
+    User((&#127760; User)) -->|HTTPS| CF[Cloudflare Edge]
+    CF -->|Outbound Tunnel| Tunnel[Cloudflared Container]
 
-    subgraph GCP_VPC [&#128225; GCP Zero-Ingress VPC]
+    subgraph GCP_VPC [GCP Zero-Ingress VPC]
     direction TB
-    Tunnel -->|Docker Bridge| Nginx[&#128295; Unprivileged Nginx<br/>:8080]
+    Tunnel -->|Docker Bridge| Nginx[Unprivileged Nginx :8080]
     end
 
-    subgraph CI_CD [&#128640; CI/CD Deployment Pipeline]
+    subgraph CI_CD [CI/CD Deployment Pipeline]
     direction LR
-    Dev[&#128187; git push] --> GH[&#9889; GitHub Actions]
-    GH -->|Compile| PDF[&#128196; Resume PDF]
-    GH -->|Build &amp; Push| GHCR[&#128230; GHCR]
-    GH -->|OIDC Login| WIF[&#128274; Workload Identity<br/>Federation]
-    WIF -->|Terraform Apply| VM[&#9968; GCP e2-micro VM]
+    Dev[git push] --> GH[GitHub Actions]
+    GH -->|Compile| PDF[Resume PDF]
+    GH -->|Build &amp; Push| GHCR[GHCR]
+    GH -->|OIDC Login| WIF[Workload Identity Federation]
+    WIF -->|Terraform| VM[GCP e2-micro VM]
     GH -->|SSH via IAP| VM
-    VM -->|deploy.sh| Compose[&#128451; Docker Compose up]
+    VM -->|deploy.sh| Compose[Docker Compose up]
     GHCR -.->|Pull Image| Compose
     end
-
-    classDef user fill:#1a2332,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0,rx:20
-    classDef cloud fill:#1a2332,stroke:#fb923c,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef infra fill:#1a2332,stroke:#4ade80,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef pipeline fill:#1a2332,stroke:#a78bfa,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef artifact fill:#1a2332,stroke:#f87171,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef dashed fill:none,stroke:#f87171,stroke-width:1.5px,stroke-dasharray:6 4,color:#94a3b8
-
-    class User user
-    class CF,Tunnel cloud
-    class Nginx,VM,Compose infra
-    class GH,WIF pipeline
-    class PDF,GHCR artifact
-    style GCP_VPC fill:#0f172a,stroke:#1e293b,stroke-width:1px,color:#e2e8f0,rx:12
-    style CI_CD fill:#0f172a,stroke:#1e293b,stroke-width:1px,color:#e2e8f0,rx:12
             </div>
         </div>
 
@@ -545,41 +529,24 @@ graph TD
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
-%%{init: {'theme': 'base', 'themeVariables': { 'fontSize':'14px', 'fontFamily': '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }, 'flowchart': { 'nodeSpacing': 60, 'rankSpacing': 50, 'curve': 'basis', 'defaultRenderer': 'elk' } } }%%
 graph TD
-    User((&#127760; User)) -->|HTTPS| CR[&#9729; Cloud Run Ingress]
+    User((&#127760; User)) -->|HTTPS| CR[Cloud Run Ingress]
 
-    subgraph GCP [&#9729; Google Cloud Platform]
+    subgraph GCP [Google Cloud Platform]
     direction TB
-    CR -->|Serve| Nginx[&#128295; Unprivileged Nginx Container]
-    Nginx -->|CORS Fetch| GoAPI[&#128200; Go Visitor Tracker API]
-    GoAPI -->|Atomic SDK Writes| Firestore[(&#128451; Firestore DB)]
+    CR -->|Serve| Nginx[Unprivileged Nginx Container]
+    Nginx -->|CORS Fetch| GoAPI[Go Visitor Tracker API]
+    GoAPI -->|SDK Writes| Firestore[(Firestore DB)]
     end
 
-    subgraph CI_CD [&#128640; Deployment Pipeline]
+    subgraph CI_CD [Deployment Pipeline]
     direction LR
-    Dev[&#128187; git push] --> GH[&#9889; GitHub Actions]
-    GH -->|Compile| PDF[&#128196; Resume PDF]
-    GH -->|OIDC Auth| WIF[&#128274; Workload Identity<br/>Federation]
-    WIF -->|Push Image| AR[&#128230; Artifact Registry]
-    GH -->|Terraform Apply| Nginx
+    Dev[git push] --> GH[GitHub Actions]
+    GH -->|Compile| PDF[Resume PDF]
+    GH -->|OIDC Auth| WIF[Workload Identity Federation]
+    WIF -->|Push Image| AR[Artifact Registry]
+    GH -->|Terraform| Nginx
     end
-
-    classDef user fill:#1a2332,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0,rx:20
-    classDef cloud fill:#1a2332,stroke:#fb923c,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef svc fill:#1a2332,stroke:#a78bfa,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef db fill:#1a2332,stroke:#f87171,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef pipeline fill:#1a2332,stroke:#a78bfa,stroke-width:2px,color:#e2e8f0,rx:8
-    classDef artifact fill:#1a2332,stroke:#f87171,stroke-width:2px,color:#e2e8f0,rx:8
-
-    class User user
-    class CR cloud
-    class Nginx,GoAPI svc
-    class Firestore db
-    class GH,WIF pipeline
-    class PDF,AR artifact
-    style GCP fill:#0f172a,stroke:#1e293b,stroke-width:1px,color:#e2e8f0,rx:12
-    style CI_CD fill:#0f172a,stroke:#1e293b,stroke-width:1px,color:#e2e8f0,rx:12
             </div>
         </div>
 
