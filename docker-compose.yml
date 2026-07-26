@@ -2,6 +2,11 @@ services:
   web:
     image: ghcr.io/roguehunter7/portfolio-web:latest
     restart: always
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     # No ports exposed to the host VM to maintain a Zero-Ingress architecture.
     # The Cloudflare tunnel handles routing traffic directly inside this Docker network.
 

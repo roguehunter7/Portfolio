@@ -3,6 +3,8 @@
 set -e
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+if [ -z "$CLOUDFLARE_TUNNEL_TOKEN" ]; then echo "ERROR: CLOUDFLARE_TUNNEL_TOKEN is not set" >&2; exit 1; fi
+
 TARGET_DIR="/opt/portfolio"
 cd "$TARGET_DIR" || exit 1
 

@@ -103,6 +103,5 @@ resource "google_compute_instance" "vm_instance" {
 
   network_interface {
     network = google_compute_network.zero_trust_vpc.id
-    access_config {}
   }
 }
