@@ -103,5 +103,9 @@ resource "google_compute_instance" "vm_instance" {
 
   network_interface {
     network = google_compute_network.zero_trust_vpc.id
+    access_config {
+      # Public IP for outbound internet access (git fetch, docker pull).
+      # Ingress remains fully locked down by deny-all-ingress + IAP-only SSH.
+    }
   }
 }

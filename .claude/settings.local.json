@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git add *)",
-      "Bash(git commit -m 'fix: restore mermaid readability with dark theme and lighter container bg *)",
-      "Bash(git push *)"
-    ]
-  }
-}
