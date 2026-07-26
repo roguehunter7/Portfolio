@@ -61,8 +61,7 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           IMAGE_TAG="ghcr.io/roguehunter7/portfolio-web:latest"
-          docker buildx build --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache -t $IMAGE_TAG .
-          docker push $IMAGE_TAG
+          docker buildx build --push --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache -t $IMAGE_TAG .
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
