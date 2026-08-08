@@ -57,11 +57,24 @@ if [ -f /etc/systemd/system/hermes.service ]; then
   systemctl daemon-reload
 fi
 
-# `hermes gateway install` creates the user service (hermes-gateway).
-# Linger makes it start at boot on a headless VM.
-sudo -u "${HERMES_USER}" "${HERMES_HOME}/.local/bin/hermes" gateway install
+# Linger first: starts the user systemd manager and creates /run/user/<uid>
+# (headless box — no login session, so the user bus must be brought up manually).
 loginctl enable-linger "${HERMES_USER}"
-sudo -u "${HERMES_USER}" "${HERMES_HOME}/.local/bin/hermes" gateway start
+HERMES_UID="$(id -u "${HERMES_USER}")"
+install -d -m 700 -o "${HERMES_USER}" -g "${HERMES_USER}" "/run/user/${HERMES_UID}"
+sleep 2
+
+run_as_hermes() {
+  sudo -u "${HERMES_USER}" env \
+    XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${HERMES_UID}/bus" \
+    "$@"
+}
+
+# `hermes gateway install` creates the user service (hermes-gateway);
+# linger makes it start at boot.
+run_as_hermes "${HERMES_HOME}/.local/bin/hermes" gateway install
+run_as_hermes "${HERMES_HOME}/.local/bin/hermes" gateway start
 
 echo "[hermes] setup complete"
 echo "[hermes] verify: journalctl --user -u hermes-gateway -n 50"
