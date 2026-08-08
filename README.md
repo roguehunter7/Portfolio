@@ -183,7 +183,7 @@ Migrating from native host-level daemons (Phase 3) to Docker Compose (Phase 5) i
 
 ### 4. Caching at the Pipeline Level
 
-Automating LaTeX document builds saves developer overhead, but caching the compiled PDFs prevents pipeline bottlenecks, cutting deployment times by **75%** on typical code-only pushes.
+Automating resume PDF builds saves developer overhead, but caching the rendered PDF prevents pipeline bottlenecks, cutting deployment times by **75%** on typical code-only pushes.
 
 ---
 

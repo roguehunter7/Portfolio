@@ -598,7 +598,7 @@ graph TD
     CF -->|Tunnel| Cloudflared
     Cloudflared --> Nginx[Nginx :8080]
     Dev[git push] --> GH[GitHub Actions]
-    GH -->|Compile LaTeX| PDF[Resume PDF]
+    GH -->|Render HTML| PDF[Resume PDF]
     GH -->|Docker Build & Push| GHCR
     GHCR -.->|Image Pull| Nginx
     GH -->|OIDC Auth| WIF
