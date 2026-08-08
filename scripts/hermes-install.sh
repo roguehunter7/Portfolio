@@ -13,7 +13,6 @@ set -euo pipefail
 HERMES_USER="hermes"
 HERMES_HOME="/home/${HERMES_USER}"
 HERMES_DIR="${HERMES_HOME}/.hermes"
-CLI="${HERMES_DIR}/hermes-agent/venv/bin/python3 ${HERMES_DIR}/hermes-agent/cli.py"
 
 id -u "${HERMES_USER}" >/dev/null 2>&1 || useradd -m -s /bin/bash "${HERMES_USER}"
 
@@ -32,6 +31,10 @@ cat > "${HERMES_DIR}/.env" <<EOF
 GEMINI_API_KEY=${GEMINI_API_KEY}
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
 EOF
+# Optional allowlist: comma-separated Telegram numeric IDs (falls back to DM pairing)
+if [ -n "${TELEGRAM_ALLOWED_USERS:-}" ]; then
+  echo "TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}" >> "${HERMES_DIR}/.env"
+fi
 chmod 600 "${HERMES_DIR}/.env"
 
 # ---- 3. Model config: Gemini main + Gemini Lite delegation ----
@@ -46,27 +49,20 @@ YAML
 
 chown -R "${HERMES_USER}:${HERMES_USER}" "${HERMES_DIR}"
 
-# ---- 4. systemd unit: Telegram gateway on :8644 ----
-cat > /etc/systemd/system/hermes.service <<UNIT
-[Unit]
-Description=Hermes Agent (Telegram gateway)
-After=network-online.target cloudflared.service
-Wants=network-online.target
+# ---- 4. Gateway: official user service (per Hermes docs) ----
+# Remove the earlier hand-rolled system unit if present.
+if [ -f /etc/systemd/system/hermes.service ]; then
+  systemctl disable --now hermes 2>/dev/null || true
+  rm -f /etc/systemd/system/hermes.service
+  systemctl daemon-reload
+fi
 
-[Service]
-User=${HERMES_USER}
-WorkingDirectory=${HERMES_DIR}
-EnvironmentFile=${HERMES_DIR}/.env
-ExecStart=${CLI} gateway --host 0.0.0.0 --port 8644
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-
-systemctl daemon-reload
-systemctl enable --now hermes
+# `hermes gateway install` creates the user service (hermes-gateway).
+# Linger makes it start at boot on a headless VM.
+sudo -u "${HERMES_USER}" "${HERMES_HOME}/.local/bin/hermes" gateway install
+loginctl enable-linger "${HERMES_USER}"
+sudo -u "${HERMES_USER}" "${HERMES_HOME}/.local/bin/hermes" gateway start
 
 echo "[hermes] setup complete"
-echo "[hermes] verify: systemctl status hermes | journalctl -u hermes -n 50"
+echo "[hermes] verify: journalctl --user -u hermes-gateway -n 50"
+
