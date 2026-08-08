@@ -112,7 +112,7 @@ The site is served directly from **Cloudflare Pages** — static assets at the e
 
 * `site/resume.html` (self-contained HTML+CSS, Source Sans Pro woff2 in `site/fonts/`) is the single source of truth for the resume.
 * `scripts/render-pdf.sh` renders it to `site/resume.pdf` using the runner's preinstalled headless Chrome (`--headless=new --print-to-pdf`), then asserts ATS-safety: exactly 1 letter page (`pdfinfo`), key text extractable, and sections in document order (`pdftotext`).
-* The workflow checks if `site/resume.html`/`site/fonts/*` changed since the last build; a cache hit skips the ~10s render.
+* The workflow always renders `site/resume.pdf` (~10s, preinstalled Chrome) and runs the ATS assertions on every deploy — no cache, no stale PDF.
 
 ### 2. Cloudflare Pages Deploy & Hardening
 
@@ -178,7 +178,7 @@ Migrating from native host-level daemons (Phase 3) to Docker Compose (Phase 5) i
 
 ### 4. Caching at the Pipeline Level
 
-Automating resume PDF builds saves developer overhead, but caching the rendered PDF prevents pipeline bottlenecks, cutting deployment times by **75%** on typical code-only pushes.
+Automating resume PDF builds saves developer overhead: a ~10s always-run render step (with ATS assertions) replaces a ~1.5 min LaTeX compile — no caching complexity needed.
 
 ### 5. HTML+CSS Resume over LaTeX
 
@@ -186,7 +186,7 @@ The resume is authored once in `resume.html` (self-contained HTML+CSS) and serve
 
 * **ATS-safe by construction** — Chrome writes a real, selectable text layer; CI asserts exactly 1 page (`pdfinfo`) and key-field extraction (`pdftotext`), the same check ATS parsers run.
 * **One source, two outputs** — no design drift between the site and the PDF; layout matches the portfolio's typography (Source Sans Pro, `#00529C` accent).
-* **No TeX toolchain** — a ~10s render step (and cache) replaces a ~1.5 min LaTeX compilation action.
+* **No TeX toolchain** — a ~10s always-run render step replaces a ~1.5 min LaTeX compilation action.
 
 ---
 

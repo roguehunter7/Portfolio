@@ -15,6 +15,13 @@ on:
         description: 'Telegram pairing request ID to approve (see hermes pairing list)'
         type: string
         default: ''
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+      - 'scripts/hermes-install.sh'
+      - '.github/workflows/hermes-setup.yml'
 
 permissions:
   contents: 'read'
@@ -23,6 +30,7 @@ permissions:
 jobs:
   provision:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -59,8 +67,12 @@ jobs:
           fi
           terraform apply -auto-approve $ARGS
 
-      - name: Wait for SSH, verify VM
+      - name: Wait for SSH, install and configure Hermes
         if: ${{ inputs.destroy_vm != 'true' || inputs.rebuild_vm == 'true' }}
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_USERS: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
         run: |
           for i in $(seq 1 30); do
             gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap --command="true" >/dev/null 2>&1 && break
@@ -72,14 +84,6 @@ jobs:
             { echo 'startup script did not complete (see /var/log/startup.log)'; exit 1; }; \
             free -m | head -2; zramctl | tail -1; sysctl vm.swappiness; \
             command -v docker >/dev/null && echo 'docker present (unexpected)' || echo 'no docker (expected)'"
-
-      - name: Install and configure Hermes
-        if: ${{ inputs.destroy_vm != 'true' || inputs.rebuild_vm == 'true' }}
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_ALLOWED_USERS: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
-        run: |
           cat scripts/hermes-install.sh \
             | gcloud compute ssh portfolio-zero-trust-node \
                 --zone="us-central1-a" --quiet --tunnel-through-iap \
