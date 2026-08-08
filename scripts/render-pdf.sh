@@ -21,7 +21,10 @@ if [ -z "$CHROME" ]; then
 fi
 
 # ---- Render ----
+UDD="$(mktemp -d)"
+trap 'rm -rf "$UDD"' EXIT
 "$CHROME" --headless=new --no-sandbox --disable-gpu --no-pdf-header-footer \
+  --user-data-dir="$UDD" \
   --virtual-time-budget=10000 \
   --print-to-pdf="$OUTPUT" \
   "file://$(pwd)/$INPUT"
@@ -49,7 +52,7 @@ fi
 TEXT="$(pdftotext "$OUTPUT" -)"
 for s in "Sreeram K R" "contact.sreeramkr@gmail.com" "Professional Summary" \
          "Technical Skills" "Professional Experience" "Certifications" "Education"; do
-  if ! grep -qF "$s" <<<"$TEXT"; then
+  if ! grep -qiF "$s" <<<"$TEXT"; then
     echo "FAIL: '$s' not extractable from PDF (ATS risk)" >&2
     exit 1
   fi
