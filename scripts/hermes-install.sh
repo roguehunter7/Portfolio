@@ -36,6 +36,37 @@ model:
 delegation:
   provider: gemini
   model: gemini-flash-lite-latest
+# All auxiliary tasks (titles, compression, web extract, vision, triage...)
+# go to flash-lite: separate rate-limit bucket + cheaper than the main model,
+# which keeps free-tier 429s at bay.
+auxiliary:
+  vision:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  web_extract:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  title_generation:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  tts_audio_tags:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  compression:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  approval:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  triage_specifier:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  kanban_decomposer:
+    provider: gemini
+    model: gemini-flash-lite-latest
+  profile_describer:
+    provider: gemini
+    model: gemini-flash-lite-latest
 YAML
 chown -R "${HERMES_USER}:${HERMES_USER}" "${HERMES_DIR}"
 
