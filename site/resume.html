@@ -41,7 +41,7 @@
 
   @page {
     size: letter;
-    margin: 0.5in 0.55in;
+    margin: 0.4in 0.55in;
   }
 
   * {
@@ -59,7 +59,7 @@
   body {
     font-family: 'Source Sans Pro', 'Segoe UI', system-ui, Arial, sans-serif;
     font-size: 10pt;
-    line-height: 1.18;
+    line-height: 1.12;
     color: var(--ink);
     background: #fff;
   }
@@ -86,7 +86,7 @@
   }
 
   h1 {
-    font-size: 22pt;
+    font-size: 20pt;
     font-weight: 700;
     letter-spacing: 0.4px;
     line-height: 1.1;
@@ -140,7 +140,7 @@
     letter-spacing: 0.8px;
     border-bottom: 1px solid var(--accent);
     padding-bottom: 1.5pt;
-    margin: 7pt 0 3.5pt;
+    margin: 5pt 0 2.5pt;
     break-after: avoid;
     page-break-after: avoid;
   }
@@ -160,7 +160,7 @@
   }
 
   li {
-    margin: 0.5pt 0 0.5pt 12pt;
+    margin: 0 0 0 12pt;
     position: relative;
   }
 
@@ -180,7 +180,7 @@
   .entry {
     break-inside: avoid;
     page-break-inside: avoid;
-    margin-bottom: 3pt;
+    margin-bottom: 1.5pt;
   }
 
   .entry-head,
@@ -271,6 +271,17 @@
         <li>Engineered a secure, keyless <b>CI/CD pipeline</b> via <b>GitHub Actions</b> using <b>Workload Identity Federation (WIF)</b> and OIDC.</li>
         <li>Implemented secure push-based SSH deployments over GCP <b>Identity-Aware Proxy (IAP)</b> to run containerized stacks.</li>
         <li>Isolated services inside a private <b>Docker Compose</b> network routed via <b>Cloudflare Tunnels</b>, exposing zero host ports.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <span class="entry-title">Hermes — Self-Hosted AI Assistant</span>
+        <span class="entry-date"><a href="https://api.sreeramkr.com">api.sreeramkr.com</a></span>
+      </div>
+      <ul>
+        <li>Self-hosted AI assistant (Telegram gateway + <b>Gemini API</b>) on a free-tier GCP e2-micro VM behind a <b>Cloudflare Tunnel</b> — zero exposed ports; provisioned end-to-end with <b>Terraform</b> + an idempotent install script, two-tier LLM routing keeps cost near zero.</li>
+        <li>Exposed an authenticated HTTP API (<a href="https://api.sreeramkr.com">api.sreeramkr.com</a>) over the same tunnel for remote task automation.</li>
       </ul>
     </div>
   </section>

@@ -611,8 +611,9 @@
         <h3 class="arch-heading orange">Current Cloudflare Pages (Phase 6)</h3>
         <p class="arch-text">
             Cloudflare Pages serves the static site directly from the edge. GitHub Actions renders the resume PDF, then
-            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM
-            (Phase 5) is on hold for future work.
+            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM now
+            runs <strong>Hermes</strong>, a self-hosted AI assistant (Telegram + Gemini) reached only through a
+            Cloudflare Tunnel — zero exposed ports.
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
@@ -625,7 +626,10 @@ graph TD
     P -->|serves| IDX[index.html / 404.html]
     P -->|serves| R[resume.html]
     P -->|serves| PDF
-    VM[e2-micro VM] -.->|on hold| FUT[Future: Hermes agent]
+    TG[Telegram] -->|HTTPS| CF
+    CF -->|Tunnel| VM[e2-micro VM]
+    VM -->|Hermes gateway| G[(Gemini API)]
+    VM -.->|api.sreeramkr.com| CF
             </div>
         </div>
 

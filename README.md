@@ -21,6 +21,7 @@ Designed with a **Zero-Ingress / Zero-Trust posture**, the architecture exposes 
 ```
 site/index.html, site/404.html    Static portfolio site (mermaid via pinned CDN + SRI)
 site/resume.html + site/fonts/     Resume source of truth — self-contained HTML+CSS (Source Sans Pro woff2)
+resume.json                       Master resume data — machine-readable, long-form (future LLM-tailoring source)
 scripts/render-pdf.sh              site/resume.html → site/resume.pdf via headless Chrome + ATS assertions
 archive/                           Docker-era files (Dockerfile, compose, deploy.sh, default.conf) — historical
 infra/main.tf, infra/variables.tf  Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM = Hermes agent host
@@ -119,6 +120,14 @@ The site is served directly from **Cloudflare Pages** — static assets at the e
 * `site/_headers` applies security headers at the edge: hardened CSP (static nonce + pinned mermaid CDN URL only), HSTS, COOP/CORP, Permissions-Policy lockdown, `Cache-Control: no-cache` on `/resume.pdf`, immutable cache on `/fonts/*`.
 * `site/.well-known/security.txt` declares the security contact.
 * Requires GitHub secrets `CLOUDFLARE_API_TOKEN` (Pages:Edit) and `CLOUDFLARE_ACCOUNT_ID`.
+
+### 3. Hermes — the VM's current job
+
+The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **Hermes**, a self-hosted AI assistant: Telegram gateway + Gemini API behind the same Cloudflare Tunnel, managed via `scripts/hermes-install.sh` (idempotent) and the manual `hermes-setup` workflow. See Phase 5 below.
+
+### 4. resume.json (master data)
+
+`resume.json` at the repo root holds every fact about the career in long-form (context, why, impact, evidence per achievement). The 1-page `site/resume.html` is a hand-curated projection of it; the planned pipeline is `resume.json + job description → LLM → resume.pdf`. Add raw material freely — it is intentionally not the final resume text.
 
 ---
 

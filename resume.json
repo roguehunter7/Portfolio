@@ -1,0 +1,273 @@
+{
+  "$comment": "Master resume data — single source of truth. Long-form context + achievements; an LLM (resume.json + JD -> resume.pdf) selects, rewrites and condenses to a 1-page ATS-safe PDF. Add/expand freely; nothing here is 'final resume text'.",
+  "meta": {
+    "name": "Sreeram K R",
+    "title": "Cloud & Infrastructure Automation Engineer",
+    "updated": "2026-08-08",
+    "contact": {
+      "phone": "+91-7293280942",
+      "email": "contact.sreeramkr@gmail.com",
+      "website": "https://sreeramkr.com",
+      "github": "https://github.com/roguehunter7",
+      "linkedin": "https://linkedin.com/in/sreeram-k-r"
+    },
+    "location": "India (Pune / Bangalore; remote-friendly)",
+    "target_roles": [
+      "Cloud Infrastructure Engineer",
+      "DevOps / SRE Engineer",
+      "Network Automation Engineer"
+    ]
+  },
+
+  "summary": {
+    "text": "Infrastructure & Automation Engineer combining on-premises network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments. Currently an engineer at Iron Systems (Honeywell client) and building a zero-ingress, free-tier personal infrastructure stack (Cloudflare Pages + GCP e2-micro + Cloudflare Tunnel).",
+    "keywords": [
+      "Terraform", "GitHub Actions", "GCP", "IAP", "WIF", "Docker", "Cloudflare", "zero-trust",
+      "network automation", "Netmiko", "PowerShell", "Active Directory", "ServiceNow", "Nginx", "CI/CD"
+    ]
+  },
+
+  "skills": [
+    {
+      "category": "Infrastructure & SRE",
+      "items": [
+        { "name": "GCP", "level": "advanced", "context": "Compute Engine, VPC, GCS, Cloud Run, IAP, WIF — all used in production personal + client infra" },
+        { "name": "Terraform (IaC)", "level": "advanced", "context": "state-locked declarative provisioning of VPCs, firewalls, instances" },
+        { "name": "Docker / Docker Compose", "level": "advanced", "context": "multi-container stacks on unprivileged, private bridge networks" },
+        { "name": "GitHub Actions (CI/CD)", "level": "advanced", "context": "OIDC/WIF keyless auth, buildx, IAP SSH deploys, Cloudflare Pages deploys" },
+        { "name": "Cloudflare Pages", "level": "intermediate", "context": "static hosting, _headers CSP, custom domain, wrangler deploys" },
+        { "name": "GCP IAP", "level": "advanced", "context": "zero-trust SSH-only access, no public ports" }
+      ]
+    },
+    {
+      "category": "Networking & Edge",
+      "items": [
+        { "name": "DNS / DNSSEC / HSTS", "level": "advanced", "context": "full zone management incl. TLS hardening" },
+        { "name": "Cloudflare Zero Trust Tunnels", "level": "advanced", "context": "outbound-only ingress, zero open ports" },
+        { "name": "WAF", "level": "intermediate", "context": "Cloudflare managed rules" },
+        { "name": "VLAN / Trunking", "level": "advanced", "context": "L3-to-L2 migrations across 70 subnets" },
+        { "name": "TCP/IP, Subnetting, Wireshark", "level": "advanced", "context": "" },
+        { "name": "Tailscale", "level": "intermediate", "context": "" }
+      ]
+    },
+    {
+      "category": "Automation & Scripting",
+      "items": [
+        { "name": "Python", "level": "advanced", "context": "Netmiko (network device automation), Pandas, NetworkX" },
+        { "name": "PowerShell", "level": "advanced", "context": "enterprise configuration deployment automation (Honeywell)" },
+        { "name": "Bash", "level": "advanced", "context": "CI scripts, system provisioning" },
+        { "name": "Linux System Administration", "level": "advanced", "context": "Debian, systemd, zram/swap, hardening" },
+        { "name": "GitHub CLI", "level": "intermediate", "context": "" }
+      ]
+    },
+    {
+      "category": "Enterprise Tools",
+      "items": [
+        { "name": "ServiceNow API", "level": "advanced", "context": "privileged account provisioning automation" },
+        { "name": "Nginx Reverse Proxy", "level": "advanced", "context": "unprivileged container builds, security headers, CSP" },
+        { "name": "GitOps Workflows", "level": "intermediate", "context": "push-to-main deploy model" },
+        { "name": "Active Directory", "level": "advanced", "context": "DNS forwarders, domain-joined system management" }
+      ]
+    }
+  ],
+
+  "experience": [
+    {
+      "role": "Systems & Infrastructure Engineer",
+      "company": "Iron Systems",
+      "client": "Honeywell",
+      "type": "full-time",
+      "start": "2026-03",
+      "end": null,
+      "location": "Pune, India",
+      "context": "Enterprise IT outsourcing for Honeywell: large-scale system configuration, network access control and deployment operations across a high-priority enterprise environment.",
+      "achievements": [
+        {
+          "what": "Engineered zero-prompt PowerShell automation scripts for configuration deployments, replacing a legacy 3,000-line manual workflow and accelerating the automated provisioning pipeline.",
+          "why": "Legacy manual workflow was slow, error-prone and required operator prompts at every step.",
+          "impact": "Replaced 3,000-line manual workflow; faster, unattended provisioning pipeline.",
+          "evidence": "Production use in enterprise deployment operations",
+          "skills_used": ["PowerShell", "Active Directory", "Windows Server"]
+        },
+        {
+          "what": "Managed enterprise infrastructure operations: automated system configurations, network access control, and platform reliability engineering for high-priority deployments.",
+          "why": "Enterprise needs consistent, reliable, repeatable platform state.",
+          "impact": "Reliable high-priority deployment operations.",
+          "evidence": "Ongoing role",
+          "skills_used": ["Active Directory", "NAC", "Windows Server", "PowerShell"]
+        }
+      ]
+    },
+    {
+      "role": "Network & Automation Engineer (Contract)",
+      "company": "Iron Systems",
+      "client": "Honeywell",
+      "type": "contract",
+      "start": "2025-01",
+      "end": "2026-02",
+      "location": "Bangalore, India",
+      "context": "Honeywell enterprise network estate: 1,000+ distributed systems, 70 subnets, Cisco gear managed via Active Directory + ServiceNow workflows.",
+      "achievements": [
+        {
+          "what": "Automated configuration management and vulnerability patching across 1,000+ distributed systems.",
+          "why": "Manual patching could not keep up with compliance requirements.",
+          "impact": "98% compliance across the estate.",
+          "evidence": "Client compliance reporting",
+          "skills_used": ["PowerShell", "Active Directory", "Windows Server"]
+        },
+        {
+          "what": "Developed a Python automation suite (Netmiko) for switch surveys.",
+          "why": "Manual per-device surveys took too long and wasted address space.",
+          "impact": "Reduced switch survey timelines by 50%; reclaimed 500+ unused IPs.",
+          "evidence": "Netmiko + Pandas/NetworkX analysis",
+          "skills_used": ["Python", "Netmiko", "Pandas", "NetworkX", "Cisco IOS"]
+        },
+        {
+          "what": "Automated ServiceNow privileged account provisioning using remote protocols.",
+          "why": "Manual provisioning took ~5 minutes per account.",
+          "impact": "95% faster provisioning (5 minutes to under 20 seconds).",
+          "evidence": "ServiceNow API + remote protocol automation",
+          "skills_used": ["ServiceNow API", "PowerShell", "RDP/WinRM"]
+        },
+        {
+          "what": "Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets.",
+          "why": "Network reorganization to simplify routing and reduce complexity.",
+          "impact": "Clean migration across 70 subnets with no service disruption.",
+          "evidence": "Migration runbooks",
+          "skills_used": ["Active Directory DNS", "L2/L3 switching", "VLAN/trunking"]
+        }
+      ]
+    },
+    {
+      "role": "Backend Developer Intern",
+      "company": "Suyati Technologies Ltd",
+      "type": "internship",
+      "start": "2023-02",
+      "end": "2023-09",
+      "location": "Kochi, India",
+      "context": "Product development shop; intern on a flight analytics project.",
+      "achievements": [
+        {
+          "what": "Developed flight delay prediction logic using Python/Django with containerized MySQL database environments using Docker.",
+          "why": "Predict delays from historical flight data.",
+          "impact": "Working prediction module + containerized dev environment.",
+          "evidence": "Internship project",
+          "skills_used": ["Python", "Django", "MySQL", "Docker"]
+        }
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "name": "Zero-Trust Cloud Infrastructure & GitOps Pipeline",
+      "url": "https://sreeramkr.com",
+      "context": "Personal portfolio infrastructure case study: a fully public GitHub repo (roguehunter7/Portfolio) demonstrating zero-ingress architecture on the free tier.",
+      "achievements": [
+        {
+          "what": "Orchestrated declarative, state-locked provisioning of private VPC networks, firewalls, and Compute instances using Terraform.",
+          "why": "Reproducible infra, no click-ops, state safety.",
+          "impact": "Full IaC: VPC, firewalls, VM from one codebase.",
+          "evidence": "infra/main.tf",
+          "skills_used": ["Terraform", "GCP VPC", "Firewalls"]
+        },
+        {
+          "what": "Engineered a secure, keyless CI/CD pipeline via GitHub Actions using Workload Identity Federation (WIF) and OIDC.",
+          "why": "No long-lived cloud credentials in CI.",
+          "impact": "Zero static keys; OIDC-authenticated deploys.",
+          "evidence": "deploy workflow",
+          "skills_used": ["GitHub Actions", "OIDC", "WIF"]
+        },
+        {
+          "what": "Implemented secure push-based SSH deployments over GCP Identity-Aware Proxy (IAP) to run containerized stacks.",
+          "why": "No public SSH; only Google's IAP proxy IPs allowed on port 22.",
+          "impact": "Zero exposed management ports.",
+          "evidence": "IAP TCP forwarding",
+          "skills_used": ["GCP IAP", "SSH"]
+        },
+        {
+          "what": "Isolated services inside a private Docker Compose network routed via Cloudflare Tunnels, exposing zero host ports.",
+          "why": "Inbound-only via outbound tunnel; nothing reachable from the internet except through Cloudflare.",
+          "impact": "Zero host ports exposed; $0/month free tier.",
+          "evidence": "docker-compose + cloudflared",
+          "skills_used": ["Docker Compose", "cloudflared", "Cloudflare Zero Trust"]
+        }
+      ]
+    },
+    {
+      "name": "Hermes — Self-Hosted AI Assistant",
+      "url": "https://api.sreeramkr.com",
+      "context": "Personal AI assistant (Telegram gateway + Gemini API) running on a zero-ingress GCP e2-micro VM behind a Cloudflare Tunnel; provisioned end-to-end by Terraform + an idempotent install script.",
+      "achievements": [
+        {
+          "what": "Deployed a self-hosted AI assistant on a free-tier e2-micro VM, reached only through a Cloudflare Tunnel — zero exposed ports.",
+          "why": "Run an always-on personal assistant without paying for a VPS or exposing SSH.",
+          "impact": "24/7 assistant at $0/month on the free tier.",
+          "evidence": "cloudflared tunnel + systemd user service (linger)",
+          "skills_used": ["cloudflared", "systemd", "GCP e2-micro", "zram"]
+        },
+        {
+          "what": "Wired the assistant to the Gemini API with two-tier model routing (gemini-flash-latest for main work, gemini-flash-lite-latest for all auxiliary tasks).",
+          "why": "Cut cost and 429s by pushing cheap tasks to the flash-lite rate-limit bucket.",
+          "impact": "~₹250-300/month ceiling for heavy use; near-zero for normal use.",
+          "evidence": "config.yaml model/delegation/auxiliary sections",
+          "skills_used": ["Gemini API", "LLM routing", "YAML config"]
+        },
+        {
+          "what": "Exposed an authenticated HTTP API over the same tunnel (api.sreeramkr.com) for remote task automation, and added Telegram chat with allowlist-only access.",
+          "why": "Control the assistant from Telegram; keep the API private.",
+          "impact": "Private API + allowlisted Telegram access.",
+          "evidence": "Hermes gateway + Telegram bot",
+          "skills_used": ["Hermes", "Telegram Bot API", "Cloudflare Tunnel"]
+        }
+      ]
+    }
+  ],
+
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect – Associate (SAA-C03)",
+      "issuer": "AWS",
+      "status": "pending",
+      "date": "Exam scheduled September 5, 2026",
+      "context": ""
+    },
+    {
+      "name": "GATE Qualified (2023)",
+      "issuer": "GATE (Electronics & Communication)",
+      "status": "passed",
+      "date": "2023",
+      "context": "Graduate Aptitude Test in Engineering, ECE stream."
+    }
+  ],
+
+  "languages": [
+    { "name": "English", "level": "Fluent" },
+    { "name": "Malayalam", "level": "Native" },
+    { "name": "Tamil", "level": "Native" },
+    { "name": "Hindi", "level": "Conversational" }
+  ],
+
+  "education": [
+    {
+      "degree": "Bachelor of Technology, Electronics & Communication",
+      "school": "Adi Shankara Institute of Engineering & Technology",
+      "location": "Kochi, India",
+      "start": "2020",
+      "end": "2024",
+      "coursework": [
+        "Computer Communication & Networks",
+        "Operating Systems",
+        "Fiber Optic Communication"
+      ],
+      "context": ""
+    }
+  ],
+
+  "extras": {
+    "notes": [
+      "Add: volunteer/open-source work, hackathons, homelab details, blog posts, quantifiable side-project outcomes, anything that didn't fit the 1-page resume."
+    ],
+    "achievements_pool": []
+  }
+}
