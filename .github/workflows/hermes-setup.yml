@@ -37,8 +37,22 @@ jobs:
           terraform apply -auto-approve \
             -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
 
-      - name: Wait for startup script and verify VM state
+      - name: Wait for SSH and verify VM state
         run: |
+          echo "Waiting for VM SSH (IAP)..."
+          SSH_UP=0
+          for i in $(seq 1 30); do
+            if gcloud compute ssh portfolio-zero-trust-node \
+                --zone="us-central1-a" --quiet --tunnel-through-iap \
+                --command="true" >/dev/null 2>&1; then
+              echo "SSH up after ${i} attempt(s)"
+              SSH_UP=1
+              break
+            fi
+            sleep 15
+          done
+          [ "$SSH_UP" = "1" ] || { echo "ERROR: VM SSH never became reachable" >&2; exit 1; }
+
           gcloud compute ssh portfolio-zero-trust-node \
             --zone="us-central1-a" --quiet --tunnel-through-iap \
             --command="timeout 400 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done'
