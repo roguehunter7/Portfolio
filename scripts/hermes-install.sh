@@ -20,7 +20,7 @@ id -u "${HERMES_USER}" >/dev/null 2>&1 || useradd -m -s /bin/bash "${HERMES_USER
 # ---- 1. Install Hermes (per-user layout: ~/.hermes/) ----
 if [ ! -x "${HERMES_DIR}/hermes-agent/venv/bin/python3" ]; then
   echo "[hermes] installing Hermes Agent..."
-  sudo -u "${HERMES_USER}" bash -c "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
+  sudo -u "${HERMES_USER}" bash -c "cd '${HERMES_HOME}' && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
 else
   echo "[hermes] already installed, skipping"
 fi
