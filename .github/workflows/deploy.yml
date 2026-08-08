@@ -31,6 +31,17 @@ jobs:
         with:
           root_file: resume.tex
 
+      - name: Cache HTML Resume PDF
+        id: cache-resume-html
+        uses: actions/cache@v4
+        with:
+          path: resume-html.pdf
+          key: resume-html-pdf-${{ hashFiles('resume.html', 'fonts/*') }}
+
+      - name: Render HTML resume to PDF (tandem comparison)
+        if: steps.cache-resume-html.outputs.cache-hit != 'true'
+        run: bash scripts/render-pdf.sh resume.html resume-html.pdf
+
       - name: Authenticate to Google Cloud (OIDC/WIF)
         uses: google-github-actions/auth@v3
         with:
