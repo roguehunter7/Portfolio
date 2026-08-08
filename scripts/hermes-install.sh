@@ -52,6 +52,8 @@ run_as_hermes() {
 }
 
 run_as_hermes "${HERMES_HOME}/.local/bin/hermes" gateway install
-run_as_hermes "${HERMES_HOME}/.local/bin/hermes" gateway start
+# restart (not start): a running service must pick up the rewritten .env
+run_as_hermes "${HERMES_HOME}/.local/bin/hermes" gateway restart || \
+  run_as_hermes "${HERMES_HOME}/.local/bin/hermes" gateway start
 
 echo "[hermes] setup complete"
