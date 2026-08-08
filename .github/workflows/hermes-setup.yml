@@ -77,8 +77,8 @@ jobs:
                 --zone="us-central1-a" --quiet --tunnel-through-iap \
                 --command="sudo GEMINI_API_KEY='$GEMINI_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' bash -s"
 
-      - name: Verify Hermes service
+      - name: Verify Hermes service (with diagnostics)
         run: |
           gcloud compute ssh portfolio-zero-trust-node \
             --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="systemctl is-active hermes && systemctl status hermes --no-pager -n 20"
+            --command="systemctl is-active hermes; echo '--- listening ports ---'; ss -tlnp | grep -E '8644|LISTEN' | head -10; echo '--- hermes journal ---'; journalctl -u hermes -n 40 --no-pager; echo '--- local gateway probe ---'; curl -s -o /dev/null -w 'local :8644 -> %{http_code}\n' http://127.0.0.1:8644/ || echo 'curl failed'"
