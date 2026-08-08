@@ -76,14 +76,12 @@ Hermes (Nous Research) runs on the VM as an unprivileged `hermes` user, answerin
 - **Service**: user systemd unit `hermes-gateway` (official `hermes gateway install`) + `loginctl enable-linger` for boot start
 - **Security**: agent runs unprivileged (remote code-execution engine = contained to its home); DM pairing or `TELEGRAM_ALLOWED_USERS` allowlist gates access
 
-Re-provision (Actions → **Hermes Setup**, on `main`):
+Re-provision (Actions → **Hermes Setup**, on `main`; also auto-runs on any push touching `infra/**`, `scripts/hermes-install.sh`, or the workflow itself):
 
-| `destroy_vm` | `rebuild_vm` | Effect |
-|---|---|---|
-| ❌ | ❌ | Idempotent apply + install |
-| ❌ | ✅ | `-replace` instance → fresh rebuild |
-| ✅ | ❌ | `terraform destroy` only |
-| ✅ | ✅ | Nuke + rebuild in one run |
+| Input | Effect |
+|---|---|
+| default run | Idempotent apply + install (no VM changes) |
+| `rebuild_vm` ✅ | Full `terraform destroy` + `apply` — nuke and rebuild the VM from scratch |
 
 **Secrets/vars used**: `DEEPSEEK_API_KEY` (platform.deepseek.com, prepaid top-up) + `TELEGRAM_BOT_TOKEN` (secrets), `TELEGRAM_ALLOWED_USERS` (optional var, Telegram numeric IDs), GCP WIF vars. Nothing is committed or echoed.
 
@@ -97,15 +95,10 @@ The site is served directly from **Cloudflare Pages** — static assets at the e
 [Developer Push]
        │
        ▼
- 1. Cache Check  ──(Hit)──► [Skip HTML Resume Render]
-       │
-    (Miss)
+ 1. HTML Render ─────────► [site/resume.html → site/resume.pdf via headless Chrome + ATS assertions]
        │
        ▼
- 2. HTML Render  ─────────► [site/resume.html → site/resume.pdf via headless Chrome + ATS assertions]
-       │
-       ▼
- 3. Pages Deploy ─────────► [wrangler pages deploy site → portfolio.pages.dev]
+ 2. Pages Deploy ────────► [wrangler pages deploy site → portfolio.pages.dev]
 ```
 
 ### 1. HTML Resume Render

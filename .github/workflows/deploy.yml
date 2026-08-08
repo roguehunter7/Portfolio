@@ -20,19 +20,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Render HTML resume to PDF (with ATS assertions)
+      - name: Render HTML resume to PDF
         run: bash scripts/render-pdf.sh site/resume.html site/resume.pdf
-
-      - name: Create Cloudflare Pages project if missing
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          npx --yes wrangler@4.120.0 pages project list 2>/dev/null | grep -qx portfolio \
-            || npx --yes wrangler@4.120.0 pages project create portfolio --production-branch=main
 
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4.120.0 pages deploy site --project-name=portfolio
+        run: |
+          npx --yes wrangler@4.120.0 pages project list | grep -qx portfolio \
+            || npx --yes wrangler@4.120.0 pages project create portfolio --production-branch=main
+          npx --yes wrangler@4.120.0 pages deploy site --project-name=portfolio

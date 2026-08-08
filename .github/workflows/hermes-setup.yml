@@ -3,21 +3,11 @@ name: Hermes Setup
 on:
   workflow_dispatch:
     inputs:
-      destroy_vm:
-        description: 'Destroy the VM (terraform destroy) and stop'
-        type: boolean
-        default: false
       rebuild_vm:
-        description: 'Recreate the VM from scratch (instance replacement)'
+        description: 'Fully destroy and rebuild the VM from scratch (nuke + recreate)'
         type: boolean
         default: false
-      pairing_request_id:
-        description: 'Telegram pairing request ID to approve (see hermes pairing list)'
-        type: string
-        default: ''
   push:
-    branches:
-      - main
     paths:
       - 'infra/**'
       - 'scripts/hermes-install.sh'
@@ -52,23 +42,16 @@ jobs:
         working-directory: infra
         run: terraform init -input=false
 
-      - name: Destroy VM
-        if: ${{ inputs.destroy_vm == 'true' }}
+      - name: Destroy VM (rebuild path)
+        if: ${{ inputs.rebuild_vm == 'true' }}
         working-directory: infra
         run: terraform destroy -auto-approve
 
       - name: Terraform Apply
-        if: ${{ inputs.destroy_vm != 'true' || inputs.rebuild_vm == 'true' }}
         working-directory: infra
-        run: |
-          ARGS=""
-          if [ "${{ inputs.rebuild_vm }}" = "true" ]; then
-            ARGS="-replace=google_compute_instance.vm_instance"
-          fi
-          terraform apply -auto-approve $ARGS
+        run: terraform apply -auto-approve
 
-      - name: Wait for SSH, install and configure Hermes
-        if: ${{ inputs.destroy_vm != 'true' || inputs.rebuild_vm == 'true' }}
+      - name: Install and configure Hermes (waits for SSH)
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -90,7 +73,6 @@ jobs:
                 --command="sudo DEEPSEEK_API_KEY='$DEEPSEEK_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' TELEGRAM_ALLOWED_USERS='$TELEGRAM_ALLOWED_USERS' bash -s"
 
       - name: Verify Hermes gateway
-        if: ${{ inputs.destroy_vm != 'true' || inputs.rebuild_vm == 'true' }}
         run: |
           gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
             --command="sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) systemctl --user is-active hermes-gateway; \
@@ -98,13 +80,4 @@ jobs:
             sudo grep -cE '^(DEEPSEEK_API_KEY|TELEGRAM_BOT_TOKEN|TELEGRAM_ALLOWED_USERS)=' /home/hermes/.hermes/.env; \
             sudo awk -F= '/^TELEGRAM_ALLOWED_USERS=/{print \"TELEGRAM_ALLOWED_USERS value length: \" length(\$2)}' /home/hermes/.hermes/.env; \
             echo '--- telegram log ---'; \
-            sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) journalctl --user -u hermes-gateway -n 60 --no-pager | grep -iE 'telegram|pair|allow|error|fail' | tail -20; \
-            echo '--- pairings ---'; \
-            sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) /home/hermes/.local/bin/hermes pairing list 2>&1 | head -10"
-
-      - name: Approve Telegram pairing (optional)
-        if: ${{ inputs.pairing_request_id != '' }}
-        run: |
-          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/\$(id -u hermes)/bus \
-              /home/hermes/.local/bin/hermes pairing approve telegram '${{ inputs.pairing_request_id }}'"
+            sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) journalctl --user -u hermes-gateway -n 60 --no-pager | grep -iE 'telegram|allow|error|fail' | tail -20"
