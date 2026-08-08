@@ -57,38 +57,51 @@ resource "google_compute_instance" "vm_instance" {
   machine_type = "e2-micro"
   zone         = "us-central1-a"
 
-  # VM Startup Script: installs Docker Compose v2, clones the repo, and bootstraps
-  # the Compose stack on first boot using the injected Cloudflare tunnel token.
+  # VM Startup Script: minimal Hermes host — memory stack (zram + swap),
+  # unattended-upgrades, and native cloudflared tunnel. No Docker.
   metadata_startup_script = replace(<<-EOF
     #!/bin/bash
     set -e
 
-    # 1. Install Docker (CE) with Compose v2 plugin, Git, and Curl
+    export DEBIAN_FRONTEND=noninteractive
+
+    # 1. Base packages
     apt-get update -y
-    apt-get install -y ca-certificates curl gnupg
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
-    apt-get update -y
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin git
-    systemctl enable --now docker
+    apt-get install -y curl git ca-certificates zram-tools unattended-upgrades
 
-    # 2. Clone the public portfolio repository
-    rm -rf /opt/portfolio
-    git clone https://github.com/roguehunter7/portfolio.git /opt/portfolio
+    # 2. Memory: 2 GB zram (compressed RAM swap) + 6 GB disk swapfile
+    sed -i 's/^#\?ALGO=lz4/ALGO=zstd/; s/^#\?PERCENT=50/PERCENT=200/' /etc/default/zramswap
+    systemctl enable --now zramswap
+    if [ ! -f /swapfile ]; then
+      fallocate -l 6G /swapfile
+      chmod 600 /swapfile
+      mkswap /swapfile
+    fi
+    swapon /swapfile || true
+    grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    cat > /etc/sysctl.d/99-memory.conf <<'CONF'
+    vm.swappiness=180
+    vm.page-cluster=0
+    CONF
+    sysctl --system
 
-    # 3. Clean line endings and ensure scripts are executable
-    find /opt/portfolio -name "*.sh" -exec sed -i 's/\r$//' {} +
-    chmod +x /opt/portfolio/*.sh
+    # 3. Unattended auto-updates (daily; auto-reboot 03:00 when needed)
+    cat > /etc/apt/apt.conf.d/20auto-upgrades <<'CONF'
+    APT::Periodic::Update-Package-Lists "1";
+    APT::Periodic::Unattended-Upgrade "1";
+    APT::Periodic::AutocleanInterval "7";
+    CONF
+    sed -i 's|^//Unattended-Upgrade::Automatic-Reboot "false";|Unattended-Upgrade::Automatic-Reboot "true";|' /etc/apt/apt.conf.d/50unattended-upgrades
 
-    # 4. Bootstrap Compose stack on first boot using the Terraform-supplied token.
-    # Subsequent deployments are handled by GitHub Actions via deploy.sh.
-    cd /opt/portfolio
-    echo "IMAGE_TAG=latest" > .env
-    echo "CLOUDFLARE_TUNNEL_TOKEN=${var.cloudflare_tunnel_token}" >> .env
-    docker compose pull web 2>/dev/null || true
-    docker compose up -d
+    # 4. Dedicated unprivileged user for Hermes
+    id -u hermes >/dev/null 2>&1 || useradd -m -s /bin/bash hermes
+
+    # 5. Native cloudflared (official deb) as a token-based systemd service
+    curl -sL -o /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+    dpkg -i /tmp/cloudflared.deb || apt-get install -f -y
+    cloudflared service install ${var.cloudflare_tunnel_token}
+    systemctl enable --now cloudflared
+
     touch /var/log/startup_script_complete
   EOF
   , "\r", "")
@@ -97,7 +110,7 @@ resource "google_compute_instance" "vm_instance" {
     initialize_params {
       image = "debian-cloud/debian-13"
       type  = "pd-standard"
-      size  = 20
+      size  = 25
     }
   }
 

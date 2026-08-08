@@ -1,0 +1,68 @@
+name: Hermes Setup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (OIDC/WIF)
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Apply (25 GB disk + minimal startup script)
+        run: |
+          terraform apply -auto-approve \
+            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+
+      - name: Wait for startup script and verify VM state
+        run: |
+          gcloud compute ssh portfolio-zero-trust-node \
+            --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="timeout 400 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done'
+            echo '--- memory ---'
+            free -m
+            echo '--- swappiness ---'
+            sysctl vm.swappiness vm.page-cluster
+            echo '--- zram ---'
+            zramctl
+            echo '--- cloudflared ---'
+            systemctl is-active cloudflared
+            echo '--- docker (should be absent) ---'
+            command -v docker || echo 'no docker (expected)'"
+
+      - name: Install and configure Hermes (Gemini + Telegram)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          cat scripts/hermes-install.sh \
+            | gcloud compute ssh portfolio-zero-trust-node \
+                --zone="us-central1-a" --quiet --tunnel-through-iap \
+                --command="sudo GEMINI_API_KEY='$GEMINI_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' bash -s"
+
+      - name: Verify Hermes service
+        run: |
+          gcloud compute ssh portfolio-zero-trust-node \
+            --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="systemctl is-active hermes && systemctl status hermes --no-pager -n 20"
