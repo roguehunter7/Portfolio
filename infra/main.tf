@@ -58,7 +58,7 @@ resource "google_compute_instance" "vm_instance" {
   zone         = "us-central1-a"
 
   # VM Startup Script: minimal Hermes host — memory stack (zram + swap),
-  # unattended-upgrades, and native cloudflared tunnel. No Docker.
+  # unattended-upgrades, hermes user. No Docker, no tunnel (site is on Pages).
   metadata_startup_script = replace(<<-EOF
     #!/bin/bash
     set -e
