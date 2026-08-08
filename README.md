@@ -16,6 +16,22 @@ Designed with a **Zero-Ingress / Zero-Trust posture**, the architecture exposes 
 
 ---
 
+## 📁 Repository Layout
+
+```
+index.html, 404.html        Static portfolio site (mermaid diagrams via pinned CDN + SRI)
+resume.html + fonts/        Resume source of truth — self-contained HTML+CSS (Source Sans Pro woff2)
+scripts/render-pdf.sh       resume.html → resume.pdf via headless Chrome + ATS assertions
+Dockerfile, default.conf    Unprivileged nginx image, security headers, /status
+docker-compose.yml          web + cloudflared tunnel (zero host ports)
+deploy.sh                   VM-side deploy: git sync, docker compose pull & up
+main.tf, variables.tf       Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM
+.github/workflows/deploy.yml   CI/CD: render resume → buildx → terraform → IAP deploy
+resume.pdf                  Generated artifact (gitignored, produced by CI)
+```
+
+---
+
 ## 🏗️ Architectural Evolution
 
 ```
@@ -184,6 +200,14 @@ Migrating from native host-level daemons (Phase 3) to Docker Compose (Phase 5) i
 ### 4. Caching at the Pipeline Level
 
 Automating resume PDF builds saves developer overhead, but caching the rendered PDF prevents pipeline bottlenecks, cutting deployment times by **75%** on typical code-only pushes.
+
+### 5. HTML+CSS Resume over LaTeX
+
+The resume is authored once in `resume.html` (self-contained HTML+CSS) and serves both surfaces: the live `/resume.html` page and the `/resume.pdf` download, rendered by headless Chrome in CI. Compared to the former `resume.tex`:
+
+* **ATS-safe by construction** — Chrome writes a real, selectable text layer; CI asserts exactly 1 page (`pdfinfo`) and key-field extraction (`pdftotext`), the same check ATS parsers run.
+* **One source, two outputs** — no design drift between the site and the PDF; layout matches the portfolio's typography (Source Sans Pro, `#00529C` accent).
+* **No TeX toolchain** — a ~10s render step (and cache) replaces a ~1.5 min LaTeX compilation action.
 
 ---
 
