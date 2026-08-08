@@ -69,9 +69,9 @@ The `e2-micro` VM (GCP Always Free Tier, $0/month) evolved: it served the site t
 
 ### 🤖 Hermes Agent (Phase 7)
 
-Hermes (Nous Research) runs on the VM as an unprivileged `hermes` user, answering on Telegram with a Gemini backend:
+Hermes (Nous Research) runs on the VM as an unprivileged `hermes` user, answering on Telegram with a DeepSeek backend:
 
-- **Models**: main `gemini-flash-latest`, sub-agents `gemini-flash-lite-latest` (official `-latest` aliases)
+- **Models**: main + all sub-agents/auxiliary `deepseek-v4-flash` (DeepSeek's budget tier; paid API, no free tier — ~10× cheaper than Gemini paid, which requires a ₹1000 minimum top-up)
 - **Memory**: 1 GB RAM + 2 GB zram + 6 GB swapfile (`vm.swappiness=180`, `vm.page-cluster=0`)
 - **Service**: user systemd unit `hermes-gateway` (official `hermes gateway install`) + `loginctl enable-linger` for boot start
 - **Security**: agent runs unprivileged (remote code-execution engine = contained to its home); DM pairing or `TELEGRAM_ALLOWED_USERS` allowlist gates access
@@ -85,7 +85,7 @@ Re-provision (Actions → **Hermes Setup**, on `main`):
 | ✅ | ❌ | `terraform destroy` only |
 | ✅ | ✅ | Nuke + rebuild in one run |
 
-**Secrets/vars used**: `GEMINI_API_KEY` + `TELEGRAM_BOT_TOKEN` (secrets), `TELEGRAM_ALLOWED_USERS` (optional var, Telegram numeric IDs), GCP WIF vars. Nothing is committed or echoed.
+**Secrets/vars used**: `DEEPSEEK_API_KEY` (platform.deepseek.com, prepaid top-up) + `TELEGRAM_BOT_TOKEN` (secrets), `TELEGRAM_ALLOWED_USERS` (optional var, Telegram numeric IDs), GCP WIF vars. Nothing is committed or echoed.
 
 ---
 
