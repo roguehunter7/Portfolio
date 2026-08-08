@@ -23,8 +23,10 @@ site/index.html, site/404.html    Static portfolio site (mermaid via pinned CDN 
 site/resume.html + site/fonts/     Resume source of truth — self-contained HTML+CSS (Source Sans Pro woff2)
 scripts/render-pdf.sh              site/resume.html → site/resume.pdf via headless Chrome + ATS assertions
 archive/                           Docker-era files (Dockerfile, compose, deploy.sh, default.conf) — historical
-infra/main.tf, infra/variables.tf  Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM (on hold)
+infra/main.tf, infra/variables.tf  Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM = Hermes agent host
 .github/workflows/deploy.yml       CI/CD: render resume → Cloudflare Pages deploy
+.github/workflows/hermes-setup.yml Manual: provision VM + install Hermes (destroy/rebuild inputs)
+scripts/hermes-install.sh          Hermes install + Gemini/Telegram gateway config (run on VM via IAP)
 site/resume.pdf                    Generated artifact (gitignored, produced by CI)
 ```
 
@@ -56,13 +58,33 @@ site/resume.pdf                    Generated artifact (gitignored, produced by C
 
 ---
 
-## 🏁 Phase 5: Zero-Ingress VM (Historical — on hold)
+## 🏁 Phase 5: Zero-Ingress VM (Historical — now the Hermes host)
 
-Cost optimization ($0/month) drove the migration from Cloud Run back to an `e2-micro` VM (GCP Always Free Tier); the tracker API and Firestore were retired. The VM is now **on hold** — the site serves from Cloudflare Pages (Phase 6). Its design:
+The `e2-micro` VM (GCP Always Free Tier, $0/month) evolved: it served the site through the tunnel (Docker/nginx, 2025–2026), the site moved to Cloudflare Pages (Phase 6, 2026-08), and the VM was **rebuilt as the Hermes agent host** — minimal Debian 13, 25 GB disk, no Docker, no tunnel. Design:
 
-1. **Zero host ports** — Nginx + `cloudflared` in a private Docker Compose network; all inbound via the outbound Cloudflare tunnel.
-2. **IAP-only SSH** — the only ingress path is GCP Identity-Aware Proxy over port 22 (`35.235.240.0/20`).
-3. **No public exposure** — deny-all-ingress firewall; the VM stays invisible to internet scanners.
+1. **IAP-only SSH** — the only ingress path is GCP Identity-Aware Proxy over port 22 (`35.235.240.0/20`).
+2. **No public exposure** — deny-all-ingress firewall; the VM stays invisible to internet scanners.
+3. **Hermes (Telegram bot)** — gateway connects *outbound* (Telegram polling + Gemini API); no inbound ports, no tunnel needed.
+
+### 🤖 Hermes Agent (Phase 7)
+
+Hermes (Nous Research) runs on the VM as an unprivileged `hermes` user, answering on Telegram with a Gemini backend:
+
+- **Models**: main `gemini-flash-latest`, sub-agents `gemini-flash-lite-latest` (official `-latest` aliases)
+- **Memory**: 1 GB RAM + 2 GB zram + 6 GB swapfile (`vm.swappiness=180`, `vm.page-cluster=0`)
+- **Service**: user systemd unit `hermes-gateway` (official `hermes gateway install`) + `loginctl enable-linger` for boot start
+- **Security**: agent runs unprivileged (remote code-execution engine = contained to its home); DM pairing or `TELEGRAM_ALLOWED_USERS` allowlist gates access
+
+Re-provision (Actions → **Hermes Setup**, on `main`):
+
+| `destroy_vm` | `rebuild_vm` | Effect |
+|---|---|---|
+| ❌ | ❌ | Idempotent apply + install |
+| ❌ | ✅ | `-replace` instance → fresh rebuild |
+| ✅ | ❌ | `terraform destroy` only |
+| ✅ | ✅ | Nuke + rebuild in one run |
+
+**Secrets/vars used**: `GEMINI_API_KEY` + `TELEGRAM_BOT_TOKEN` (secrets), `TELEGRAM_ALLOWED_USERS` (optional var, Telegram numeric IDs), GCP WIF vars. Nothing is committed or echoed.
 
 ---
 
