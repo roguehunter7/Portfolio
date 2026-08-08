@@ -1,0 +1,6 @@
+# sreeramkr.com — robots.txt
+# Public portfolio. All bots may crawl for search, citations, and AI-assisted
+# reading. Junk traffic is still filtered by Cloudflare zone-level bot rules.
+
+User-agent: *
+Allow: /
