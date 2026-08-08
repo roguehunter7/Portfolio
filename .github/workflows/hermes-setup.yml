@@ -11,6 +11,10 @@ on:
         description: 'Recreate the VM from scratch (instance replacement)'
         type: boolean
         default: false
+      pairing_request_id:
+        description: 'Telegram pairing request ID to approve (see hermes pairing list)'
+        type: string
+        default: ''
 
 permissions:
   contents: 'read'
@@ -88,7 +92,15 @@ jobs:
             --command="sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) systemctl --user is-active hermes-gateway; \
             echo '--- .env keys (values hidden) ---'; \
             sudo grep -cE '^(GEMINI_API_KEY|TELEGRAM_BOT_TOKEN|TELEGRAM_ALLOWED_USERS)=' /home/hermes/.hermes/.env; \
+            sudo awk -F= '/^TELEGRAM_ALLOWED_USERS=/{print \"TELEGRAM_ALLOWED_USERS value length: \" length(\$2)}' /home/hermes/.hermes/.env; \
             echo '--- telegram log ---'; \
             sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) journalctl --user -u hermes-gateway -n 60 --no-pager | grep -iE 'telegram|pair|allow|error|fail' | tail -20; \
             echo '--- pairings ---'; \
             sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) /home/hermes/.local/bin/hermes pairing list 2>&1 | head -10"
+
+      - name: Approve Telegram pairing (optional)
+        if: ${{ inputs.pairing_request_id != '' }}
+        run: |
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/\$(id -u hermes)/bus \
+              /home/hermes/.local/bin/hermes pairing approve telegram '${{ inputs.pairing_request_id }}'"
