@@ -64,12 +64,12 @@ The push-based deployment is fully automated using GitHub Actions. Below is a de
 [Developer Push] 
        │
        ▼
- 1. Cache Check  ──(Hit)──► [Skip LaTeX Build]
+ 1. Cache Check  ──(Hit)──► [Skip HTML Resume Render]
        │
     (Miss)
        │
        ▼
- 2. LaTeX Build  ─────────► [Generate resume.pdf]
+ 2. HTML Render  ─────────► [resume.html → resume.pdf via headless Chrome]
        │
        ▼
  3. OIDC Auth    ─────────► [Authenticate via WIF to GCP]
@@ -90,16 +90,16 @@ The push-based deployment is fully automated using GitHub Actions. Below is a de
  8. VM Deploy    ─────────► [deploy.sh runs Docker Compose up]
 ```
 
-### 1. LaTeX Resume Cache & Compilation
+### 1. HTML Resume Render
 
-* The workflow checks if `resume.tex` has been updated since the last build.
-* If a cache hit occurs, it retrieves the compiled `resume.pdf` from the GitHub Actions Cache, saving about 1.5 minutes of runner run time.
-* If it is a cache miss, it spins up a LaTeX compilation action (`xu-cheng/latex-action`) to compile `resume.tex` into a fresh PDF.
+* `resume.html` (self-contained HTML+CSS, Source Sans Pro woff2 in `fonts/`) is the single source of truth for the resume.
+* `scripts/render-pdf.sh` renders it to `resume.pdf` using the runner's preinstalled headless Chrome (`--headless=new --print-to-pdf`), then asserts ATS-safety: exactly 1 letter page (`pdfinfo`) and key text extractable (`pdftotext`).
+* The workflow checks if `resume.html`/`fonts/*` changed since the last build; a cache hit skips the ~10s render.
 
 ### 2. Hardened Container Build & Push
 
 * The runner builds a Docker image based on `nginxinc/nginx-unprivileged:alpine-slim`.
-* This image packages `index.html`, the custom `default.conf` (which exposes the Nginx `/status` endpoint), and the newly compiled `resume.pdf`.
+* This image packages `index.html`, the custom `default.conf` (which exposes the Nginx `/status` endpoint), the rendered `resume.pdf`, and the live `resume.html`.
 * The container runs under non-root user `nginx` (UID 101) to mitigate container-escape risks.
 * The image is tagged as `latest` and pushed to **GitHub Container Registry (GHCR)**.
 

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 INPUT="${1:-resume.html}"
-OUTPUT="${2:-resume-html.pdf}"
+OUTPUT="${2:-resume.pdf}"
 
 # ---- Locate a Chrome/Chromium binary (no installs) ----
 CHROME=""

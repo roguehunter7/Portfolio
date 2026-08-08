@@ -23,24 +23,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: resume.pdf
-          key: resume-pdf-${{ hashFiles('resume.tex') }}
+          key: resume-pdf-${{ hashFiles('resume.html', 'fonts/*') }}
 
-      - name: Compile LaTeX document
+      - name: Render HTML resume to PDF
         if: steps.cache-resume.outputs.cache-hit != 'true'
-        uses: xu-cheng/latex-action@v3
-        with:
-          root_file: resume.tex
-
-      - name: Cache HTML Resume PDF
-        id: cache-resume-html
-        uses: actions/cache@v4
-        with:
-          path: resume-html.pdf
-          key: resume-html-pdf-${{ hashFiles('resume.html', 'fonts/*') }}
-
-      - name: Render HTML resume to PDF (tandem comparison)
-        if: steps.cache-resume-html.outputs.cache-hit != 'true'
-        run: bash scripts/render-pdf.sh resume.html resume-html.pdf
+        run: bash scripts/render-pdf.sh resume.html resume.pdf
 
       - name: Authenticate to Google Cloud (OIDC/WIF)
         uses: google-github-actions/auth@v3
