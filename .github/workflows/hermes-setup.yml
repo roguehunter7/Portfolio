@@ -3,8 +3,12 @@ name: Hermes Setup
 on:
   workflow_dispatch:
     inputs:
+      destroy_vm:
+        description: 'Destroy the VM (terraform destroy) and stop'
+        type: boolean
+        default: false
       rebuild_vm:
-        description: 'Recreate the VM from scratch (disk/instance replacement)'
+        description: 'Recreate the VM from scratch (instance replacement)'
         type: boolean
         default: false
 
@@ -36,48 +40,39 @@ jobs:
         working-directory: infra
         run: terraform init -input=false
 
-      - name: Terraform Apply (25 GB disk + minimal startup script)
+      - name: Destroy VM
+        if: ${{ inputs.destroy_vm == 'true' }}
+        working-directory: infra
+        run: terraform destroy -auto-approve \
+          -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+
+      - name: Terraform Apply
+        if: ${{ inputs.destroy_vm != 'true' }}
         working-directory: infra
         run: |
           ARGS=""
           if [ "${{ inputs.rebuild_vm }}" = "true" ]; then
-            echo "rebuild_vm=true — forcing instance replacement"
             ARGS="-replace=google_compute_instance.vm_instance"
           fi
           terraform apply -auto-approve $ARGS \
             -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
 
-      - name: Wait for SSH and verify VM state
+      - name: Wait for SSH, verify VM
+        if: ${{ inputs.destroy_vm != 'true' }}
         run: |
-          echo "Waiting for VM SSH (IAP)..."
-          SSH_UP=0
           for i in $(seq 1 30); do
-            if gcloud compute ssh portfolio-zero-trust-node \
-                --zone="us-central1-a" --quiet --tunnel-through-iap \
-                --command="true" >/dev/null 2>&1; then
-              echo "SSH up after ${i} attempt(s)"
-              SSH_UP=1
-              break
-            fi
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap --command="true" >/dev/null 2>&1 && break
+            [ "$i" = 30 ] && { echo "VM SSH never came up" >&2; exit 1; }
             sleep 15
           done
-          [ "$SSH_UP" = "1" ] || { echo "ERROR: VM SSH never became reachable" >&2; exit 1; }
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="timeout 400 bash -c 'until [ -f /var/log/startup_script_complete ]; do sleep 10; done' && \
+            free -m | head -2 && zramctl | tail -1 && sysctl vm.swappiness && \
+            systemctl is-active cloudflared && \
+            (command -v docker || echo 'no docker (expected)')"
 
-          gcloud compute ssh portfolio-zero-trust-node \
-            --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="timeout 400 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done'
-            echo '--- memory ---'
-            free -m
-            echo '--- swappiness ---'
-            sysctl vm.swappiness vm.page-cluster
-            echo '--- zram ---'
-            zramctl
-            echo '--- cloudflared ---'
-            systemctl is-active cloudflared
-            echo '--- docker (should be absent) ---'
-            command -v docker || echo 'no docker (expected)'"
-
-      - name: Install and configure Hermes (Gemini + Telegram)
+      - name: Install and configure Hermes
+        if: ${{ inputs.destroy_vm != 'true' }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -86,10 +81,11 @@ jobs:
           cat scripts/hermes-install.sh \
             | gcloud compute ssh portfolio-zero-trust-node \
                 --zone="us-central1-a" --quiet --tunnel-through-iap \
-                --command="sudo GEMINI_API_KEY='$GEMINI_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' bash -s"
+                --command="sudo GEMINI_API_KEY='$GEMINI_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' TELEGRAM_ALLOWED_USERS='$TELEGRAM_ALLOWED_USERS' bash -s"
 
-      - name: Verify Hermes service (with diagnostics)
+      - name: Verify Hermes gateway
+        if: ${{ inputs.destroy_vm != 'true' }}
         run: |
-          gcloud compute ssh portfolio-zero-trust-node \
-            --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="systemctl is-active hermes; echo '--- listening ports ---'; ss -tlnp | grep -E '8644|LISTEN' | head -10; echo '--- hermes journal ---'; journalctl -u hermes -n 40 --no-pager; echo '--- local gateway probe ---'; curl -s -o /dev/null -w 'local :8644 -> %{http_code}\n' http://127.0.0.1:8644/ || echo 'curl failed'"
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) systemctl --user is-active hermes-gateway && \
+            sudo -u hermes XDG_RUNTIME_DIR=/run/user/\$(id -u hermes) journalctl --user -u hermes-gateway -n 20 --no-pager"
