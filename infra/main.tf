@@ -67,7 +67,7 @@ resource "google_compute_instance" "vm_instance" {
 
     # 1. Base packages
     apt-get update -y
-    apt-get install -y curl git ca-certificates zram-tools unattended-upgrades
+    apt-get install -y curl git ca-certificates zram-tools unattended-upgrades ripgrep ffmpeg
 
     # 2. Memory: 2 GB zram (compressed RAM swap) + 6 GB disk swapfile
     sed -i 's/^#\?ALGO=lz4/ALGO=zstd/; s/^#\?PERCENT=50/PERCENT=200/' /etc/default/zramswap

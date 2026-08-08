@@ -2,6 +2,11 @@ name: Hermes Setup
 
 on:
   workflow_dispatch:
+    inputs:
+      rebuild_vm:
+        description: 'Recreate the VM from scratch (disk/instance replacement)'
+        type: boolean
+        default: false
 
 permissions:
   contents: 'read'
@@ -34,7 +39,12 @@ jobs:
       - name: Terraform Apply (25 GB disk + minimal startup script)
         working-directory: infra
         run: |
-          terraform apply -auto-approve \
+          ARGS=""
+          if [ "${{ inputs.rebuild_vm }}" = "true" ]; then
+            echo "rebuild_vm=true — forcing instance replacement"
+            ARGS="-replace=google_compute_instance.vm_instance"
+          fi
+          terraform apply -auto-approve $ARGS \
             -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
 
       - name: Wait for SSH and verify VM state
