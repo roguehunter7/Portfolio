@@ -586,27 +586,24 @@
         <h2 class="section-title section-title--tight">System Architecture</h2>
         <p class="section-sub">Current production topology and how code reaches production.</p>
 
-        <h3 class="arch-heading orange">Current Cost-Optimized VM (Phase 5)</h3>
+        <h3 class="arch-heading orange">Current Cloudflare Pages (Phase 6)</h3>
         <p class="arch-text">
-            Terraform provisions a zero-ingress VPC. GitHub Actions compiles the resume PDF, builds the Nginx container,
-            pushes to GHCR, then runs a push-based SSH deploy over GCP IAP to <code>docker compose up</code> on the VM.
+            Cloudflare Pages serves the static site directly from the edge. GitHub Actions renders the resume PDF, then
+            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM
+            (Phase 5) is on hold for future work.
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
 graph TD
     User((User)) -->|HTTPS| CF[Cloudflare Edge]
-    CF -->|Tunnel| Cloudflared
-    Cloudflared --> Nginx[Nginx :8080]
+    CF -->|Pages| P[Cloudflare Pages]
     Dev[git push] --> GH[GitHub Actions]
     GH -->|Render HTML| PDF[Resume PDF]
-    GH -->|Docker Build & Push| GHCR
-    GHCR -.->|Image Pull| Nginx
-    GH -->|OIDC Auth| WIF
-    WIF -->|Terraform Apply| VM[e2-micro VM]
-    GH -->|SSH via IAP| VM
-    VM -->|deploy.sh| Compose[Docker Compose]
-    Compose --> Nginx
-    Compose --> Cloudflared
+    GH -->|wrangler pages deploy| P
+    P -->|serves| IDX[index.html / 404.html]
+    P -->|serves| R[resume.html]
+    P -->|serves| PDF
+    VM[e2-micro VM] -.->|on hold| FUT[Future: Hermes agent]
             </div>
         </div>
 
@@ -675,7 +672,7 @@ graph TD
         <!-- FOOTER -->
         <div class="footer-status">
             <span class="status-dot"></span>
-            Uptime: 100% &middot; GCP Free Tier &middot; Docker Compose &middot; Cloudflare Tunnel
+            Uptime: 100% &middot; Cloudflare Pages &middot; $0/mo
         </div>
         <div class="footer-links">
             <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>

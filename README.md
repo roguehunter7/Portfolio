@@ -19,15 +19,13 @@ Designed with a **Zero-Ingress / Zero-Trust posture**, the architecture exposes 
 ## 📁 Repository Layout
 
 ```
-index.html, 404.html        Static portfolio site (mermaid diagrams via pinned CDN + SRI)
-resume.html + fonts/        Resume source of truth — self-contained HTML+CSS (Source Sans Pro woff2)
-scripts/render-pdf.sh       resume.html → resume.pdf via headless Chrome + ATS assertions
-Dockerfile, default.conf    Unprivileged nginx image, security headers, /status
-docker-compose.yml          web + cloudflared tunnel (zero host ports)
-deploy.sh                   VM-side deploy: git sync, docker compose pull & up
-main.tf, variables.tf       Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM
-.github/workflows/deploy.yml   CI/CD: render resume → buildx → terraform → IAP deploy
-resume.pdf                  Generated artifact (gitignored, produced by CI)
+site/index.html, site/404.html    Static portfolio site (mermaid via pinned CDN + SRI)
+site/resume.html + site/fonts/     Resume source of truth — self-contained HTML+CSS (Source Sans Pro woff2)
+scripts/render-pdf.sh              site/resume.html → site/resume.pdf via headless Chrome + ATS assertions
+archive/                           Docker-era files (Dockerfile, compose, deploy.sh, default.conf) — historical
+infra/main.tf, infra/variables.tf  Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM (on hold)
+.github/workflows/deploy.yml       CI/CD: render resume → Cloudflare Pages deploy
+site/resume.pdf                    Generated artifact (gitignored, produced by CI)
 ```
 
 ---
@@ -58,26 +56,22 @@ resume.pdf                  Generated artifact (gitignored, produced by CI)
 
 ---
 
-## 🏁 Phase 5: Current Production Architecture (Cost Optimization)
+## 🏁 Phase 5: Zero-Ingress VM (Historical — on hold)
 
-To bring monthly operating costs strictly down to **$0**, the infrastructure was migrated from Google Cloud Run back to an `e2-micro` Virtual Machine (fully covered under Google's Always Free Tier). The tracker API and its Firestore database dependencies were retired to avoid storage and API request charges.
+Cost optimization ($0/month) drove the migration from Cloud Run back to an `e2-micro` VM (GCP Always Free Tier); the tracker API and Firestore were retired. The VM is now **on hold** — the site serves from Cloudflare Pages (Phase 6). Its design:
 
-### Zero-Ingress Docker Compose Setup
-
-The host VM does not map Nginx's ports (`80` or `8080`) to the host interface, nor are there any open inbound firewall rules from the public internet. Instead:
-
-1. **Cloudflared Container**: Connects outwards to Cloudflare Zero Trust via a secure outbound tunnel.
-2. **Private Docker Network**: The `cloudflared` container proxies incoming traffic directly to the `web` container over an isolated, internal Docker bridge network.
-3. **No Ingress Ports**: The VM remains a closed box to all incoming traffic except secure SSH management proxied via Identity-Aware Proxy.
+1. **Zero host ports** — Nginx + `cloudflared` in a private Docker Compose network; all inbound via the outbound Cloudflare tunnel.
+2. **IAP-only SSH** — the only ingress path is GCP Identity-Aware Proxy over port 22 (`35.235.240.0/20`).
+3. **No public exposure** — deny-all-ingress firewall; the VM stays invisible to internet scanners.
 
 ---
 
-## ⚙️ Step-by-Step Build & Deployment Pipeline (CI/CD)
+## ⚡ Phase 6: Cloudflare Pages (Current)
 
-The push-based deployment is fully automated using GitHub Actions. Below is a detailed, step-by-step explanation of the execution flow:
+The site is served directly from **Cloudflare Pages** — static assets at the edge, no server. Deployment is fully automated via GitHub Actions:
 
 ```
-[Developer Push] 
+[Developer Push]
        │
        ▼
  1. Cache Check  ──(Hit)──► [Skip HTML Resume Render]
@@ -85,70 +79,24 @@ The push-based deployment is fully automated using GitHub Actions. Below is a de
     (Miss)
        │
        ▼
- 2. HTML Render  ─────────► [resume.html → resume.pdf via headless Chrome]
+ 2. HTML Render  ─────────► [site/resume.html → site/resume.pdf via headless Chrome + ATS assertions]
        │
        ▼
- 3. OIDC Auth    ─────────► [Authenticate via WIF to GCP]
-       │
-       ▼
- 4. Login GHCR   ─────────► [Authenticate to GitHub Container Registry]
-       │
-       ▼
- 5. Docker Build ─────────► [Push to GHCR (Public Package)]
-       │
-       ▼
- 6. IaC Check    ─────────► [Terraform Apply (VPC, Firewall, VM)]
-       │
-       ▼
- 7. IAP SSH Push ─────────► [gcloud compute ssh via Port 22 Tunnel]
-       │
-       ▼
- 8. VM Deploy    ─────────► [deploy.sh runs Docker Compose up]
+ 3. Pages Deploy ─────────► [wrangler pages deploy site → portfolio.pages.dev]
 ```
 
 ### 1. HTML Resume Render
 
-* `resume.html` (self-contained HTML+CSS, Source Sans Pro woff2 in `fonts/`) is the single source of truth for the resume.
-* `scripts/render-pdf.sh` renders it to `resume.pdf` using the runner's preinstalled headless Chrome (`--headless=new --print-to-pdf`), then asserts ATS-safety: exactly 1 letter page (`pdfinfo`) and key text extractable (`pdftotext`).
-* The workflow checks if `resume.html`/`fonts/*` changed since the last build; a cache hit skips the ~10s render.
+* `site/resume.html` (self-contained HTML+CSS, Source Sans Pro woff2 in `site/fonts/`) is the single source of truth for the resume.
+* `scripts/render-pdf.sh` renders it to `site/resume.pdf` using the runner's preinstalled headless Chrome (`--headless=new --print-to-pdf`), then asserts ATS-safety: exactly 1 letter page (`pdfinfo`), key text extractable, and sections in document order (`pdftotext`).
+* The workflow checks if `site/resume.html`/`site/fonts/*` changed since the last build; a cache hit skips the ~10s render.
 
-### 2. Hardened Container Build & Push
+### 2. Cloudflare Pages Deploy & Hardening
 
-* The runner builds a Docker image based on `nginxinc/nginx-unprivileged:alpine-slim`.
-* This image packages `index.html`, the custom `default.conf` (which exposes the Nginx `/status` endpoint), the rendered `resume.pdf`, and the live `resume.html`.
-* The container runs under non-root user `nginx` (UID 101) to mitigate container-escape risks.
-* The image is tagged as `latest` and pushed to **GitHub Container Registry (GHCR)**.
-
-### 3. Federated Authentication via OIDC/WIF
-
-* Rather than storing long-lived GCP service account keys in GitHub Secrets, the runner authenticates using **Workload Identity Federation (WIF)**.
-* The workflow exchanges a short-lived GitHub OIDC token for a federated GCP credential.
-
-### 4. Declarative Infrastructure Provisioning (Terraform)
-
-* The runner initializes and applies the Terraform configuration (`main.tf`).
-* The state is stored and locked in a Google Cloud Storage (GCS) bucket.
-* Terraform provisions/updates the **Zero-Trust VPC**, the **IAP SSH firewall rule**, and the **e2-micro VM instance**.
-
-### 5. Secure Push-Based VM Deployment (IAP Tunneling)
-
-* Once the infrastructure is ready, the runner executes a secure `gcloud compute ssh` command to connect to the GCE VM.
-* Because all ingress ports are blocked, the runner tunnels through GCP **Identity-Aware Proxy (IAP)**, which acts as a secure bastion. IAP traffic is restricted to Google's specific range (`35.235.240.0/20`).
-* The runner passes the `CLOUDFLARE_TUNNEL_TOKEN` repository secret as an environment variable across the SSH tunnel.
-
-### 6. Orchestration on the Host VM
-
-* The command executes `/opt/portfolio/deploy.sh` on the VM.
-* The script syncs the repository to the latest `main` branch via `git fetch && git reset --hard origin/main`.
-* It writes the `CLOUDFLARE_TUNNEL_TOKEN` to a local `.env` file.
-* It pulls the latest public image from GHCR.
-* It launches the Docker Compose services:
-
-  ```bash
-  docker compose up -d --remove-orphans
-  ```
-
-* The Nginx server starts up, and the Cloudflare tunnel establishes an outbound connection, bringing the website update live.
+* `wrangler pages deploy site/` uploads the static assets (including the rendered `resume.pdf`) to the `portfolio` Pages project — the project is auto-created on first deploy.
+* `site/_headers` applies security headers at the edge: hardened CSP (static nonce + pinned mermaid CDN URL only), HSTS, COOP/CORP, Permissions-Policy lockdown, `Cache-Control: no-cache` on `/resume.pdf`, immutable cache on `/fonts/*`.
+* `site/.well-known/security.txt` declares the security contact.
+* Requires GitHub secrets `CLOUDFLARE_API_TOKEN` (Pages:Edit) and `CLOUDFLARE_ACCOUNT_ID`.
 
 ---
 

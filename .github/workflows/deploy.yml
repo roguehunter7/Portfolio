@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: 'read'
-  id-token: 'write'
-  packages: 'write'
 
 jobs:
   deploy:
@@ -22,61 +20,15 @@ jobs:
         id: cache-resume
         uses: actions/cache@v4
         with:
-          path: resume.pdf
-          key: resume-pdf-${{ hashFiles('resume.html', 'fonts/*') }}
+          path: site/resume.pdf
+          key: resume-pdf-${{ hashFiles('site/resume.html', 'site/fonts/*') }}
 
       - name: Render HTML resume to PDF
         if: steps.cache-resume.outputs.cache-hit != 'true'
-        run: bash scripts/render-pdf.sh resume.html resume.pdf
+        run: bash scripts/render-pdf.sh site/resume.html site/resume.pdf
 
-      - name: Authenticate to Google Cloud (OIDC/WIF)
-        uses: google-github-actions/auth@v3
-        with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: docker-${{ runner.os }}-${{ hashFiles('Dockerfile', 'default.conf', 'index.html') }}
-          restore-keys: docker-${{ runner.os }}-
-
-      - name: Build and Push Docker Image
-        run: |
-          IMAGE_TAG="ghcr.io/roguehunter7/portfolio-web:latest"
-          docker buildx build --push --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache -t $IMAGE_TAG .
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Apply
-        run: |
-          terraform apply -auto-approve \
-            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
-
-      - name: SSH via IAP and Execute deploy.sh on VM
-        run: |
-          echo "Connecting to VM and waiting for startup script to finish..."
-          gcloud compute ssh portfolio-zero-trust-node \
-            --zone="us-central1-a" \
-            --quiet \
-            --tunnel-through-iap \
-            --command="timeout 350 bash -c 'until [ -f /var/log/startup_script_complete ]; do echo \"Waiting for VM initialization...\"; sleep 10; done' && sudo bash -c 'if [ ! -f /opt/portfolio/deploy.sh ]; then rm -rf /opt/portfolio && git clone https://github.com/roguehunter7/Portfolio.git /opt/portfolio; fi && chmod +x /opt/portfolio/*.sh && CLOUDFLARE_TUNNEL_TOKEN=\"${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}\" /opt/portfolio/deploy.sh'"
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy site --project-name=portfolio

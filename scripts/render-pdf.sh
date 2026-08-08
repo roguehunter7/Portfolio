@@ -4,8 +4,8 @@
 # Usage: bash scripts/render-pdf.sh [input.html] [output.pdf]
 set -euo pipefail
 
-INPUT="${1:-resume.html}"
-OUTPUT="${2:-resume.pdf}"
+INPUT="${1:-site/resume.html}"
+OUTPUT="${2:-site/resume.pdf}"
 
 # ---- Locate a Chrome/Chromium binary (no installs) ----
 CHROME=""
@@ -58,4 +58,20 @@ for s in "Sreeram K R" "contact.sreeramkr@gmail.com" "Professional Summary" \
   fi
 done
 
-echo "OK: $OUTPUT rendered ($PAGES page, ATS text verified)"
+# ---- Assertion 3: ATS parse order (sections must extract in document order) ----
+LAST=0
+for s in "Professional Summary" "Technical Skills" "Technical Projects" \
+         "Professional Experience" "Certifications" "Education"; do
+  LINE="$(grep -niF "$s" <<<"$TEXT" | head -1 | cut -d: -f1)"
+  if [ -z "$LINE" ]; then
+    echo "FAIL: section '$s' not found in PDF text" >&2
+    exit 1
+  fi
+  if [ "$LINE" -le "$LAST" ]; then
+    echo "FAIL: section '$s' extracts at line $LINE (previous $LAST) — out of order, ATS parse risk" >&2
+    exit 1
+  fi
+  LAST="$LINE"
+done
+
+echo "OK: $OUTPUT rendered ($PAGES page, ATS text + section order verified)"

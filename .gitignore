@@ -26,8 +26,9 @@ terraform.rc
 package*.json
 repomix-output.xml
 # Ignore compiled resume PDF
-resume.pdf
-resume-html.pdf
+site/resume.pdf
+# Playwright MCP tool artifacts
+.playwright-mcp/
 reasonix.toml
 # macOS
 .DS_Store
