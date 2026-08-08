@@ -43,8 +43,7 @@ jobs:
       - name: Destroy VM
         if: ${{ inputs.destroy_vm == 'true' }}
         working-directory: infra
-        run: terraform destroy -auto-approve \
-          -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+        run: terraform destroy -auto-approve
 
       - name: Terraform Apply
         if: ${{ inputs.destroy_vm != 'true' }}
@@ -54,8 +53,7 @@ jobs:
           if [ "${{ inputs.rebuild_vm }}" = "true" ]; then
             ARGS="-replace=google_compute_instance.vm_instance"
           fi
-          terraform apply -auto-approve $ARGS \
-            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+          terraform apply -auto-approve $ARGS
 
       - name: Wait for SSH, verify VM
         if: ${{ inputs.destroy_vm != 'true' }}
@@ -69,7 +67,6 @@ jobs:
             --command="timeout 400 bash -c 'until [ -f /var/log/startup_script_complete ]; do sleep 10; done' || \
             { echo 'startup script did not complete (see /var/log/startup.log)'; exit 1; }; \
             free -m | head -2; zramctl | tail -1; sysctl vm.swappiness; \
-            echo -n 'cloudflared: '; systemctl is-active cloudflared || true; \
             command -v docker >/dev/null && echo 'docker present (unexpected)' || echo 'no docker (expected)'"
 
       - name: Install and configure Hermes

@@ -1,5 +1,1 @@
-variable "cloudflare_tunnel_token" {
-  description = "The Cloudflare Zero Trust Tunnel Token"
-  type        = string
-  sensitive   = true
-}
+# No variables required — infra is static (VPC, IAP SSH, e2-micro VM).

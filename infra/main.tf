@@ -96,12 +96,6 @@ resource "google_compute_instance" "vm_instance" {
     # 4. Dedicated unprivileged user for Hermes
     id -u hermes >/dev/null 2>&1 || useradd -m -s /bin/bash hermes
 
-    # 5. Native cloudflared (official deb) as a token-based systemd service
-    curl -sL -o /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-    dpkg -i /tmp/cloudflared.deb || apt-get install -f -y
-    cloudflared service install ${var.cloudflare_tunnel_token}
-    systemctl enable --now cloudflared
-
     touch /var/log/startup_script_complete
   EOF
   , "\r", "")
