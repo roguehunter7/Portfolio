@@ -24,6 +24,8 @@ mkdir -p "${HERMES_DIR}"
 {
   echo "GEMINI_API_KEY=${GEMINI_API_KEY}"
   echo "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}"
+  # Official Telegram allowlist (docs: TELEGRAM_ALLOWED_USERS in ~/.hermes/.env)
+  [ -n "${TELEGRAM_ALLOWED_USERS:-}" ] && echo "TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}"
 } > "${HERMES_DIR}/.env"
 chmod 600 "${HERMES_DIR}/.env"
 

@@ -78,11 +78,12 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_USERS: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
         run: |
           cat scripts/hermes-install.sh \
             | gcloud compute ssh portfolio-zero-trust-node \
                 --zone="us-central1-a" --quiet --tunnel-through-iap \
-                --command="sudo GEMINI_API_KEY='$GEMINI_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' bash -s"
+                --command="sudo GEMINI_API_KEY='$GEMINI_API_KEY' TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' TELEGRAM_ALLOWED_USERS='$TELEGRAM_ALLOWED_USERS' bash -s"
 
       - name: Verify Hermes gateway
         if: ${{ inputs.destroy_vm != 'true' || inputs.rebuild_vm == 'true' }}
