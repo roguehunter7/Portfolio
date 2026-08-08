@@ -28,9 +28,11 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Init
+        working-directory: infra
         run: terraform init -input=false
 
       - name: Terraform Apply (25 GB disk + minimal startup script)
+        working-directory: infra
         run: |
           terraform apply -auto-approve \
             -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
