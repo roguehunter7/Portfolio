@@ -1,6 +1,6 @@
 # Sreeram K R
 
-> Cloud & Infrastructure Automation Engineer. Zero-ingress infrastructure case study: Terraform, GCP, Docker, Cloudflare, GitHub Actions. One-page ATS-safe resume plus a live infrastructure write-up.
+> Cloud & Infrastructure Automation Engineer. Zero-ingress infrastructure case study: Terraform, GCP, Oracle Cloud, Docker, Cloudflare, GitHub Actions. One-page ATS-safe resume plus a live infrastructure write-up.
 
 [Sreeram K R — Portfolio](https://sreeramkr.com)
 [Sreeram K R — Resume (HTML)](https://sreeramkr.com/resume.html)

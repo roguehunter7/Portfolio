@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sreeram K R | Cloud & Infrastructure Engineering</title>
-    <meta name="description" content="Sreeram K R - Cloud & Infrastructure Automation Engineer. Zero-ingress cloud architecture case study on GCP free tier.">
+    <meta name="description" content="Sreeram K R - Cloud & Infrastructure Automation Engineer. Zero-ingress cloud architecture case study on free-tier infrastructure (GCP → Oracle Cloud).">
     <meta property="og:title" content="Sreeram K R | Cloud & Infrastructure Engineering">
-    <meta property="og:description" content="Zero-ingress cloud infrastructure case study — Terraform, GCP, Docker, Cloudflare.">
+    <meta property="og:description" content="Zero-ingress cloud infrastructure case study — Terraform, GCP, Oracle Cloud, Docker, Cloudflare.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sreeramkr.com">
     <meta name="twitter:card" content="summary_large_image">
@@ -509,18 +509,20 @@
             <div class="subtitle">Cloud &amp; Infrastructure Automation Engineer</div>
             <p class="tagline">
                 Architecting secure, automated infrastructure at scale. This site is a live case study of a zero-ingress
-                cloud environment — spanning bare-metal constraints, serverless migration, and cost optimization.
+                cloud environment — spanning bare-metal constraints, serverless migration, and cost optimization, now
+                consolidating onto Oracle Cloud Free Tier.
             </p>
             <div class="tag-row">
                 <span class="tag">Terraform</span>
                 <span class="tag">GCP</span>
+                <span class="tag">Oracle Cloud</span>
                 <span class="tag">GitHub Actions</span>
-                <span class="tag">Docker Compose</span>
                 <span class="tag">Zero Trust</span>
                 <span class="tag">Cloudflare</span>
-                <span class="tag">Go</span>
-                <span class="tag">Firestore</span>
-                <span class="tag">Nginx</span>
+                <span class="tag">IAP</span>
+                <span class="tag">systemd</span>
+                <span class="tag">Docker</span>
+                <span class="tag">WIF</span>
             </div>
             <div class="links-bar">
                 <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
@@ -538,7 +540,7 @@
 
         <!-- ARCHITECTURAL EVOLUTION -->
         <h2 class="section-title">Architectural Evolution</h2>
-        <p class="section-sub">Five phases of infrastructure design — from bare-metal polling to zero-ingress serverless and back to a hardened VM.</p>
+        <p class="section-sub">Eight phases — from bare-metal polling to serverless, back to a hardened VM, and on to Oracle Cloud Free Tier.</p>
 
         <div class="evolution-grid">
             <div class="phase-card p1">
@@ -592,14 +594,44 @@
             </div>
 
             <div class="phase-card p5">
-                <span class="badge badge-p5">Phase 5: Cost Optimization</span>
+                <span class="badge badge-p5">Phase 5: Cost Optimization (Historical)</span>
                 <h3>Zero-Ingress Docker Compose</h3>
                 <p class="phase-desc">
                     <strong>Constraint:</strong> Cloud Run + Artifact Registry + Firestore storage costs accumulated.
                 </p>
                 <p class="phase-desc">
                     <strong>Architecture:</strong> Returned to free-tier <code>e2-micro</code> VM. Nginx + Cloudflared
-                    in private <strong>Docker Compose</strong> stack. Retained WIF for IAP SSH deploys.
+                    in private <strong>Docker Compose</strong> stack. Retained WIF for IAP SSH deploys. Retired when the
+                    site moved to Cloudflare Pages in Phase 6.
+                </p>
+            </div>
+
+            <div class="phase-card p3">
+                <span class="badge badge-p3">Phase 6: Serverless at the Edge</span>
+                <h3>Cloudflare Pages</h3>
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Static site moved to <strong>Cloudflare Pages</strong> — assets at
+                    the edge, resume rendered by CI, hardened security headers. The VM stopped serving the site.
+                </p>
+            </div>
+
+            <div class="phase-card p4">
+                <span class="badge badge-p4">Phase 7: AI Agent Host</span>
+                <h3>Hermes (GCP e2-micro)</h3>
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> VM rebuilt as a <strong>Hermes</strong> AI-assistant host —
+                    outbound-only (Telegram polling + DeepSeek API), no tunnel, no Docker; admin via <strong>IAP-only
+                    SSH</strong>. Being decommissioned in Phase 8.
+                </p>
+            </div>
+
+            <div class="phase-card p5">
+                <span class="badge badge-p5">Phase 8: Consolidation (In Progress)</span>
+                <h3>Oracle Cloud Free Tier</h3>
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> Consolidating onto one Oracle <code>A1.Flex</code> VM: Vaultwarden,
+                    Ghost blog, Hermes, Reasonix dev box — zero-ingress via Cloudflare Tunnel, admin via OCI Bastion.
+                    Provisioned with Terraform + GitHub Actions.
                 </p>
             </div>
         </div>
@@ -611,9 +643,10 @@
         <h3 class="arch-heading orange">Current Cloudflare Pages (Phase 6)</h3>
         <p class="arch-text">
             Cloudflare Pages serves the static site directly from the edge. GitHub Actions renders the resume PDF, then
-            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM now
-            runs <strong>Hermes</strong>, a self-hosted AI assistant (Telegram + Gemini) reached only through a
-            Cloudflare Tunnel — zero exposed ports.
+            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM hosts
+            <strong>Hermes</strong>, a self-hosted AI assistant (Telegram + DeepSeek) — outbound-only traffic, no
+            tunnel, no exposed ports; admin access only via IAP SSH. A Phase 8 consolidation onto Oracle Cloud Free
+            Tier is in progress.
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
@@ -626,10 +659,9 @@ graph TD
     P -->|serves| IDX[index.html / 404.html]
     P -->|serves| R[resume.html]
     P -->|serves| PDF
-    TG[Telegram] -->|HTTPS| CF
-    CF -->|Tunnel| VM[e2-micro VM]
-    VM -->|Hermes gateway| G[(Gemini API)]
-    VM -.->|api.sreeramkr.com| CF
+    TG[Telegram] -->|outbound polling| VM[e2-micro VM]
+    VM -->|outbound HTTPS| G[(DeepSeek API)]
+    ADM[Admin] -->|IAP-only SSH| VM
             </div>
         </div>
 
@@ -663,7 +695,7 @@ graph TD
 
         <!-- RATIONALE -->
         <h2 class="section-title">The VM Reversion Rationale</h2>
-        <p class="section-sub">Why Phase 5 exists, what it costs, and how it stays secure.</p>
+        <p class="section-sub">Why Phase 5 existed, what it cost, and how the VM evolved since.</p>
 
         <div class="rationale-box">
             <h3 style="color: var(--orange);">Evaluating Cloud Run Costs</h3>
@@ -692,6 +724,20 @@ graph TD
             <p>
                 <strong>Result:</strong> $0/month, zero open ports, container-isolated networking, automated keyless
                 deployments.
+            </p>
+
+            <h3 style="color: var(--purple);">Since Phase 5: Hermes Host, then Oracle</h3>
+            <p>
+                The Phase 5 stack was retired when the site moved to Cloudflare Pages (Phase 6). The <code>e2-micro</code>
+                was rebuilt as a <strong>Hermes</strong> AI-assistant host (Phase 7): minimal Debian 13, zram + swap,
+                no Docker, no tunnel — outbound-only traffic (Telegram polling + DeepSeek API), admin only via
+                <strong>IAP SSH</strong>.
+            </p>
+            <p>
+                <strong>Next (Phase 8, in progress):</strong> consolidate onto a single Oracle Cloud Free Tier
+                <code>A1.Flex</code> VM running Vaultwarden, a Ghost blog, Hermes, and a Reasonix dev box — same
+                zero-ingress posture (Cloudflare Tunnel for ingress, OCI Bastion for admin), provisioned entirely with
+                Terraform + GitHub Actions.
             </p>
         </div>
 

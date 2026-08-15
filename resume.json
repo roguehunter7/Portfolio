@@ -20,7 +20,7 @@
   },
 
   "summary": {
-    "text": "Infrastructure & Automation Engineer combining on-premises network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments. Currently an engineer at Iron Systems (Honeywell client) and building a zero-ingress, free-tier personal infrastructure stack (Cloudflare Pages + GCP e2-micro + Cloudflare Tunnel).",
+    "text": "Infrastructure & Automation Engineer combining on-premises network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments. Currently an engineer at Iron Systems (Honeywell client) and building a zero-ingress, free-tier personal infrastructure stack (Cloudflare Pages + GCP e2-micro + Oracle Cloud Free Tier).",
     "keywords": [
       "Terraform", "GitHub Actions", "GCP", "IAP", "WIF", "Docker", "Cloudflare", "zero-trust",
       "network automation", "Netmiko", "PowerShell", "Active Directory", "ServiceNow", "Nginx", "CI/CD"
@@ -196,29 +196,29 @@
     },
     {
       "name": "Hermes — Self-Hosted AI Assistant",
-      "url": "https://api.sreeramkr.com",
-      "context": "Personal AI assistant (Telegram gateway + Gemini API) running on a zero-ingress GCP e2-micro VM behind a Cloudflare Tunnel; provisioned end-to-end by Terraform + an idempotent install script.",
+      "url": "https://sreeramkr.com",
+      "context": "Personal AI assistant (Telegram gateway + DeepSeek API) running on a zero-ingress GCP e2-micro VM — outbound-only traffic, no tunnel, no exposed ports; provisioned end-to-end by Terraform + an idempotent install script. Being consolidated onto an Oracle Cloud Free Tier VM.",
       "achievements": [
         {
-          "what": "Deployed a self-hosted AI assistant on a free-tier e2-micro VM, reached only through a Cloudflare Tunnel — zero exposed ports.",
+          "what": "Deployed a self-hosted AI assistant on a free-tier e2-micro VM with an outbound-only network posture — no tunnel, no exposed ports.",
           "why": "Run an always-on personal assistant without paying for a VPS or exposing SSH.",
           "impact": "24/7 assistant at $0/month on the free tier.",
-          "evidence": "cloudflared tunnel + systemd user service (linger)",
-          "skills_used": ["cloudflared", "systemd", "GCP e2-micro", "zram"]
+          "evidence": "systemd user service (linger) + IAP-only SSH",
+          "skills_used": ["systemd", "GCP e2-micro", "IAP", "zram"]
         },
         {
-          "what": "Wired the assistant to the Gemini API with two-tier model routing (gemini-flash-latest for main work, gemini-flash-lite-latest for all auxiliary tasks).",
-          "why": "Cut cost and 429s by pushing cheap tasks to the flash-lite rate-limit bucket.",
-          "impact": "~₹250-300/month ceiling for heavy use; near-zero for normal use.",
+          "what": "Wired the assistant to the DeepSeek API (v4-flash everywhere) for main and all auxiliary tasks.",
+          "why": "DeepSeek's budget tier is ~10x cheaper than Gemini paid (which required a ₹1000 minimum top-up).",
+          "impact": "Near-zero cost; single rate limit and billing bucket.",
           "evidence": "config.yaml model/delegation/auxiliary sections",
-          "skills_used": ["Gemini API", "LLM routing", "YAML config"]
+          "skills_used": ["DeepSeek API", "LLM configuration", "YAML config"]
         },
         {
-          "what": "Exposed an authenticated HTTP API over the same tunnel (api.sreeramkr.com) for remote task automation, and added Telegram chat with allowlist-only access.",
-          "why": "Control the assistant from Telegram; keep the API private.",
-          "impact": "Private API + allowlisted Telegram access.",
-          "evidence": "Hermes gateway + Telegram bot",
-          "skills_used": ["Hermes", "Telegram Bot API", "Cloudflare Tunnel"]
+          "what": "Kept a strict zero-ingress posture: deny-all ingress, admin only via GCP IAP SSH, outbound Telegram polling + LLM API.",
+          "why": "An assistant that needs no inbound ports needs no tunnel — less moving surface.",
+          "impact": "No tunnel to maintain; invisible to internet scanners.",
+          "evidence": "IAP-only SSH + outbound-only services",
+          "skills_used": ["Hermes", "Telegram Bot API", "GCP IAP", "zero-trust networking"]
         }
       ]
     }
