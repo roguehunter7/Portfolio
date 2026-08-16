@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       destroy_first:
-        description: 'Destroy the VM first, then re-apply (rebuild from scratch — picks up new cloud-init)'
+        description: 'Destroy VM, then re-apply (rebuild)'
         type: boolean
         default: false
 
