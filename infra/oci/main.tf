@@ -117,7 +117,6 @@ resource "oci_core_instance" "portfolio_node" {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
       cloudflare_tunnel_token = var.cloudflare_tunnel_token
-      ssh_hostname            = var.ssh_hostname
     }))
   }
 

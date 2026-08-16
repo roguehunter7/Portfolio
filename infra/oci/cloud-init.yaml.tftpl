@@ -1,7 +1,8 @@
 #cloud-config
 # Phase 8: Oracle A1.Flex host — cloudflared tunnel for SSH (zero open ports).
-# Terraform template: ${cloudflare_tunnel_token} / ${ssh_hostname} are rendered
-# by templatefile() before cloud-init runs; bash-only vars use $${...} escapes.
+# Terraform template: ${cloudflare_tunnel_token} is rendered by templatefile()
+# before cloud-init runs. ssh.sreeramkr.com is routed to the tunnel in the
+# Cloudflare Zero Trust dashboard (remote-managed tunnel; no local config.yml).
 
 package_update: true
 
@@ -24,41 +25,37 @@ write_files:
       #!/bin/bash
       set -euo pipefail
 
-      # 1. Install cloudflared from Cloudflare's apt repo
-      curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-main.gpg
-      echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' > /etc/apt/sources.list.d/cloudflared.list
-      apt-get update -y
-      apt-get install -y cloudflared
+      # 1. Install cloudflared from Cloudflare's apt repo (official instructions)
+      sudo mkdir -p --mode=0755 /usr/share/keyrings
+      curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+      echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list >/dev/null
+      sudo apt-get update -y
+      sudo apt-get install -y cloudflared
 
-      # 2. Decode the tunnel token (base64 JSON: {"a": accountTag, "s": secret, "t": tunnelId})
+      # 2. Register the REMOTELY-MANAGED tunnel (created in the Zero Trust
+      #    dashboard). The token is base64 JSON {"a": accountTag, "t": tunnelId,
+      #    "s": secret}; ingress routes live in the dashboard, not in a local
+      #    config.yml.
       TOKEN='${cloudflare_tunnel_token}'
-      echo "$TOKEN" | base64 -d > /tmp/tunnel-token.json
-      ACCOUNT_TAG="$(jq -r .a /tmp/tunnel-token.json)"
-      TUNNEL_ID="$(jq -r .t /tmp/tunnel-token.json)"
-      TUNNEL_SECRET="$(jq -r .s /tmp/tunnel-token.json)"
-      rm -f /tmp/tunnel-token.json
+      sudo cloudflared service install "$TOKEN"
+      sudo systemctl enable --now cloudflared
 
-      # 3. Credentials file (name must be exactly <tunnel-id>.json)
-      CREDS="/etc/cloudflared/$${TUNNEL_ID}.json"
-      printf '{"AccountTag":"%s","TunnelID":"%s","TunnelSecret":"%s"}' \
-        "$ACCOUNT_TAG" "$${TUNNEL_ID}" "$TUNNEL_SECRET" > "$${CREDS}"
-      chmod 600 "$${CREDS}"
-
-      # 4. Ingress: only the SSH hostname is exposed; everything else 404
-      cat > /etc/cloudflared/config.yml <<EOF
-      tunnel: $${TUNNEL_ID}
-      credentials-file: $${CREDS}
-      ingress:
-        - hostname: ${ssh_hostname}
-          service: ssh://localhost:22
-        - service: http_status:404
-      EOF
-
-      # 5. Install + start the cloudflared systemd service
-      cloudflared --config /etc/cloudflared/config.yml service install
-      systemctl enable --now cloudflared
+      # 3. Verify the tunnel actually registered (not just "service started").
+      #    cloudflared logs "Registered tunnel connection" once it reaches
+      #    Cloudflare's edge; wait up to 120s, else fail loudly.
+      for i in $(seq 1 24); do
+        if sudo journalctl -u cloudflared --no-pager -n 200 2>/dev/null \
+             | grep -q "Registered tunnel connection"; then
+          echo "cloudflared registered with Cloudflare"
+          touch /var/log/cloud_init_complete   # sentinel only on SUCCESS
+          exit 0
+        fi
+        sleep 5
+      done
+      echo "ERROR: cloudflared never registered a tunnel connection" >&2
+      sudo journalctl -u cloudflared --no-pager -n 40 >&2 || true
+      exit 1
 
 runcmd:
   - [bash, /usr/local/sbin/configure-tunnel.sh]
   - [sh, -c, "sed -i 's|^//Unattended-Upgrade::Automatic-Reboot \"false\";|Unattended-Upgrade::Automatic-Reboot \"true\";|' /etc/apt/apt.conf.d/50unattended-upgrades || true"]
-  - [sh, -c, "touch /var/log/cloud_init_complete"]
