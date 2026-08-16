@@ -77,12 +77,22 @@ jobs:
             -backend-config="namespace=${{ env.OCI_NAMESPACE }}" \
             -backend-config="key=oci/terraform.tfstate"
 
-      - name: Terraform Apply
+      - name: Terraform Apply (retry on transient capacity errors)
         working-directory: infra/oci
         run: |
-          terraform apply -auto-approve \
-            -var="ssh_public_key=${{ vars.OCI_SSH_PUBLIC_KEY }}" \
-            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+          set -euo pipefail
+          for attempt in $(seq 1 6); do
+            echo "--- apply attempt $attempt/6 ---"
+            if terraform apply -auto-approve \
+                -var="ssh_public_key=${{ vars.OCI_SSH_PUBLIC_KEY }}" \
+                -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"; then
+              echo "apply succeeded"
+              exit 0
+            fi
+            [ "$attempt" = 6 ] && { echo "apply failed after 6 attempts" >&2; exit 1; }
+            echo "apply failed (transient capacity?) — retrying in 90s"
+            sleep 90
+          done
 
       - name: Show outputs
         working-directory: infra/oci
