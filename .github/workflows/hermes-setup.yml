@@ -7,11 +7,6 @@ on:
         description: 'Fully destroy and rebuild the VM from scratch (nuke + recreate)'
         type: boolean
         default: false
-  push:
-    paths:
-      - 'infra/**'
-      - 'scripts/hermes-install.sh'
-      - '.github/workflows/hermes-setup.yml'
 
 permissions:
   contents: 'read'
