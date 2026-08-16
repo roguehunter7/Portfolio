@@ -89,14 +89,16 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="ssh_public_key=${{ vars.OCI_SSH_PUBLIC_KEY }}" \
-            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}" \
+            -var="ttyd_password=${{ secrets.TTYD_PASSWORD }}"
 
       - name: Terraform Apply
         working-directory: infra/oci
         run: |
           terraform apply -auto-approve \
             -var="ssh_public_key=${{ vars.OCI_SSH_PUBLIC_KEY }}" \
-            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}" \
+            -var="ttyd_password=${{ secrets.TTYD_PASSWORD }}"
 
       - name: Show outputs
         working-directory: infra/oci

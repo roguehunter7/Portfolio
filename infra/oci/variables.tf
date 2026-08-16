@@ -39,3 +39,9 @@ variable "budget_alert_email" {
   type        = string
   default     = "krsreeram007@gmail.com"
 }
+
+variable "ttyd_password" {
+  description = "Password for the ttyd browser terminal login (user: reasonix). Passed from GitHub secret TTYD_PASSWORD."
+  type        = string
+  sensitive   = true
+}

@@ -1,8 +1,9 @@
 #cloud-config
-# Phase 8: Oracle A1.Flex host — cloudflared tunnel for SSH (zero open ports).
-# Terraform template: ${cloudflare_tunnel_token} is rendered by templatefile()
-# before cloud-init runs. ssh.sreeramkr.com is routed to the tunnel in the
-# Cloudflare Zero Trust dashboard (remote-managed tunnel; no local config.yml).
+# Phase 8+: Oracle A1.Flex dev box — cloudflared tunnel + ttyd/tmux browser
+# terminal (Reasonix dev box). Zero open ports: NSG deny-all, host firewall
+# deny-incoming, sshd disabled. Admin = browser terminal via tunnel.
+# Terraform template: ${cloudflare_tunnel_token} / ${ttyd_password} are
+# rendered by templatefile() before cloud-init runs.
 
 package_update: true
 
@@ -10,6 +11,9 @@ packages:
   - curl
   - gnupg
   - jq
+  - tmux
+  - ttyd
+  - update-notifier-common
   - unattended-upgrades
 
 write_files:
@@ -18,6 +22,58 @@ write_files:
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
+
+  # Daily unattended upgrades; NO immediate reboot (scheduled reboot instead).
+  - path: /etc/apt/apt.conf.d/50unattended-upgrades-overrides
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "false";
+
+  # --- Scheduled reboot: Monday 02:00, only if a reboot is pending ----------
+  - path: /etc/systemd/system/reboot-if-needed.service
+    content: |
+      [Unit]
+      Description=Reboot the host if a reboot is pending
+      ConditionPathExists=/var/run/reboot-required
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/systemctl reboot
+
+  - path: /etc/systemd/system/reboot-if-needed.timer
+    content: |
+      [Unit]
+      Description=Check for pending reboot every Monday at 02:00
+
+      [Timer]
+      OnCalendar=Mon *-*-* 02:00:00
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+
+  # --- Host firewall: deny all incoming (loopback + established allowed) -----
+  - path: /etc/ufw/before.rules-backup-flag
+    content: "ufw configured via runcmd"
+
+  # --- ttyd systemd unit: browser terminal -> tmux "main" session -----------
+  # Runs as the ubuntu user so node/npm/reasonix (installed via nvm in
+  # $HOME/.nvm) are on PATH without sudo. Emergency backdoor = OCI serial console.
+  - path: /etc/systemd/system/ttyd.service
+    content: |
+      [Unit]
+      Description=ttyd web terminal (tmux main session)
+      After=network-online.target
+
+      [Service]
+      User=ubuntu
+      Group=ubuntu
+      WorkingDirectory=/home/ubuntu
+      ExecStart=/usr/bin/ttyd -p 7681 -i 127.0.0.1 -u ubuntu -g ubuntu -c reasonix:${ttyd_password} tmux new -A -s main
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
 
   - path: /usr/local/sbin/configure-tunnel.sh
     permissions: "0755"
@@ -33,21 +89,17 @@ write_files:
       sudo apt-get install -y cloudflared
 
       # 2. Register the REMOTELY-MANAGED tunnel (created in the Zero Trust
-      #    dashboard). The token is base64 JSON {"a": accountTag, "t": tunnelId,
-      #    "s": secret}; ingress routes live in the dashboard, not in a local
-      #    config.yml.
+      #    dashboard). Token is base64 JSON {"a": accountTag, "t": tunnelId,
+      #    "s": secret}; ingress routes live in the dashboard.
       TOKEN='${cloudflare_tunnel_token}'
       sudo cloudflared service install "$TOKEN"
       sudo systemctl enable --now cloudflared
 
-      # 3. Verify the tunnel actually registered (not just "service started").
-      #    cloudflared logs "Registered tunnel connection" once it reaches
-      #    Cloudflare's edge; wait up to 120s, else fail loudly.
+      # 3. Verify the tunnel actually registered; wait up to 120s, else fail.
       for i in $(seq 1 24); do
         if sudo journalctl -u cloudflared --no-pager -n 200 2>/dev/null \
              | grep -q "Registered tunnel connection"; then
           echo "cloudflared registered with Cloudflare"
-          touch /var/log/cloud_init_complete   # sentinel only on SUCCESS
           exit 0
         fi
         sleep 5
@@ -56,6 +108,51 @@ write_files:
       sudo journalctl -u cloudflared --no-pager -n 40 >&2 || true
       exit 1
 
+  - path: /usr/local/sbin/configure-devbox.sh
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      # 1. Node.js 22 via nvm (user-level, no sudo; Reasonix needs >= 22).
+      #    Installed for the ubuntu user; ttyd runs as ubuntu so node/npm
+      #    land on PATH from ~/.nvm. Maintenance: `nvm install --lts` as ubuntu.
+      sudo -u ubuntu bash -lc '
+        export NVM_DIR="$HOME/.nvm"
+        curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+        . "$NVM_DIR/nvm.sh"
+        nvm install --lts
+        nvm alias default lts/*
+        node --version
+        npm --version
+      '
+
+      # 2. Reasonix via its official npm package (installs to ~/.nvm — no sudo)
+      sudo -u ubuntu bash -lc '
+        export NVM_DIR="$HOME/.nvm"
+        . "$NVM_DIR/nvm.sh"
+        npm install -g reasonix
+        reasonix --version || true
+      '
+
+      # 3. Enable scheduled reboot timer (Mon 02:00 if /var/run/reboot-required)
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now reboot-if-needed.timer
+
+      # 4. Start ttyd -> tmux main session (browser terminal)
+      sudo systemctl enable --now ttyd
+
+      # 5. HARDEN: deny all incoming, keep outbound. sshd disabled (browser
+      #    terminal replaces it; emergency backdoor = OCI serial console).
+      sudo systemctl disable --now ssh || true
+      sudo ufw default deny incoming
+      sudo ufw default allow outgoing
+      sudo ufw allow in on lo
+      sudo ufw --force enable
+
+      echo "devbox configured"
+      touch /var/log/cloud_init_complete   # sentinel only after everything
+
 runcmd:
   - [bash, /usr/local/sbin/configure-tunnel.sh]
-  - [sh, -c, "sed -i 's|^//Unattended-Upgrade::Automatic-Reboot \"false\";|Unattended-Upgrade::Automatic-Reboot \"true\";|' /etc/apt/apt.conf.d/50unattended-upgrades || true"]
+  - [bash, /usr/local/sbin/configure-devbox.sh]
