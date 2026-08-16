@@ -6,43 +6,46 @@
 # rendered by templatefile() before cloud-init runs.
 
 package_update: true
+package_upgrade: true   # full apt upgrade once at first boot, before packages/scripts
 
 packages:
+  - build-essential
+  - ca-certificates
   - curl
+  - git
   - gnupg
+  - htop
   - jq
+  - neofetch
+  - python3-dev
+  - python3-full
+  - python3-pip
+  - ripgrep
   - tmux
   - ttyd
-  - update-notifier-common
-  - unattended-upgrades
+  - vim
 
 write_files:
-  - path: /etc/apt/apt.conf.d/20auto-upgrades
-    content: |
-      APT::Periodic::Update-Package-Lists "1";
-      APT::Periodic::Unattended-Upgrade "1";
-      APT::Periodic::AutocleanInterval "7";
-
-  # Daily unattended upgrades; NO immediate reboot (scheduled reboot instead).
-  - path: /etc/apt/apt.conf.d/50unattended-upgrades-overrides
-    content: |
-      Unattended-Upgrade::Automatic-Reboot "false";
-
-  # --- Scheduled reboot: Monday 02:00, only if a reboot is pending ----------
-  - path: /etc/systemd/system/reboot-if-needed.service
+  # --- Weekly maintenance: upgrade + forced reboot, Monday 02:00 -----------
+  # Simpler than unattended-upgrades + conditional reboot: one timer, one
+  # oneshot service. A forced weekly reboot is good hygiene for a long-running
+  # dev box (clears memory drift, resets tmux/ttyd/cloudflared state).
+  - path: /etc/systemd/system/weekly-maintenance.service
     content: |
       [Unit]
-      Description=Reboot the host if a reboot is pending
-      ConditionPathExists=/var/run/reboot-required
+      Description=Weekly apt upgrade then reboot
+      After=network-online.target
 
       [Service]
       Type=oneshot
+      ExecStart=/usr/bin/apt-get update
+      ExecStart=/usr/bin/env DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get upgrade -y
       ExecStart=/usr/bin/systemctl reboot
 
-  - path: /etc/systemd/system/reboot-if-needed.timer
+  - path: /etc/systemd/system/weekly-maintenance.timer
     content: |
       [Unit]
-      Description=Check for pending reboot every Monday at 02:00
+      Description=Run weekly maintenance (upgrade + reboot) every Monday at 02:00
 
       [Timer]
       OnCalendar=Mon *-*-* 02:00:00
@@ -114,7 +117,7 @@ write_files:
       #!/bin/bash
       set -euo pipefail
 
-      # 1. Node.js 22 via nvm (user-level, no sudo; Reasonix needs >= 22).
+      # 1. Node.js LTS via nvm (user-level, no sudo; Reasonix needs >= 22).
       #    Installed for the ubuntu user; ttyd runs as ubuntu so node/npm
       #    land on PATH from ~/.nvm. Maintenance: `nvm install --lts` as ubuntu.
       sudo -u ubuntu bash -lc '
@@ -135,9 +138,9 @@ write_files:
         reasonix --version || true
       '
 
-      # 3. Enable scheduled reboot timer (Mon 02:00 if /var/run/reboot-required)
+      # 3. Enable weekly maintenance timer (upgrade + forced reboot, Mon 02:00)
       sudo systemctl daemon-reload
-      sudo systemctl enable --now reboot-if-needed.timer
+      sudo systemctl enable --now weekly-maintenance.timer
 
       # 4. Start ttyd -> tmux main session (browser terminal)
       sudo systemctl enable --now ttyd
