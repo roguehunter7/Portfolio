@@ -26,8 +26,22 @@ packages:
   - ufw
   - vim
   - zsh
+  - zsh-autosuggestions
+  - zsh-syntax-highlighting
 
 write_files:
+  # --- Memory/network tuning for a 12 GB dev box ---------------------------
+  # swappiness 10: keep 12 GB in RAM (default 60 is for small-memory boxes).
+  # vfs_cache_pressure 50: keep more dentry/inode cache — snappier repeated
+  # file reads (Reasonix reads code constantly).
+  # BBR: better throughput/latency for the tunnel + DeepSeek API traffic.
+  - path: /etc/sysctl.d/99-devbox.conf
+    content: |
+      vm.swappiness=10
+      vm.vfs_cache_pressure=50
+      net.core.default_qdisc=fq
+      net.ipv4.tcp_congestion_control=bbr
+
   # --- Weekly maintenance: upgrade + forced reboot, Monday 02:00 -----------
   # Simpler than unattended-upgrades + conditional reboot: one timer, one
   # oneshot service. A forced weekly reboot is good hygiene for a long-running
@@ -114,15 +128,22 @@ write_files:
         npm install -g reasonix
       '
 
-      # --- zsh + oh-my-zsh + starship (dev shell) ---
+      # --- zsh + oh-my-zsh + powerlevel10k (dev shell) ---
       sudo -u ubuntu bash -lc '
         # oh-my-zsh (non-interactive; runs with `--unattended` to skip chsh prompt)
         RUNZSH=no CHSH=no \
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-        # starship prompt (official installer, user-level)
-        curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
-        # enable starship in .zshrc
-        printf "\n# starship prompt\neval \"\$(starship init zsh)\"\n" >> "$HOME/.zshrc"
+        # powerlevel10k theme (cloned into omz custom themes dir)
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+          "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+        # pre-made theme config (skips the interactive wizard) + instant prompt
+        cp "$HOME/.oh-my-zsh/custom/themes/powerlevel10k/config/p10k-lean.zsh" "$HOME/.p10k.zsh"
+        # enable the theme in .zshrc
+        sed -i "s/^ZSH_THEME=.*/ZSH_THEME=\"powerlevel10k\/powerlevel10k\"/" "$HOME/.zshrc"
+        # enable autosuggestions + syntax highlighting plugins (installed via apt)
+        sed -i "s/^plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/" "$HOME/.zshrc"
+        # powerlevel10k instant prompt (loads cached prompt before zsh finishes)
+        printf '\n# Enable instant prompt (p10k)\ntypeset -g POWERLEVEL9K_INSTANT_PROMPT=verbose\nsource ~/.p10k.zsh\n' >> "$HOME/.zshrc"
       '
       # make zsh the default shell for ubuntu (takes effect on next tmux attach)
       sudo chsh -s /usr/bin/zsh ubuntu
@@ -131,6 +152,9 @@ write_files:
       sudo systemctl daemon-reload
       sudo systemctl enable --now weekly-maintenance.timer   # upgrade+reboot, Mon 02:00
       sudo systemctl enable --now ttyd                        # browser terminal
+
+      # --- Apply sysctl tuning (write_files wrote /etc/sysctl.d/99-devbox.conf) ---
+      sudo sysctl --system
 
       # --- Verify the tunnel registered (wait up to 120s) ---
       for i in $(seq 1 24); do
