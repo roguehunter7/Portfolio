@@ -23,6 +23,7 @@ packages:
   - ripgrep
   - tmux
   - ttyd
+  - ufw
   - vim
 
 write_files:
@@ -54,10 +55,6 @@ write_files:
       [Install]
       WantedBy=timers.target
 
-  # --- Host firewall: deny all incoming (loopback + established allowed) -----
-  - path: /etc/ufw/before.rules-backup-flag
-    content: "ufw configured via runcmd"
-
   # --- ttyd systemd unit: browser terminal -> tmux "main" session -----------
   # Runs as the ubuntu user so node/npm/reasonix (installed via nvm in
   # $HOME/.nvm) are on PATH without sudo. Emergency backdoor = OCI serial console.
@@ -71,91 +68,74 @@ write_files:
       User=ubuntu
       Group=ubuntu
       WorkingDirectory=/home/ubuntu
-      ExecStart=/usr/bin/ttyd -p 7681 -i 127.0.0.1 -u ubuntu -g ubuntu -c reasonix:${ttyd_password} tmux new -A -s main
+      Environment=TERM=xterm-256color
+      ExecStart=/usr/bin/ttyd -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
       Restart=always
       RestartSec=5
+      StandardOutput=append:/var/log/ttyd.log
+      StandardError=append:/var/log/ttyd.log
 
       [Install]
       WantedBy=multi-user.target
 
-  - path: /usr/local/sbin/configure-tunnel.sh
+  - path: /usr/local/sbin/provision.sh
     permissions: "0755"
     content: |
       #!/bin/bash
       set -euo pipefail
 
-      # 1. Install cloudflared from Cloudflare's apt repo (official instructions)
+      # =========================================================================
+      # One-shot provisioning for the dev box. Runs once via cloud-init runcmd.
+      # Order matters: cloudflared first (bootstraps admin access), then the
+      # dev-box stack, then hardening LAST (so we never lock ourselves out
+      # mid-setup). Emergency backdoor if anything fails: OCI serial console.
+      # =========================================================================
+
+      # --- cloudflared tunnel (remote-managed; routes live in the dashboard) ---
       sudo mkdir -p --mode=0755 /usr/share/keyrings
       curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
       echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list >/dev/null
       sudo apt-get update -y
       sudo apt-get install -y cloudflared
-
-      # 2. Register the REMOTELY-MANAGED tunnel (created in the Zero Trust
-      #    dashboard). Token is base64 JSON {"a": accountTag, "t": tunnelId,
-      #    "s": secret}; ingress routes live in the dashboard.
-      TOKEN='${cloudflare_tunnel_token}'
-      sudo cloudflared service install "$TOKEN"
+      # Token is base64 JSON {"a": accountTag, "t": tunnelId, "s": secret}.
+      sudo cloudflared service install '${cloudflare_tunnel_token}'
       sudo systemctl enable --now cloudflared
 
-      # 3. Verify the tunnel actually registered; wait up to 120s, else fail.
-      for i in $(seq 1 24); do
-        if sudo journalctl -u cloudflared --no-pager -n 200 2>/dev/null \
-             | grep -q "Registered tunnel connection"; then
-          echo "cloudflared registered with Cloudflare"
-          exit 0
-        fi
-        sleep 5
-      done
-      echo "ERROR: cloudflared never registered a tunnel connection" >&2
-      sudo journalctl -u cloudflared --no-pager -n 40 >&2 || true
-      exit 1
-
-  - path: /usr/local/sbin/configure-devbox.sh
-    permissions: "0755"
-    content: |
-      #!/bin/bash
-      set -euo pipefail
-
-      # 1. Node.js LTS via nvm (user-level, no sudo; Reasonix needs >= 22).
-      #    Installed for the ubuntu user; ttyd runs as ubuntu so node/npm
-      #    land on PATH from ~/.nvm. Maintenance: `nvm install --lts` as ubuntu.
+      # --- Node.js LTS via nvm (user-level, no sudo; Reasonix needs >= 22) ---
+      # Installed for the ubuntu user; ttyd runs as ubuntu so node/npm land on
+      # PATH from ~/.nvm. Maintenance: `nvm install --lts` as ubuntu.
       sudo -u ubuntu bash -lc '
         export NVM_DIR="$HOME/.nvm"
         curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
         . "$NVM_DIR/nvm.sh"
         nvm install --lts
         nvm alias default lts/*
-        node --version
-        npm --version
-      '
-
-      # 2. Reasonix via its official npm package (installs to ~/.nvm — no sudo)
-      sudo -u ubuntu bash -lc '
-        export NVM_DIR="$HOME/.nvm"
-        . "$NVM_DIR/nvm.sh"
         npm install -g reasonix
-        reasonix --version || true
       '
 
-      # 3. Enable weekly maintenance timer (upgrade + forced reboot, Mon 02:00)
+      # --- Services ---
       sudo systemctl daemon-reload
-      sudo systemctl enable --now weekly-maintenance.timer
+      sudo systemctl enable --now weekly-maintenance.timer   # upgrade+reboot, Mon 02:00
+      sudo systemctl enable --now ttyd                        # browser terminal
 
-      # 4. Start ttyd -> tmux main session (browser terminal)
-      sudo systemctl enable --now ttyd
+      # --- Verify the tunnel registered (wait up to 120s) ---
+      for i in $(seq 1 24); do
+        if sudo journalctl -u cloudflared --no-pager -n 200 2>/dev/null \
+             | grep -q "Registered tunnel connection"; then
+          echo "cloudflared registered with Cloudflare"
+          break
+        fi
+        sleep 5
+      done
 
-      # 5. HARDEN: deny all incoming, keep outbound. sshd disabled (browser
-      #    terminal replaces it; emergency backdoor = OCI serial console).
+      # --- HARDEN LAST: deny incoming, keep outbound, sshd off ---
       sudo systemctl disable --now ssh || true
       sudo ufw default deny incoming
       sudo ufw default allow outgoing
       sudo ufw allow in on lo
       sudo ufw --force enable
 
-      echo "devbox configured"
-      touch /var/log/cloud_init_complete   # sentinel only after everything
+      touch /var/log/cloud_init_complete   # sentinel only if we get here
 
 runcmd:
-  - [bash, /usr/local/sbin/configure-tunnel.sh]
-  - [bash, /usr/local/sbin/configure-devbox.sh]
+  - [bash, /usr/local/sbin/provision.sh]

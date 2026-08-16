@@ -41,7 +41,7 @@ variable "budget_alert_email" {
 }
 
 variable "ttyd_password" {
-  description = "Password for the ttyd browser terminal login (user: reasonix). Passed from GitHub secret TTYD_PASSWORD."
+  description = "Password for the ttyd browser terminal login (user: sreeram). Passed from GitHub secret TTYD_PASSWORD."
   type        = string
   sensitive   = true
 }

@@ -32,26 +32,27 @@ VM: public IP exists but NSG has ZERO ingress rules → nothing reachable from t
 - VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
 - NSG `instance-nsg`: **no rules** (= deny-all ingress)
 - A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 ARM64, 50 GB boot, ephemeral public IP (egress only)
-- cloud-init: installs `cloudflared`, decodes the tunnel token into
-  `/etc/cloudflared/<id>.json`, writes ingress config (`ssh.sreeramkr.com → ssh://localhost:22`, catch-all 404), installs the systemd service
+- cloud-init: installs `cloudflared` and registers the remote-managed tunnel
+  via its token (ingress routes live in the Cloudflare dashboard — `ssh.sreeramkr.com
+  → ttyd on :7681`); installs Node LTS + Reasonix via nvm, ttyd+tmux browser
+  terminal, weekly maintenance (upgrade + reboot, Mon 02:00), and host hardening
+  (ufw deny-incoming, sshd off)
 
 ## One-time setup (Console)
 
+The CI workflow reads credentials from GitHub **Secrets / Variables** (exact
+names are in `.github/workflows/oci-provision.yml`). Configure:
+
 1. **Upgrade to PAYG** — `Billing → Upgrade` (needed for reliable A1 capacity; Always Free resources stay free).
-2. **API key** — `Profile → API keys → Add`; upload the public key, copy:
-   - **tenancy OCID** → secret `OCI_TENANCY_OCID`
-   - **user OCID** → secret `OCI_USER_OCID`
-   - **fingerprint** → secret `OCI_FINGERPRINT`
-   - **private key PEM contents** → secret `OCI_API_KEY`
-3. **SSH keypair** for the VM (`ssh-keygen -t ed25519 -f ~/.ssh/portfolio`):
-   - public key → **variable** `OCI_SSH_PUBLIC_KEY`
-   - keep the private key locally (used by `scripts/oci-ssh.sh`)
-4. **tfstate bucket name** → **variable** `OCI_TFSTATE_BUCKET` (e.g. `portfolio-tfstate`; bucket is auto-created by the workflow).
-5. Confirm the existing **`CLOUDFLARE_TUNNEL_TOKEN`** secret's tunnel still exists:
+2. **OCI API key** — `Profile → API keys → Add`; upload the public key, then store the tenancy OCID, user OCID, fingerprint, and private key PEM contents as GitHub secrets.
+3. **SSH keypair** for the VM (`ssh-keygen -t ed25519 -f ~/.ssh/portfolio`) — public key as a GitHub variable (the private key is only a fallback/console path; the primary admin access is the browser terminal).
+4. **tfstate bucket name** as a GitHub variable (e.g. `portfolio-tfstate`; bucket is auto-created by the workflow).
+5. Confirm the existing **Cloudflare tunnel token** secret's tunnel still exists:
    `Cloudflare dashboard → Zero Trust → Networks → Tunnels` — note its name.
-6. **Tunnel endpoint** — on that tunnel: `Public Hostname → Add`:
-   `ssh.sreeramkr.com`, service **SSH**, URL `localhost:22` (creates the DNS CNAME).
-7. *(Recommended)* **Zero Trust Access app**: `Access → Applications → Add self-hosted`, domain `ssh.sreeramkr.com`, policy = Allow your email. Without this the hostname is public (key auth still required).
+6. **Browser terminal password** as a GitHub secret (used by the ttyd login).
+7. **Tunnel endpoint** — on that tunnel: `Public Hostname → Add`:
+   `ssh.sreeramkr.com`, service **HTTP**, URL `localhost:7681` (creates the DNS CNAME).
+8. *(Recommended)* **Zero Trust Access app**: `Access → Applications → Add self-hosted`, domain `ssh.sreeramkr.com`, policy = Allow your email.
 
 ## Deploy
 
@@ -61,20 +62,18 @@ Run **Actions → OCI Provision → Run workflow** (manual `workflow_dispatch` o
 > the GCP "Hermes Setup" workflow once. It is a harmless no-op apply on the GCP
 > infra (untouched); ignore it. (Trigger narrowing is deliberately deferred.)
 
-## SSH (no open ports)
+## Access (browser terminal — zero open ports)
 
-```bash
-./scripts/oci-ssh.sh --key ~/.ssh/portfolio
-# SSH_KEY=~/.ssh/portfolio ./scripts/oci-ssh.sh
-```
+Open **https://ssh.sreeramkr.com** → log in with your configured ttyd credentials
+(user `sreeram` + the password you set as a GitHub secret) → lands in a tmux
+session (`main`) on the VM.
 
-First run opens a browser for Cloudflare Access login. Under the hood:
-`ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.com`
+- Multiple terminals: `Ctrl-b c` (new tmux window), `Ctrl-b %` / `Ctrl-b "` (split panes)
+- Detach/reattach: close the tab, reopen — tmux keeps your session (Reasonix keeps running)
+- Node/reasonix are installed via nvm for the `ubuntu` user (no sudo needed)
 
-Manual equivalent if no Access app:
-```bash
-ssh -i ~/.ssh/portfolio ubuntu@ssh.sreeramkr.com
-```
+Emergency backdoor (if the tunnel is down): OCI serial console
+(`Compute → instance → Resources → Console connection`).
 
 ## Destroy
 
