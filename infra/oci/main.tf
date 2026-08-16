@@ -173,8 +173,9 @@ resource "oci_limits_quota" "free_tier_guard" {
     # Free A1.Flex allowance. Nothing else (E2/E3/E4, X9, GPU, dense-io, etc.)
     # can ever be launched, on PAYG or not.
     "zero compute-core quotas in tenancy",
+    "zero compute-memory quotas in tenancy",
     "set compute-core quota standard-a1-core-count to 2 in tenancy",
-    "set compute-core quota standard-a1-memory-count to 12 in tenancy",
+    "set compute-memory quota standard-a1-memory-count to 12 in tenancy",
     # Block storage — free tier is 200 GB total block+boot; no backups.
     "set block-storage quota total-storage-gb to 200 in tenancy",
     "set block-storage quota backup-count to 0 in tenancy",
