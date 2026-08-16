@@ -2,10 +2,6 @@ name: OCI Provision
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'infra/oci/**'
-      - '.github/workflows/oci-provision.yml'
 
 permissions:
   contents: read
@@ -62,7 +58,7 @@ jobs:
           TFSTATE_BUCKET: ${{ vars.OCI_TFSTATE_BUCKET }}
         run: |
           set -euo pipefail
-          NAMESPACE="$(oci os ns get --raw-output)"
+          NAMESPACE="$(oci os ns get --query 'data' --raw-output)"
           echo "OCI_NAMESPACE=$NAMESPACE" >> "$GITHUB_ENV"
           oci os bucket create \
             --namespace "$NAMESPACE" \

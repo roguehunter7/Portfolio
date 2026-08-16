@@ -55,7 +55,7 @@ VM: public IP exists but NSG has ZERO ingress rules → nothing reachable from t
 
 ## Deploy
 
-Push to `main` (paths `infra/oci/**`) or run **Actions → OCI Provision → Run workflow**.
+Run **Actions → OCI Provision → Run workflow** (manual `workflow_dispatch` only).
 
 > Note: because `hermes-setup.yml` watches `infra/**`, the first push also fires
 > the GCP "Hermes Setup" workflow once. It is a harmless no-op apply on the GCP
