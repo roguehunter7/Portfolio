@@ -33,3 +33,9 @@ variable "cloudflare_tunnel_token" {
   type        = string
   sensitive   = true
 }
+
+variable "budget_alert_email" {
+  description = "Email receiving budget alert notifications when ANY spend is detected."
+  type        = string
+  default     = "krsreeram007@gmail.com"
+}

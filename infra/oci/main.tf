@@ -123,3 +123,62 @@ resource "oci_core_instance" "portfolio_node" {
 
   preserve_boot_volume = false
 }
+
+# ---------------------------------------------------------------------------
+# Cost guardrails — most-restrictive, tenancy-wide (the whole account).
+# Budget: alert on ANY spend ($1 budget, $0.01 absolute actual+forecast).
+# Quota: allow exactly the Always Free A1.Flex (2 OCPU / 12 GB) + 1 boot
+# volume + tfstate bucket; deny every other resource. Even on PAYG this
+# keeps the account at $0 while inside Always Free limits.
+# ---------------------------------------------------------------------------
+
+resource "oci_budget_budget" "free_tier_guard" {
+  amount         = "1"
+  compartment_id = var.tenancy_ocid
+  reset_period   = "MONTHLY"
+  target_type    = "COMPARTMENT"
+  targets        = [var.tenancy_ocid] # root compartment == whole tenancy
+  display_name   = "free-tier-guard"
+  description    = "Most-restrictive guard: alert on any spend at all (free tier only)"
+}
+
+resource "oci_budget_alert_rule" "actual_spend" {
+  budget_id      = oci_budget_budget.free_tier_guard.id
+  threshold      = "0.01"
+  threshold_type = "ABSOLUTE"
+  type           = "ACTUAL"
+  display_name   = "any-actual-spend"
+  description    = "Triggers on any real spend (free tier should be $0)"
+  message        = "OCI spend detected above $0.01 — check for a resource outside Always Free limits"
+  recipients     = var.budget_alert_email
+}
+
+resource "oci_budget_alert_rule" "forecast_spend" {
+  budget_id      = oci_budget_budget.free_tier_guard.id
+  threshold      = "0.01"
+  threshold_type = "ABSOLUTE"
+  type           = "FORECAST"
+  display_name   = "any-forecast-spend"
+  description    = "Triggers if spend is forecast to exceed $0.01"
+  message        = "OCI forecast spend above $0.01 — a paid resource is likely being created"
+  recipients     = var.budget_alert_email
+}
+
+resource "oci_limits_quota" "free_tier_guard" {
+  compartment_id = var.tenancy_ocid
+  name           = "free-tier-guard"
+  description    = "Deny everything except the Always Free A1.Flex VM (2 OCPU/12 GB), its boot volume, and the tfstate bucket"
+  statements = [
+    # Compute — exactly the Always Free A1.Flex allowance; all paid shapes denied.
+    "set compute quota standard-a1-core-count to 2 in tenancy",
+    "set compute quota standard-a1-memory-count to 12 in tenancy",
+    "set compute quota standard-e2-core-count to 0 in tenancy",
+    "set compute quota standard-e4-core-count to 0 in tenancy",
+    # Block storage — one boot volume for the VM, zero extra volumes.
+    "set block-storage quota boot-volume-count to 1 in tenancy",
+    "set block-storage quota block-volume-count to 0 in tenancy",
+    # Object storage — the tfstate bucket only, inside the 20 GB free cap.
+    "set object-storage quota bucket-count to 2 in tenancy",
+    "set object-storage quota object-storage-size-in-gbs to 20 in tenancy",
+  ]
+}
