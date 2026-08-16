@@ -167,18 +167,18 @@ resource "oci_budget_alert_rule" "forecast_spend" {
 resource "oci_limits_quota" "free_tier_guard" {
   compartment_id = var.tenancy_ocid
   name           = "free-tier-guard"
-  description    = "Deny everything except the Always Free A1.Flex VM (2 OCPU/12 GB), its boot volume, and the tfstate bucket"
+  description    = "Deny everything except the Always Free A1.Flex VM (2 OCPU/12 GB), its storage, and the tfstate bucket"
   statements = [
-    # Compute — exactly the Always Free A1.Flex allowance; all paid shapes denied.
-    "set compute quota standard-a1-core-count to 2 in tenancy",
-    "set compute quota standard-a1-memory-count to 12 in tenancy",
-    "set compute quota standard-e2-core-count to 0 in tenancy",
-    "set compute quota standard-e4-core-count to 0 in tenancy",
-    # Block storage — one boot volume for the VM, zero extra volumes.
-    "set block-storage quota boot-volume-count to 1 in tenancy",
-    "set block-storage quota block-volume-count to 0 in tenancy",
-    # Object storage — the tfstate bucket only, inside the 20 GB free cap.
-    "set object-storage quota bucket-count to 2 in tenancy",
-    "set object-storage quota object-storage-size-in-gbs to 20 in tenancy",
+    # Compute — zero ALL core/memory quotas, then re-allow exactly the Always
+    # Free A1.Flex allowance. Nothing else (E2/E3/E4, X9, GPU, dense-io, etc.)
+    # can ever be launched, on PAYG or not.
+    "zero compute-core quotas in tenancy",
+    "set compute-core quota standard-a1-core-count to 2 in tenancy",
+    "set compute-core quota standard-a1-memory-count to 12 in tenancy",
+    # Block storage — free tier is 200 GB total block+boot; no backups.
+    "set block-storage quota total-storage-gb to 200 in tenancy",
+    "set block-storage quota backup-count to 0 in tenancy",
+    # Object storage — free tier is 20 GB (21474836480 bytes); tfstate bucket only.
+    "set object-storage quota storage-bytes to 21474836480 in tenancy",
   ]
 }
