@@ -2,6 +2,11 @@ name: OCI Provision
 
 on:
   workflow_dispatch:
+    inputs:
+      destroy_first:
+        description: 'Destroy the VM first, then re-apply (rebuild from scratch — picks up new cloud-init)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -77,6 +82,14 @@ jobs:
             -backend-config="bucket=${{ vars.OCI_TFSTATE_BUCKET }}" \
             -backend-config="namespace=${{ env.OCI_NAMESPACE }}" \
             -backend-config="key=oci/terraform.tfstate"
+
+      - name: Terraform Destroy (rebuild path)
+        if: ${{ inputs.destroy_first == 'true' }}
+        working-directory: infra/oci
+        run: |
+          terraform destroy -auto-approve \
+            -var="ssh_public_key=${{ vars.OCI_SSH_PUBLIC_KEY }}" \
+            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
 
       - name: Terraform Apply
         working-directory: infra/oci
