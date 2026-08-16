@@ -12,7 +12,7 @@
 
 This repository serves as a live, evolving systems engineering case study. It showcases the design, implementation, and deployment of a secure, production-grade personal portfolio website.
 
-Designed with a **Zero-Ingress / Zero-Trust posture**, the architecture exposes no public ports to the internet and has evolved through multiple phases to achieve maximum availability, high security, and strict **cost optimization** ($0/month) within the GCP Always Free Tier.
+Designed with a **Zero-Ingress / Zero-Trust posture**, the architecture exposes no public ports to the internet and has evolved through multiple phases to achieve maximum availability, high security, and strict **cost optimization** ($0/month) — currently a Cloudflare Pages site plus an Oracle Cloud Always Free dev box.
 
 ---
 
@@ -24,10 +24,12 @@ site/resume.html + site/fonts/     Resume source of truth — self-contained HTM
 resume.json                       Master resume data — machine-readable, long-form (future LLM-tailoring source)
 scripts/render-pdf.sh              site/resume.html → site/resume.pdf via headless Chrome + ATS assertions
 archive/                           Docker-era files (Dockerfile, compose, deploy.sh, default.conf) — historical
-infra/main.tf, infra/variables.tf  Terraform: zero-trust VPC, IAP-only SSH, e2-micro VM = Hermes agent host
-.github/workflows/deploy.yml       CI/CD: render resume → Cloudflare Pages deploy
-.github/workflows/hermes-setup.yml Manual: provision VM + install Hermes (destroy/rebuild inputs)
-scripts/hermes-install.sh          Hermes install + Gemini/Telegram gateway config (run on VM via IAP)
+infra/oci/                         Terraform: Oracle A1.Flex dev box (VCN, zero-ingress NSG, cloud-init)
+infra/main.tf, infra/variables.tf  Terraform (GCP, legacy): zero-trust VPC, IAP-only SSH, e2-micro = Hermes host
+.github/workflows/deploy.yml       CI/CD: render resume → Cloudflare Pages deploy (manual)
+.github/workflows/oci-provision.yml Manual: provision Oracle dev box (destroy/rebuild inputs)
+.github/workflows/hermes-setup.yml Manual: provision GCP VM + install Hermes (destroy/rebuild inputs)
+scripts/hermes-install.sh          Hermes install + DeepSeek/Telegram gateway config (run on GCP VM via IAP)
 site/resume.pdf                    Generated artifact (gitignored, produced by CI)
 ```
 
@@ -65,7 +67,7 @@ The `e2-micro` VM (GCP Always Free Tier, $0/month) evolved: it served the site t
 
 1. **IAP-only SSH** — the only ingress path is GCP Identity-Aware Proxy over port 22 (`35.235.240.0/20`).
 2. **No public exposure** — deny-all-ingress firewall; the VM stays invisible to internet scanners.
-3. **Hermes (Telegram bot)** — gateway connects *outbound* (Telegram polling + Gemini API); no inbound ports, no tunnel needed.
+3. **Hermes (Telegram bot)** — gateway connects *outbound* (Telegram polling + DeepSeek API); no inbound ports, no tunnel needed.
 
 ### 🤖 Hermes Agent (Phase 7)
 
@@ -116,11 +118,44 @@ The site is served directly from **Cloudflare Pages** — static assets at the e
 
 ### 3. Hermes — the VM's current job
 
-The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **Hermes**, a self-hosted AI assistant: Telegram gateway + Gemini API behind the same Cloudflare Tunnel, managed via `scripts/hermes-install.sh` (idempotent) and the manual `hermes-setup` workflow. See Phase 5 below.
+The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **Hermes**, a self-hosted AI assistant: Telegram gateway + DeepSeek API behind the same Cloudflare Tunnel, managed via `scripts/hermes-install.sh` (idempotent) and the manual `hermes-setup` workflow. See Phase 5 below.
 
 ### 4. resume.json (master data)
 
 `resume.json` at the repo root holds every fact about the career in long-form (context, why, impact, evidence per achievement). The 1-page `site/resume.html` is a hand-curated projection of it; the planned pipeline is `resume.json + job description → LLM → resume.pdf`. Add raw material freely — it is intentionally not the final resume text.
+
+---
+
+## 🟠 Phase 8: Oracle Free-Tier Dev Box (Current)
+
+A single Oracle Cloud **Always Free** `A1.Flex` VM (2 OCPU / 12 GB, Ubuntu 24.04 ARM64) serving as a
+**Reasonix dev box** — zero open ports, provisioned entirely with Terraform + GitHub Actions:
+
+```
+[Browser] ──HTTPS──► [Cloudflare Tunnel: ssh.sreeramkr.com]
+                              │
+                              ▼
+                     ttyd (web terminal, :7681, localhost-only)
+                              │
+                              ▼
+                     tmux session "main" (multi-window, persistent)
+                              │
+                              ▼
+                     zsh + Node LTS (nvm) + Reasonix (DeepSeek coding agent)
+```
+
+- **Admin**: browser terminal at `https://ssh.sreeramkr.com` (ttyd basic-auth) — no SSH keys, no open ports.
+- **Zero ingress**: NSG has no rules; host `ufw` denies incoming; `sshd` is disabled. Emergency backdoor = OCI serial console.
+- **Dev stack**: zsh + oh-my-zsh + starship prompt, Node LTS via nvm, Reasonix via npm — all user-level, no sudo.
+- **Maintenance**: full `apt upgrade` + forced reboot weekly (Monday 02:00, systemd timer); initial `package_upgrade` at first boot.
+- **IaC**: `infra/oci/` (VCN, NSG, cloud-init, budget + quota guardrails) applied by the manual `oci-provision` workflow (with a `destroy_first` rebuild input).
+- **Cost guardrails**: tenancy-wide budget ($1, alert at $0.01) + compartment quota allowing only the Always Free A1.Flex allocation — stays at $0.
+
+### Planned next steps
+
+- Migrate **Hermes** off the GCP `e2-micro` onto this VM (single consolidated free-tier host).
+- Decommission the GCP infrastructure (`terraform destroy` + remove WIF variables/secrets) once Hermes moves.
+- Add more zero-ingress services on the same VM as future case-study phases (password vault, blog, etc.), each behind the Cloudflare Tunnel.
 
 ---
 

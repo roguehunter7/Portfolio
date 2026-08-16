@@ -629,9 +629,9 @@
                 <span class="badge badge-p5">Phase 8: Consolidation (In Progress)</span>
                 <h3>Oracle Cloud Free Tier</h3>
                 <p class="phase-desc">
-                    <strong>Architecture:</strong> Consolidating onto one Oracle <code>A1.Flex</code> VM: Vaultwarden,
-                    Ghost blog, Hermes, Reasonix dev box — zero-ingress via Cloudflare Tunnel, admin via OCI Bastion.
-                    Provisioned with Terraform + GitHub Actions.
+                    <strong>Architecture:</strong> One Oracle <code>A1.Flex</code> VM (2 OCPU / 12 GB, Always Free) —
+                    a <strong>Reasonix dev box</strong> with a browser terminal (ttyd + tmux) over a Cloudflare Tunnel,
+                    admin via serial console. Provisioned with Terraform + GitHub Actions; zero open ports.
                 </p>
             </div>
         </div>
@@ -734,10 +734,11 @@ graph TD
                 <strong>IAP SSH</strong>.
             </p>
             <p>
-                <strong>Next (Phase 8, in progress):</strong> consolidate onto a single Oracle Cloud Free Tier
-                <code>A1.Flex</code> VM running Vaultwarden, a Ghost blog, Hermes, and a Reasonix dev box — same
-                zero-ingress posture (Cloudflare Tunnel for ingress, OCI Bastion for admin), provisioned entirely with
-                Terraform + GitHub Actions.
+                <strong>Next (Phase 8, in progress):</strong> one Oracle Cloud Free Tier
+                <code>A1.Flex</code> VM as a <strong>Reasonix dev box</strong> — browser terminal (ttyd + tmux),
+                Node LTS + Reasonix via nvm, hardened host (ufw deny-incoming, sshd off), weekly maintenance,
+                all behind the same zero-ingress posture (Cloudflare Tunnel for ingress, serial console for admin),
+                provisioned entirely with Terraform + GitHub Actions.
             </p>
         </div>
 
