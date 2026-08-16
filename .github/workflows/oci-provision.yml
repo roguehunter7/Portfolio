@@ -83,6 +83,12 @@ jobs:
             -backend-config="namespace=${{ env.OCI_NAMESPACE }}" \
             -backend-config="key=oci/terraform.tfstate"
 
+      - name: Debug input
+        run: |
+          echo "destroy_first = [${{ inputs.destroy_first }}]"
+          echo "type = ${{ inputs.destroy_first }}"
+          echo "eq check = ${{ inputs.destroy_first == 'true' }}"
+
       - name: Terraform Destroy (rebuild path)
         if: ${{ inputs.destroy_first == 'true' }}
         working-directory: infra/oci
