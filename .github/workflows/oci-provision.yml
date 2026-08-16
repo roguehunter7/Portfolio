@@ -84,7 +84,7 @@ jobs:
             -backend-config="key=oci/terraform.tfstate"
 
       - name: Terraform Destroy (rebuild path)
-        if: ${{ inputs.destroy_first == 'true' }}
+        if: ${{ github.event.inputs.destroy_first == 'true' }}
         working-directory: infra/oci
         run: |
           terraform destroy -auto-approve \
