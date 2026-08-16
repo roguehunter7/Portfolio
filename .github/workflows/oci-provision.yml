@@ -1,0 +1,93 @@
+name: OCI Provision
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'infra/oci/**'
+      - '.github/workflows/oci-provision.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oci-provision
+  cancel-in-progress: true
+
+env:
+  # oracle/oci terraform provider auth (API key; OIDC migration comes later)
+  OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+  OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+  OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+  OCI_PRIVATE_KEY: ${{ secrets.OCI_API_KEY }}
+  OCI_REGION: ap-hyderabad-1
+  OCI_AUTH: api_key
+  # Terraform variables (tenancy OCID doubles as the root compartment OCID)
+  TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install OCI CLI
+        run: |
+          curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh | bash -s -- --accept-all-defaults
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Configure OCI CLI from secrets
+        env:
+          OCI_CLI_KEY: ${{ secrets.OCI_API_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.oci
+          printf '%s\n' "$OCI_CLI_KEY" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
+          cat > ~/.oci/config <<EOF
+          [DEFAULT]
+          user = ${{ secrets.OCI_USER_OCID }}
+          fingerprint = ${{ secrets.OCI_FINGERPRINT }}
+          tenancy = ${{ secrets.OCI_TENANCY_OCID }}
+          region = ap-hyderabad-1
+          key_file = ~/.oci/oci_api_key.pem
+          EOF
+          # Smoke-test auth (fail fast on a bad key)
+          oci iam region list >/dev/null
+
+      - name: Ensure tfstate bucket exists (idempotent)
+        env:
+          TFSTATE_BUCKET: ${{ vars.OCI_TFSTATE_BUCKET }}
+        run: |
+          set -euo pipefail
+          NAMESPACE="$(oci os ns get --raw-output)"
+          echo "OCI_NAMESPACE=$NAMESPACE" >> "$GITHUB_ENV"
+          oci os bucket create \
+            --namespace "$NAMESPACE" \
+            --compartment-id "${{ secrets.OCI_TENANCY_OCID }}" \
+            --name "$TFSTATE_BUCKET" \
+            >/dev/null 2>&1 || echo "bucket $TFSTATE_BUCKET already exists"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init (OCI Object Storage backend)
+        working-directory: infra/oci
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.OCI_TFSTATE_BUCKET }}" \
+            -backend-config="namespace=${{ env.OCI_NAMESPACE }}" \
+            -backend-config="key=oci/terraform.tfstate"
+
+      - name: Terraform Apply
+        working-directory: infra/oci
+        run: |
+          terraform apply -auto-approve \
+            -var="ssh_public_key=${{ vars.OCI_SSH_PUBLIC_KEY }}" \
+            -var="cloudflare_tunnel_token=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}"
+
+      - name: Show outputs
+        working-directory: infra/oci
+        run: terraform output
