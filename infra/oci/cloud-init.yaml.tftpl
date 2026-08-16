@@ -25,6 +25,7 @@ packages:
   - ttyd
   - ufw
   - vim
+  - zsh
 
 write_files:
   # --- Weekly maintenance: upgrade + forced reboot, Monday 02:00 -----------
@@ -69,7 +70,7 @@ write_files:
       Group=ubuntu
       WorkingDirectory=/home/ubuntu
       Environment=TERM=xterm-256color
-      ExecStart=/usr/bin/ttyd -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
+      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
       Restart=always
       RestartSec=5
       StandardOutput=append:/var/log/ttyd.log
@@ -112,6 +113,19 @@ write_files:
         nvm alias default lts/*
         npm install -g reasonix
       '
+
+      # --- zsh + oh-my-zsh + starship (dev shell) ---
+      sudo -u ubuntu bash -lc '
+        # oh-my-zsh (non-interactive; runs with `--unattended` to skip chsh prompt)
+        RUNZSH=no CHSH=no \
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+        # starship prompt (official installer, user-level)
+        curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+        # enable starship in .zshrc
+        printf "\n# starship prompt\neval \"\$(starship init zsh)\"\n" >> "$HOME/.zshrc"
+      '
+      # make zsh the default shell for ubuntu (takes effect on next tmux attach)
+      sudo chsh -s /usr/bin/zsh ubuntu
 
       # --- Services ---
       sudo systemctl daemon-reload
