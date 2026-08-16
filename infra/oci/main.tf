@@ -95,6 +95,11 @@ resource "oci_core_instance" "portfolio_node" {
   shape               = "VM.Standard.A1.Flex"
   display_name        = "portfolio-node"
 
+  # The cost-guard quota zeroes compute families then re-allows A1; the
+  # instance must NOT launch until the quota update lands (race: it would hit
+  # the still-zeroed regional limits).
+  depends_on = [oci_limits_quota.free_tier_guard]
+
   shape_config {
     ocpus         = 2
     memory_in_gbs = 12
