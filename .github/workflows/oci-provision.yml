@@ -29,10 +29,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install OCI CLI
+      - name: Install OCI CLI (pinned, venv)
         run: |
-          curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh | bash -s -- --accept-all-defaults
-          echo "$HOME/bin" >> "$GITHUB_PATH"
+          python3 -m venv /tmp/oci-cli-venv
+          /tmp/oci-cli-venv/bin/pip install --quiet oci-cli==3.90.2
+          echo "/tmp/oci-cli-venv/bin" >> "$GITHUB_PATH"
 
       - name: Configure OCI CLI from secrets
         env:
