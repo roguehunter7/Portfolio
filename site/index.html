@@ -1,803 +1,132 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sreeram K R | Cloud & Infrastructure Engineering</title>
-    <meta name="description" content="Sreeram K R - Cloud & Infrastructure Automation Engineer. Zero-ingress cloud architecture case study on free-tier infrastructure (GCP → Oracle Cloud).">
-    <meta property="og:title" content="Sreeram K R | Cloud & Infrastructure Engineering">
-    <meta property="og:description" content="Zero-ingress cloud infrastructure case study — Terraform, GCP, Oracle Cloud, Docker, Cloudflare.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sreeramkr.com">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-    <script type="application/ld+json" nonce="p0rtfolio-s1te">
-    {
-      "@context": "https://schema.org",
-      "@type": "ProfilePage",
-      "mainEntity": {
-        "@type": "Person",
-        "name": "Sreeram K R",
-        "url": "https://sreeramkr.com",
-        "jobTitle": "Cloud & Infrastructure Automation Engineer",
-        "email": "mailto:contact.sreeramkr@gmail.com",
-        "sameAs": [
-          "https://github.com/roguehunter7",
-          "https://linkedin.com/in/sreeram-k-r"
-        ],
-        "alumniOf": {
-          "@type": "CollegeOrUniversity",
-          "name": "Adi Shankara Institute of Engineering & Technology"
-        },
-        "knowsAbout": ["Terraform", "Google Cloud Platform", "Docker", "GitHub Actions", "Cloudflare", "Python", "Networking", "Linux", "CI/CD"]
-      }
-    }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.min.js"
-      integrity="sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy"
-      crossorigin="anonymous"></script>
-    <script nonce="p0rtfolio-s1te">
-    (function() {
-      var saved = localStorage.getItem('theme') || 'dark';
-      document.documentElement.dataset.theme = saved;
-
-      var emailUser = 'contact.sreeramkr';
-      var emailDomain = 'gmail.com';
-      var emailEls = document.querySelectorAll('.email-link');
-      for (var i = 0; i < emailEls.length; i++) {
-        emailEls[i].href = 'mailto:' + emailUser + '@' + emailDomain;
-        emailEls[i].textContent = emailUser + '@' + emailDomain;
-      }
-
-      mermaid.initialize({ startOnLoad: true, theme: saved === 'light' ? 'default' : 'dark' });
-    })();
-    </script>
-    <style>
-        :root {
-            --bg: #0b0f19;
-            --bg-alt: #111827;
-            --card: #1a2332;
-            --card-hover: #1f2a3d;
-            --text: #e2e8f0;
-            --text-dim: #94a3b8;
-            --blue: #60a5fa;
-            --green: #4ade80;
-            --orange: #fb923c;
-            --purple: #a78bfa;
-            --red: #f87171;
-            --border: #1e293b;
-            --radius: 12px;
-            --heading: #ffffff;
-            --card-code-bg: rgba(255, 255, 255, 0.04);
-            --tag-bg: rgba(96, 165, 250, 0.08);
-            --tag-border: rgba(96, 165, 250, 0.2);
-            --hero-glow: rgba(96, 165, 250, 0.06);
-            --mermaid-bg: #1a2332;
-            --shadow: rgba(0, 0, 0, 0.3);
-            --btn-hover-text: #0b0f19;
-        }
-
-        [data-theme="light"] {
-            --bg: #ffffff;
-            --bg-alt: #f8fafc;
-            --card: #ffffff;
-            --card-hover: #f1f5f9;
-            --text: #1e293b;
-            --text-dim: #64748b;
-            --blue: #2563eb;
-            --green: #16a34a;
-            --orange: #ea580c;
-            --purple: #7c3aed;
-            --red: #dc2626;
-            --border: #e2e8f0;
-            --heading: #0f172a;
-            --card-code-bg: rgba(0, 0, 0, 0.04);
-            --tag-bg: rgba(37, 99, 235, 0.06);
-            --tag-border: rgba(37, 99, 235, 0.2);
-            --hero-glow: rgba(37, 99, 235, 0.04);
-            --mermaid-bg: #f8fafc;
-            --shadow: rgba(0, 0, 0, 0.08);
-            --btn-hover-text: #ffffff;
-        }
-
-        * { box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-        @media (prefers-reduced-motion: reduce) {
-          html { scroll-behavior: auto; }
-          .status-dot { animation: none; }
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.7;
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        /* ── Hero ── */
-        .hero {
-            padding: 80px 0 48px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -120px;
-            right: -120px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, var(--hero-glow) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .hero h1 {
-            font-size: 2.8em;
-            font-weight: 800;
-            color: var(--heading);
-            margin: 0;
-            letter-spacing: -0.02em;
-            line-height: 1.15;
-        }
-
-        .hero .subtitle {
-            font-size: 1.2em;
-            color: var(--blue);
-            font-weight: 500;
-            margin: 8px 0 16px;
-        }
-
-        .hero .tagline {
-            font-size: 1em;
-            color: var(--text-dim);
-            max-width: 680px;
-            line-height: 1.7;
-        }
-
-        .tag-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin: 20px 0;
-        }
-
-        .tag {
-            display: inline-block;
-            background: var(--tag-bg);
-            border: 1px solid var(--tag-border);
-            border-radius: 6px;
-            padding: 4px 10px;
-            font-size: 0.78em;
-            font-weight: 500;
-            color: var(--blue);
-            font-family: 'SF Mono', Monaco, monospace;
-            transition: all 0.2s;
-        }
-
-        .tag:hover {
-            background: rgba(96, 165, 250, 0.15);
-            border-color: var(--blue);
-            transform: translateY(-1px);
-        }
-
-        .links-bar {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .links-bar a {
-            color: var(--text-dim);
-            font-size: 0.92em;
-            font-weight: 500;
-            transition: color 0.2s;
-            text-decoration: none;
-        }
-
-        .links-bar a:hover { color: var(--blue); text-decoration: none; }
-
-        .links-bar .sep { color: var(--border); font-size: 0.85em; user-select: none; }
-
-        .btn-resume {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(96, 165, 250, 0.06));
-            color: var(--blue) !important;
-            border: 1px solid rgba(96, 165, 250, 0.35);
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 0.88em;
-            font-weight: 600;
-            transition: all 0.25s;
-        }
-
-        .btn-resume:hover {
-            background: var(--blue) !important;
-            color: var(--btn-hover-text) !important;
-            border-color: var(--blue);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
-        }
-
-        /* ── Section Titles ── */
-        .section-title {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: var(--heading);
-            margin: 56px 0 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title--tight { margin-top: 48px; }
-
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(to right, var(--border), transparent);
-        }
-
-        .section-sub {
-            color: var(--text-dim);
-            font-size: 0.92em;
-            margin: 0 0 28px;
-        }
-
-        /* ── Phase Grid ── */
-        .evolution-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 16px;
-        }
-
-        .phase-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-
-        .phase-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            border-radius: var(--radius) var(--radius) 0 0;
-        }
-
-        .phase-card:hover {
-            background: var(--card-hover);
-            border-color: var(--border);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px var(--shadow);
-        }
-
-        .phase-card.p1::before { background: linear-gradient(90deg, var(--orange), rgba(251, 146, 60, 0.3)); }
-        .phase-card.p2::before { background: linear-gradient(90deg, var(--green), rgba(74, 222, 128, 0.3)); }
-        .phase-card.p3::before { background: linear-gradient(90deg, var(--blue), rgba(96, 165, 250, 0.3)); }
-        .phase-card.p4::before { background: linear-gradient(90deg, var(--purple), rgba(167, 139, 250, 0.3)); }
-        .phase-card.p5::before { background: linear-gradient(90deg, var(--red), rgba(248, 113, 113, 0.3)); }
-
-        .badge {
-            display: inline-block;
-            font-size: 0.65em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            padding: 3px 10px;
-            border-radius: 20px;
-            margin-bottom: 14px;
-        }
-
-        .badge-p1 { background: rgba(251, 146, 60, 0.1); color: var(--orange); border: 1px solid rgba(251, 146, 60, 0.25); }
-        .badge-p2 { background: rgba(74, 222, 128, 0.1); color: var(--green); border: 1px solid rgba(74, 222, 128, 0.25); }
-        .badge-p3 { background: rgba(96, 165, 250, 0.1); color: var(--blue); border: 1px solid rgba(96, 165, 250, 0.25); }
-        .badge-p4 { background: rgba(167, 139, 250, 0.1); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.25); }
-        .badge-p5 { background: rgba(248, 113, 113, 0.1); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.25); }
-
-        .phase-card h3 {
-            margin: 0 0 8px;
-            color: var(--heading);
-            font-size: 1.05em;
-            font-weight: 600;
-        }
-
-        .phase-card .phase-desc {
-            font-size: 0.88em;
-            color: var(--text-dim);
-            line-height: 1.65;
-            margin: 0;
-        }
-
-        .phase-card .phase-desc strong {
-            color: var(--text);
-        }
-
-        .phase-card .phase-desc code {
-            font-size: 0.9em;
-            background: var(--card-code-bg);
-            padding: 1px 5px;
-            border-radius: 3px;
-            font-family: 'SF Mono', Monaco, monospace;
-        }
-
-        /* ── Architecture Docs ── */
-        .arch-heading {
-            font-size: 1.15em;
-            font-weight: 600;
-            margin: 32px 0 8px;
-        }
-
-        .arch-heading.orange { color: var(--orange); }
-        .arch-heading.blue { color: var(--blue); }
-        .arch-heading.green { color: var(--green); }
-
-        .arch-text {
-            font-size: 0.92em;
-            color: var(--text-dim);
-            line-height: 1.7;
-            margin: 0 0 16px;
-        }
-
-        .mermaid-container {
-            background: var(--mermaid-bg);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin: 16px 0 24px;
-            border: 1px solid var(--border);
-        }
-
-        /* ── Rationale Section ── */
-        .rationale-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 28px;
-            margin: 20px 0;
-        }
-
-        .rationale-box h3 {
-            margin: 28px 0 10px;
-            font-size: 1.05em;
-            font-weight: 600;
-        }
-
-        .rationale-box h3:first-child { margin-top: 0; }
-
-        .rationale-box p {
-            font-size: 0.92em;
-            color: var(--text-dim);
-            line-height: 1.7;
-            margin: 0 0 12px;
-        }
-
-        .rationale-box ul { padding-left: 20px; }
-
-        .rationale-box li {
-            font-size: 0.9em;
-            color: var(--text-dim);
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .rationale-box li strong { color: var(--text); }
-
-        /* ── Footer ── */
-        .footer-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 0.82em;
-            color: var(--text-dim);
-            margin-top: 64px;
-            padding: 20px 0;
-            border-top: 1px solid var(--border);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--green);
-            display: inline-block;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 16px 0 0;
-            font-size: 0.85em;
-        }
-
-        .footer-links a {
-            color: var(--text-dim);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer-links a:hover { color: var(--blue); }
-
-        /* ── Theme Toggle ── */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--text);
-            font-size: 1.1em;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px var(--shadow);
-        }
-
-        .theme-toggle:hover {
-            border-color: var(--blue);
-            transform: scale(1.1);
-        }
-
-        .theme-toggle .icon-light { display: none; }
-        .theme-toggle .icon-dark { display: block; }
-        [data-theme="light"] .theme-toggle .icon-light { display: block; }
-        [data-theme="light"] .theme-toggle .icon-dark { display: none; }
-
-        /* ── Utility ── */
-        a { color: var(--blue); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .highlight { color: var(--green); font-weight: 600; }
-        code { font-family: 'SF Mono', Monaco, monospace; }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .hero { padding: 48px 0 32px; }
-            .hero h1 { font-size: 2em; }
-            .hero .subtitle { font-size: 1em; }
-            .evolution-grid { grid-template-columns: 1fr; }
-            .links-bar { gap: 8px; }
-            .links-bar .sep { display: none; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sreeram K R | Cloud &amp; Infrastructure Engineering</title>
+<meta name="description" content="Sreeram K R — Cloud & Infrastructure Automation Engineer. Zero-ingress infrastructure case study on free-tier cloud (GCP, Oracle), documented phase by phase.">
+<meta property="og:title" content="Sreeram K R | Cloud & Infrastructure Engineering">
+<meta property="og:description" content="Zero-ingress cloud infrastructure case study — Terraform, GCP, Oracle Cloud, Docker, Cloudflare. Full archive at /archive.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sreeramkr.com">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+<script type="application/ld+json" nonce="p0rtfolio-s1te">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "mainEntity": {
+    "@type": "Person",
+    "name": "Sreeram K R",
+    "url": "https://sreeramkr.com",
+    "jobTitle": "Cloud & Infrastructure Automation Engineer",
+    "email": "mailto:contact.sreeramkr@gmail.com",
+    "sameAs": ["https://github.com/roguehunter7", "https://linkedin.com/in/sreeram-k-r"],
+    "alumniOf": { "@type": "CollegeOrUniversity", "name": "Adi Shankara Institute of Engineering & Technology" },
+    "knowsAbout": ["Terraform", "Google Cloud Platform", "Oracle Cloud", "Docker", "GitHub Actions", "Cloudflare", "Python", "Networking", "Linux", "CI/CD", "Zero Trust"]
+  }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.min.js"
+  integrity="sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy"
+  crossorigin="anonymous" nonce="p0rtfolio-s1te"></script>
+<script src="/assets/site.js" nonce="p0rtfolio-s1te"></script>
+<link rel="stylesheet" href="/assets/style.css">
 </head>
-
 <body>
+<div class="container">
+  <nav class="site-nav">
+    <span class="brand">Sreeram K R</span>
+    <span class="links">
+      <a href="/">Home</a>
+      <a href="/archive">Archive</a>
+      <a href="/resume.html">Resume</a>
+    </span>
+  </nav>
 
-    <div class="container">
-        <!-- HERO -->
-        <header class="hero">
-            <h1>Sreeram K R</h1>
-            <div class="subtitle">Cloud &amp; Infrastructure Automation Engineer</div>
-            <p class="tagline">
-                Architecting secure, automated infrastructure at scale. This site is a live case study of a zero-ingress
-                cloud environment — spanning bare-metal constraints, serverless migration, and cost optimization, now
-                running a zero-ingress stack across Cloudflare Pages, Oracle Cloud Free Tier, and a GCP Vaultwarden host.
-            </p>
-            <div class="tag-row">
-                <span class="tag">Terraform</span>
-                <span class="tag">GCP</span>
-                <span class="tag">Oracle Cloud</span>
-                <span class="tag">GitHub Actions</span>
-                <span class="tag">Zero Trust</span>
-                <span class="tag">Cloudflare</span>
-                <span class="tag">IAP</span>
-                <span class="tag">systemd</span>
-                <span class="tag">Docker</span>
-                <span class="tag">WIF</span>
-            </div>
-            <div class="links-bar">
-                <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
-                <span class="sep" aria-hidden="true">|</span>
-                <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
-                <span class="sep" aria-hidden="true">|</span>
-                <a href="#" class="email-link"></a>
-                <span class="sep" aria-hidden="true">|</span>
-                <a href="/resume.pdf" target="_blank" class="btn-resume">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Download PDF Resume
-                </a>
-            </div>
-        </header>
-
-        <!-- ARCHITECTURAL EVOLUTION -->
-        <h2 class="section-title">Architectural Evolution</h2>
-        <p class="section-sub">Nine phases — from bare-metal polling to serverless, back to a hardened VM, and on to a zero-ingress Vaultwarden host on GCP.</p>
-
-        <div class="evolution-grid">
-            <div class="phase-card p1">
-                <span class="badge badge-p1">Phase 1: Bootstrapping</span>
-                <h3>Native Resource Polling</h3>
-                <p class="phase-desc">
-                    <strong>Constraint:</strong> GCP <code>e2-micro</code> with 1GB RAM. CI/CD runners risk OOM.
-                </p>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> Pull-based GitOps loop via <code>systemd.timer</code> + Bash script.
-                    Polled GitHub API every 2 min for SHA deltas — minimal memory overhead.
-                </p>
-            </div>
-
-            <div class="phase-card p2">
-                <span class="badge badge-p2">Phase 2: Refactored</span>
-                <h3>Push-Based IAP Tunneling</h3>
-                <p class="phase-desc">
-                    <strong>Requirement:</strong> Instant push-based deploys while keeping zero-ingress security.
-                </p>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> Replaced polling with <strong>GitHub Actions</strong>. Used
-                    <strong>GCP IAP</strong> to tunnel SSH deploys over port 22 — no public port exposed.
-                </p>
-            </div>
-
-            <div class="phase-card p3">
-                <span class="badge badge-p3">Phase 3: Registry &amp; Telemetry</span>
-                <h3>GHCR &amp; Native systemd</h3>
-                <p class="phase-desc">
-                    <strong>Optimization:</strong> Building on the VM triggered OOM. Telemetry confined inside container
-                    network boundaries.
-                </p>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> Unprivileged Nginx image built &amp; pushed to <strong>GHCR</strong>
-                    in CI. Telemetry daemon runs natively on host under <strong>systemd</strong>, proxied via bridge.
-                </p>
-            </div>
-
-            <div class="phase-card p4">
-                <span class="badge badge-p4">Phase 4: Serverless</span>
-                <h3>Cloud Run &amp; WIF</h3>
-                <p class="phase-desc">
-                    <strong>Optimization:</strong> VM + Cloudflare tunnel + systemd daemons added operational overhead.
-                </p>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> Transitioned to <strong>Cloud Run</strong> (serverless).
-                    <strong>Workload Identity Federation</strong> for keyless GitHub Actions deploys via Artifact
-                    Registry.
-                </p>
-            </div>
-
-            <div class="phase-card p5">
-                <span class="badge badge-p5">Phase 5: Cost Optimization (Historical)</span>
-                <h3>Zero-Ingress Docker Compose</h3>
-                <p class="phase-desc">
-                    <strong>Constraint:</strong> Cloud Run + Artifact Registry + Firestore storage costs accumulated.
-                </p>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> Returned to free-tier <code>e2-micro</code> VM. Nginx + Cloudflared
-                    in private <strong>Docker Compose</strong> stack. Retained WIF for IAP SSH deploys. Retired when the
-                    site moved to Cloudflare Pages in Phase 6.
-                </p>
-            </div>
-
-            <div class="phase-card p3">
-                <span class="badge badge-p3">Phase 6: Serverless at the Edge</span>
-                <h3>Cloudflare Pages</h3>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> Static site moved to <strong>Cloudflare Pages</strong> — assets at
-                    the edge, resume rendered by CI, hardened security headers. The VM stopped serving the site.
-                </p>
-            </div>
-
-            <div class="phase-card p4">
-                <span class="badge badge-p4">Phase 7: AI Agent Host (Historical)</span>
-                <h3>Hermes (GCP e2-micro)</h3>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> VM rebuilt as a <strong>Hermes</strong> AI-assistant host —
-                    outbound-only (Telegram polling + DeepSeek API), no tunnel, no Docker; admin via <strong>IAP-only
-                    SSH</strong>. Retired from GCP — Hermes relaunches on a fresh Oracle VM in a later phase.
-                </p>
-            </div>
-
-            <div class="phase-card p5">
-                <span class="badge badge-p5">Phase 8: Oracle Dev Box (Done)</span>
-                <h3>Oracle Cloud Free Tier</h3>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> One Oracle <code>A1.Flex</code> VM (2 OCPU / 12 GB, Always Free) —
-                    a <strong>Reasonix dev box</strong> with a browser terminal (ttyd + tmux) over a Cloudflare Tunnel,
-                    admin via serial console. Provisioned with Terraform + GitHub Actions; zero open ports.
-                </p>
-            </div>
-
-            <div class="phase-card p1">
-                <span class="badge badge-p1">Phase 9: Vaultwarden (Current)</span>
-                <h3>Password Vault on GCP</h3>
-                <p class="phase-desc">
-                    <strong>Architecture:</strong> The GCP <code>e2-micro</code> repurposed as a <strong>Vaultwarden</strong>
-                    host — a single Rust container on <code>127.0.0.1:8000</code> + <code>cloudflared</code> reaching
-                    <code>vault.sreeramkr.com</code>, no public ports. Runs on a least-privilege service account; nightly
-                    SQLite backup to a dedicated private bucket (5-object retention). Zero-ingress, admin via IAP-SSH.
-                </p>
-            </div>
-        </div>
-
-        <!-- CURRENT ARCHITECTURE DIAGRAM -->
-        <h2 class="section-title section-title--tight">System Architecture</h2>
-        <p class="section-sub">Current production topology and how code reaches production.</p>
-
-        <h3 class="arch-heading orange">Current: Cloudflare Pages + Vaultwarden</h3>
-        <p class="arch-text">
-            Cloudflare Pages serves the static site directly from the edge. GitHub Actions renders the resume PDF, then
-            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM now hosts
-            <strong>Vaultwarden</strong>, a self-hosted password manager — a single Rust container on
-            <code>127.0.0.1:8000</code> plus <code>cloudflared</code>, reached only via the <code>vault.sreeramkr.com</code>
-            tunnel route, with no public ports and admin over IAP-SSH. A nightly cron pushes the SQLite DB to a
-            dedicated private GCS bucket (5-object retention). The Oracle <code>A1.Flex</code> dev box serves as the
-            Reasonix browser terminal.
-        </p>
-        <div class="mermaid-container">
-            <div class="mermaid">
-graph TD
-    User((User)) -->|HTTPS| CF[Cloudflare Edge]
-    CF -->|Pages| P[Cloudflare Pages]
-    Dev[git push] --> GH[GitHub Actions]
-    GH -->|Render HTML| PDF[Resume PDF]
-    GH -->|wrangler pages deploy| P
-    P -->|serves| IDX[index.html / 404.html]
-    P -->|serves| R[resume.html]
-    P -->|serves| PDF
-    VUser((Vault User)) -->|HTTPS vault.sreeramkr.com| T[Cloudflare Tunnel]
-    T -->|cloudflared| VW[Vaultwarden :8000]
-    VW -->|db.sqlite3| D[(vw-data)]
-    D -->|nightly backup| B[(Private GCS bucket)]
-    Ad[Admin] -->|IAP-only SSH| VM[e2-micro host]
-    VM -.-> VW
-            </div>
-        </div>
-
-        <h3 class="arch-heading blue">Historical Serverless Architecture (Phase 4)</h3>
-        <p class="arch-text">
-            Serverless configuration using Cloud Run for frontend Nginx + Go microservice connected to Firestore for
-            visitor and session telemetry.
-        </p>
-        <div class="mermaid-container">
-            <div class="mermaid">
-graph TD
-    User((&#127760; User)) -->|HTTPS| CR[Cloud Run Ingress]
-
-    subgraph GCP [Google Cloud Platform]
-    direction TB
-    CR -->|Serve| Nginx[Unprivileged Nginx Container]
-    Nginx -->|CORS Fetch| GoAPI[Go Visitor Tracker API]
-    GoAPI -->|SDK Writes| Firestore[(Firestore DB)]
-    end
-
-    subgraph CI_CD [Deployment Pipeline]
-    direction LR
-    Dev[git push] --> GH[GitHub Actions]
-    GH -->|Compile| PDF[Resume PDF]
-    GH -->|OIDC Auth| WIF[Workload Identity Federation]
-    WIF -->|Push Image| AR[Artifact Registry]
-    GH -->|Terraform| Nginx
-    end
-            </div>
-        </div>
-
-        <!-- RATIONALE -->
-        <h2 class="section-title">The VM Reversion Rationale</h2>
-        <p class="section-sub">Why Phase 5 existed, what it cost, and how the VM evolved since.</p>
-
-        <div class="rationale-box">
-            <h3 style="color: var(--orange);">Evaluating Cloud Run Costs</h3>
-            <p>
-                While serverless (Phase 4) eliminated VM maintenance and tunnels, it introduced unexpected cost vectors.
-                Artifact Registry storage for multiple Docker image tags plus Firestore reads/writes from the visitor
-                tracker accumulated charges. For a low-traffic personal portfolio, this defeated our "100% Free Tier"
-                objective.
-            </p>
-
-            <h3 style="color: var(--green);">The Phase 5 Zero-Ingress Design</h3>
-            <p>
-                We retired Cloud Run + Firestore and returned to a single <strong>GCP e2-micro VM</strong> — fully
-                covered under the Always Free program.
-            </p>
-            <ul>
-                <li><strong>Docker Compose Isolation:</strong> Nginx and Cloudflared run in isolated containers under a
-                    unified Compose stack — no more OOM crashes from host-level daemons.</li>
-                <li><strong>Zero Exposed Ports:</strong> Nginx binds only to a private Docker bridge network. The
-                    Cloudflared container handles all ingress via outbound tunnel.</li>
-                <li><strong>Public GHCR Packages:</strong> Public repo → public container images. VM pulls anonymously
-                    — no registry secrets to manage.</li>
-                <li><strong>Preserved Security:</strong> Retained WIF + IAP SSH tunneling. GitHub Actions authenticates
-                    keylessly via port 22 (locked to Google's IAP proxy IPs only).</li>
-            </ul>
-            <p>
-                <strong>Result:</strong> $0/month, zero open ports, container-isolated networking, automated keyless
-                deployments.
-            </p>
-
-            <h3 style="color: var(--purple);">Since Phase 5: Hermes, Dev Box, then Vaultwarden</h3>
-            <p>
-                The Phase 5 stack was retired when the site moved to Cloudflare Pages (Phase 6). The <code>e2-micro</code>
-                was rebuilt as a <strong>Hermes</strong> AI-assistant host (Phase 7): minimal Debian 13, zram + swap,
-                no Docker, no tunnel — outbound-only traffic (Telegram polling + DeepSeek API), admin only via
-                <strong>IAP SSH</strong>. Hermes has since been retired from GCP and will relaunch on a fresh Oracle VM.
-            </p>
-            <p>
-                <strong>Phase 8 (done):</strong> an Oracle Cloud Free Tier <code>A1.Flex</code> VM as a
-                <strong>Reasonix dev box</strong> — browser terminal (ttyd + tmux), Node LTS + Reasonix via nvm,
-                hardened host (ufw deny-incoming, sshd off), weekly maintenance, all behind the zero-ingress posture
-                (Cloudflare Tunnel for ingress, serial console for admin), provisioned with Terraform + GitHub Actions.
-            </p>
-            <p>
-                <strong>Current (Phase 9):</strong> the GCP <code>e2-micro</code> repurposed as a
-                <strong>Vaultwarden</strong> host — a single Rust container on <code>127.0.0.1:8000</code> +
-                <code>cloudflared</code> behind the <code>vault.sreeramkr.com</code> tunnel route, on a least-privilege
-                service account, with a nightly SQLite backup to a dedicated private GCS bucket. Zero public ports.
-            </p>
-        </div>
-
-        <!-- FOOTER -->
-        <div class="footer-status">
-            <span class="status-dot"></span>
-            Uptime: 100% &middot; Cloudflare Pages &middot; $0/mo
-        </div>
-        <div class="footer-links">
-            <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
-            <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
-            <a href="#" class="email-link"></a>
-            <a href="/resume.pdf" target="_blank">Resume (PDF)</a>
-            <a href="/resume.html" target="_blank">Resume (HTML)</a>
-        </div>
+  <header class="hero">
+    <h1>Sreeram K R</h1>
+    <div class="subtitle">Cloud &amp; Infrastructure Automation Engineer</div>
+    <p class="tagline">
+      Automating secure, zero-ingress infrastructure on free-tier cloud. This project is a live
+      case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
+      capacity became a self-hosted password vault — all documented phase by phase.
+    </p>
+    <div class="tag-row">
+      <span class="tag">Terraform</span><span class="tag">GCP</span><span class="tag">Oracle Cloud</span>
+      <span class="tag">GitHub Actions</span><span class="tag">Zero Trust</span><span class="tag">Cloudflare</span>
+      <span class="tag">IAP</span><span class="tag">Docker</span><span class="tag">WIF</span>
     </div>
+    <div class="links-bar">
+      <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
+      <span class="sep" aria-hidden="true">|</span>
+      <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
+      <span class="sep" aria-hidden="true">|</span>
+      <a href="#" class="email-link"></a>
+      <span class="sep" aria-hidden="true">|</span>
+      <a href="/resume.html" class="btn-primary">View Resume</a>
+      <a href="/resume.pdf" class="btn-primary">Download PDF</a>
+    </div>
+  </header>
+
+  <h2 class="section-title">The Story</h2>
+  <p class="section-sub">Six phases, from a hand-built VM to a zero-ingress password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
+
+  <ol class="timeline">
+    <li>
+      <span class="tl-title">1 · Bootstrap &amp; GitOps polling</span>
+      <span class="tl-status historical">Historical</span>
+      <div class="tl-gist">Hand-deployed VM, then a pull-based GitOps loop; moved to push-based deploys and hardened it.</div>
+    </li>
+    <li>
+      <span class="tl-title">2 · Observability &amp; IaC serverless</span>
+      <span class="tl-status historical">Historical</span>
+      <div class="tl-gist">Live metrics daemon, LaTeX resume in CI, then a full Terraform + Cloud Run / Firestore serverless rebuild.</div>
+    </li>
+    <li>
+      <span class="tl-title">3 · Zero-ingress Docker Compose</span>
+      <span class="tl-status historical">Historical</span>
+      <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no public ports, everything through a Cloudflare Tunnel.</div>
+    </li>
+    <li>
+      <span class="tl-title">4 · Edge migration to Cloudflare Pages</span>
+      <span class="tl-status historical">Historical</span>
+      <div class="tl-gist">Static site moved to the edge; hardened headers, robots/llms.txt, JSON-LD, CI-rendered resume PDF.</div>
+    </li>
+    <li>
+      <span class="tl-title">5 · Repurposing the compute</span>
+      <span class="tl-status historical">Historical</span>
+      <div class="tl-gist">The freed VMs became a Hermes AI host, then a zero-ingress Oracle dev box with a browser terminal.</div>
+    </li>
+    <li>
+      <span class="tl-title">6 · Vaultwarden host (current)</span>
+      <span class="tl-status live">Live</span>
+      <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>
+    </li>
+  </ol>
+
+  <div class="links-bar" style="margin-top:8px">
+    <a href="/archive" class="btn-primary">Read the full archive &rarr;</a>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-status">
+    <span class="status-dot"></span>
+    Uptime: 100% &middot; Cloudflare Pages &middot; $0/mo
+  </div>
+  <div class="footer-links">
+    <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
+    <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
+    <a href="#" class="email-link"></a>
+    <a href="/resume.pdf" target="_blank">Resume (PDF)</a>
+    <a href="/resume.html" target="_blank">Resume (HTML)</a>
+  </div>
+</div>
 
 <button class="theme-toggle" aria-label="Toggle theme">
-    <span class="icon-light">&#9728;</span>
-    <span class="icon-dark">&#9790;</span>
+  <span class="icon-light">&#9728;</span>
+  <span class="icon-dark">&#9790;</span>
 </button>
-
-<script nonce="p0rtfolio-s1te">
-(function() {
-  function toggleTheme() {
-    var html = document.documentElement;
-    var next = html.dataset.theme === 'light' ? 'dark' : 'light';
-    html.dataset.theme = next;
-    localStorage.setItem('theme', next);
-    mermaid.initialize({ startOnLoad: false, theme: next === 'light' ? 'default' : 'dark' });
-    document.querySelectorAll('.mermaid').forEach(function(el) {
-      el.removeAttribute('data-processed');
-      mermaid.run({ nodes: [el] });
-    });
-  }
-  document.querySelector('.theme-toggle').addEventListener('click', toggleTheme);
-})();
-</script>
 
 </body>
 </html>
