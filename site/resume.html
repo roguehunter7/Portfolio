@@ -150,10 +150,6 @@
     page-break-inside: avoid;
   }
 
-  .summary {
-    text-align: justify;
-  }
-
   /* ---------- LISTS ---------- */
   ul {
     list-style: none;
@@ -245,14 +241,9 @@
   </header>
 
   <section>
-    <h2>Professional Summary</h2>
-    <p class="summary">Infrastructure &amp; Automation Engineer combining on-premises network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments.</p>
-  </section>
-
-  <section>
     <h2>Technical Skills</h2>
     <ul>
-      <li><b>Infrastructure &amp; SRE:</b> GCP (Compute Engine, VPC, GCS, Cloud Run), Terraform (IaC), Docker, Docker Compose, GitHub Actions (CI/CD), GCP IAP.</li>
+      <li><b>Infrastructure &amp; SRE:</b> GCP (Compute Engine, VPC, GCS, IAP), Oracle Cloud (OCI), Terraform (IaC), Docker, Docker Compose, GitHub Actions (CI/CD, WIF/OIDC), Cloudflare Pages, Vaultwarden.</li>
       <li><b>Networking &amp; Edge:</b> DNSSEC, HSTS, Cloudflare Zero Trust Tunnels, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.</li>
       <li><b>Automation &amp; Scripting:</b> Python (Netmiko, Pandas, NetworkX), PowerShell, Bash Scripting, GitHub CLI, Linux System Administration.</li>
       <li><b>Enterprise Tools:</b> ServiceNow API, Nginx Reverse Proxy, GitOps Workflows, Active Directory.</li>
@@ -267,10 +258,11 @@
         <span class="entry-date"><a href="https://sreeramkr.com">sreeramkr.com</a></span>
       </div>
       <ul>
-        <li>Orchestrated declarative, state-locked provisioning of private VPC networks, firewalls, and Compute instances using <b>Terraform</b>.</li>
-        <li>Engineered a secure, keyless <b>CI/CD pipeline</b> via <b>GitHub Actions</b> using <b>Workload Identity Federation (WIF)</b> and OIDC.</li>
-        <li>Implemented secure push-based SSH deployments over GCP <b>Identity-Aware Proxy (IAP)</b> to run containerized stacks.</li>
-        <li>Isolated services inside a private <b>Docker Compose</b> network routed via <b>Cloudflare Tunnels</b>, exposing zero host ports.</li>
+        <li><b>Terraform</b> (state-locked): custom VPC, deny-all ingress (0-65535), IAP-only SSH, e2-micro, with a declared <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box — all zero-ingress.</li>
+        <li><b>Cost guardrails</b> in IaC: tenancy budget (alert on any spend) + quota that denies everything except the Always-Free allocation ($0/mo).</li>
+        <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: buildx, IAP-SSH deploys, <code>wrangler pages deploy</code> under hardened <code>_headers</code> (CSP+nonce, HSTS); CI renders the ATS-safe resume PDF.</li>
+        <li>Proved a <b>serverless</b> phase: a <b>Go</b> session-analytics API on <b>Cloud Run</b> with transactional state + atomic increments in <b>Cloud Firestore</b> (later reverted to the $0 Docker/VM phase).</li>
+        <li>Services isolated on a private <b>Docker Compose</b> network reached only through an outbound <b>Cloudflare Tunnel</b> — zero exposed host ports.</li>
       </ul>
     </div>
 
@@ -280,7 +272,29 @@
       </div>
       <ul>
         <li>Self-hosted AI assistant (Telegram gateway + <b>DeepSeek API</b>) on a free-tier GCP e2-micro VM — outbound-only traffic, zero exposed ports; provisioned end-to-end with <b>Terraform</b> + an idempotent install script.</li>
-        <li>Zero-ingress posture: deny-all ingress, IAP-only admin SSH, outbound Telegram polling + LLM API. Relocating to an Oracle Cloud Free Tier VM (zero-ingress, outbound-only).</li>
+        <li>Zero-ingress posture: deny-all ingress, IAP-only admin SSH, outbound Telegram polling + LLM API.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <span class="entry-title">Vaultwarden — Zero-Ingress Self-Hosted Password Vault</span>
+        <span class="entry-date"><a href="https://vault.sreeramkr.com">vault.sreeramkr.com</a></span>
+      </div>
+      <ul>
+        <li>Re-purposed the freed GCP VM into a hardened password manager: <b>Vaultwarden</b> bound to loopback <b>:8000</b> behind a <b>Cloudflare Tunnel</b>; no public ports.</li>
+        <li>Secrets in a root-owned <code>0600 .env</code> written by CI (Argon2 admin token, signups disabled); <b>least-privilege SA</b> scoped to one private GCS bucket.</li>
+        <li>Nightly SQLite backup via the instance's metadata token (no keys on host), auto-pruned to the newest 5.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <span class="entry-title">CornerSentinel — IoT Safety System (Li-Fi Communication)</span>
+      </div>
+      <ul>
+        <li>Built a real-time computer vision (Python, <b>YOLOv8</b>, OpenCV) warning system on Raspberry Pi to prevent accidents at blind corners.</li>
+        <li>Used <b>Li-Fi (Visible Light Communication)</b> signaling for a <b>1ms</b> warning latency via optical transmission and signal modulation.</li>
       </ul>
     </div>
   </section>
@@ -290,55 +304,28 @@
 
     <div class="entry">
       <div class="entry-head">
-        <span class="entry-title">Systems &amp; Infrastructure Engineer</span>
-        <span class="entry-date"><b>Mar 2026 – Present</b></span>
+        <span class="entry-title">Infrastructure Engineer</span>
+        <span class="entry-date"><b>Jan 2025 – Present</b></span>
       </div>
       <div class="entry-sub">
         <span>Iron Systems (Client: Honeywell)</span>
-        <span>Pune, India</span>
+        <span>Pune / Bangalore, India</span>
       </div>
       <ul>
-        <li>Engineered zero-prompt PowerShell automation scripts to streamline configuration deployments, replacing a legacy 3,000-line manual workflow and accelerating the automated provisioning pipeline.</li>
-        <li>Managed enterprise infrastructure operations, executing automated system configurations, network access control, and platform reliability engineering for high-priority deployments.</li>
+        <li>Achieved <b>98% compliance</b> and eliminated configuration drift by automating patching and config management across <b>1,000+ distributed systems</b> (Tanium + PowerShell).</li>
+        <li>Cut a <b>4-month manual switch survey in half</b> and reclaimed <b>500+ unused IPs</b> with a Python/Netmiko automation suite.</li>
+        <li>Slashed ServiceNow privileged-account provisioning by <b>95%</b> (5 min to under 20 s) using custom <b>WMI/RDP PowerShell</b> tooling.</li>
+        <li>Replaced a legacy <b>3,000-line manual workflow</b> with zero-prompt PowerShell automation, accelerating the <b>Windows Autopilot / Intune</b> enrollment pipeline.</li>
+        <li>Delivered <b>L1/L2 enterprise endpoint support</b>: bare-metal OS imaging, hardware provisioning, and complex system configuration for high-priority deployments.</li>
+        <li>Ran a clean <b>L3-to-L2 migration across 70 subnets</b> (AD DNS, firewall ports/URLs, VLAN/trunking) with no service disruption.</li>
       </ul>
     </div>
 
-    <div class="entry">
-      <div class="entry-head">
-        <span class="entry-title">Network &amp; Automation Engineer (Contract)</span>
-        <span class="entry-date"><b>Jan 2025 – Feb 2026</b></span>
-      </div>
-      <div class="entry-sub">
-        <span>Iron Systems (Client: Honeywell)</span>
-        <span>Bangalore, India</span>
-      </div>
-      <ul>
-        <li>Automated configuration management and vulnerability patching across 1,000+ distributed systems, achieving <b>98% compliance</b>.</li>
-        <li>Developed a Python automation suite (Netmiko) that reduced switch survey timelines by <b>50%</b>, reclaiming <b>500+ unused IPs</b>.</li>
-        <li>Slashed ServiceNow privileged account provisioning time by <b>95%</b> (5 minutes to under 20 seconds) by automating remote protocols.</li>
-        <li>Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets.</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="entry-head">
-        <span class="entry-title">Backend Developer Intern</span>
-        <span class="entry-date"><b>Feb 2023 – Sep 2023</b></span>
-      </div>
-      <div class="entry-sub">
-        <span>Suyati Technologies Ltd</span>
-        <span>Kochi, India</span>
-      </div>
-      <ul>
-        <li>Developed flight delay prediction logic using Python/Django and containerized MySQL database environments using Docker.</li>
-      </ul>
-    </div>
   </section>
 
   <section>
     <h2>Certifications &amp; Languages</h2>
     <ul>
-      <li><b>AWS Certified Solutions Architect – Associate (SAA-C03):</b> Pending (Exam scheduled for September 5, 2026).</li>
       <li><b>GATE Qualified (2023):</b> Passed the Graduate Aptitude Test in Engineering in the Electronics &amp; Communication stream.</li>
       <li><b>Languages:</b> English (Fluent), Malayalam (Native), Tamil (Native), Hindi (Conversational).</li>
     </ul>

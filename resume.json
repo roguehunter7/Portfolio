@@ -36,7 +36,9 @@
         { "name": "Docker / Docker Compose", "level": "advanced", "context": "multi-container stacks on unprivileged, private bridge networks" },
         { "name": "GitHub Actions (CI/CD)", "level": "advanced", "context": "OIDC/WIF keyless auth, buildx, IAP SSH deploys, Cloudflare Pages deploys" },
         { "name": "Cloudflare Pages", "level": "intermediate", "context": "static hosting, _headers CSP, custom domain, wrangler deploys" },
-        { "name": "GCP IAP", "level": "advanced", "context": "zero-trust SSH-only access, no public ports" }
+        { "name": "GCP IAP", "level": "advanced", "context": "zero-trust SSH-only access, no public ports" },
+        { "name": "Oracle Cloud (OCI)", "level": "intermediate", "context": "Always Free A1.Flex (2 OCPU/12 GB), VCN/NSG deny-all, budget + quota cost guardrails" },
+        { "name": "Vaultwarden", "level": "intermediate", "context": "self-hosted vault container behind cloudflared tunnel, least-privilege GCS backups" }
       ]
     },
     {
@@ -54,9 +56,11 @@
       "category": "Automation & Scripting",
       "items": [
         { "name": "Python", "level": "advanced", "context": "Netmiko (network device automation), Pandas, NetworkX" },
+        { "name": "Go (Golang)", "level": "intermediate", "context": "serverless visitor-tracker API on Cloud Run (earlier phase)" },
         { "name": "PowerShell", "level": "advanced", "context": "enterprise configuration deployment automation (Honeywell)" },
         { "name": "Bash", "level": "advanced", "context": "CI scripts, system provisioning" },
         { "name": "Linux System Administration", "level": "advanced", "context": "Debian, systemd, zram/swap, hardening" },
+        { "name": "Kubernetes", "level": "basic", "context": "manifest design, local cluster testing (earlier exploration)" },
         { "name": "GitHub CLI", "level": "intermediate", "context": "" }
       ]
     },
@@ -64,6 +68,9 @@
       "category": "Enterprise Tools",
       "items": [
         { "name": "ServiceNow API", "level": "advanced", "context": "privileged account provisioning automation" },
+        { "name": "Tanium Deploy", "level": "advanced", "context": "OS vulnerability patching across 1,000+ endpoints (Honeywell)" },
+        { "name": "Windows Autopilot / Intune", "level": "advanced", "context": "hardware-hash extraction, bare-metal imaging, zero-prompt enrollment" },
+        { "name": "Microsoft Defender Endpoint", "level": "intermediate", "context": "endpoint onboarding" },
         { "name": "Nginx Reverse Proxy", "level": "advanced", "context": "unprivileged container builds, security headers, CSP" },
         { "name": "GitOps Workflows", "level": "intermediate", "context": "push-to-main deploy model" },
         { "name": "Active Directory", "level": "advanced", "context": "DNS forwarders, domain-joined system management" }
@@ -73,21 +80,56 @@
 
   "experience": [
     {
-      "role": "Systems & Infrastructure Engineer",
+      "role": "Infrastructure Engineer",
       "company": "Iron Systems",
       "client": "Honeywell",
       "type": "full-time",
-      "start": "2026-03",
+      "start": "2025-01",
       "end": null,
-      "location": "Pune, India",
-      "context": "Enterprise IT outsourcing for Honeywell: large-scale system configuration, network access control and deployment operations across a high-priority enterprise environment.",
+      "location": "Pune / Bangalore, India",
+      "context": "Enterprise IT outsourcing for Honeywell (Endpoint Operations + network estate): large-scale system configuration, bare-metal imaging, network access control, deployment operations and platform reliability across a 1,000+ system, 70-subnet estate.",
       "achievements": [
+        {
+          "what": "Automated configuration management and OS vulnerability patching across 1,000+ distributed systems via Tanium + PowerShell.",
+          "why": "Manual patching could not keep up with compliance requirements.",
+          "impact": "98% compliance on targeted vulnerabilities; eliminated manual configuration drift.",
+          "evidence": "Tanium Deploy + PowerShell, client compliance reporting",
+          "skills_used": ["PowerShell", "Tanium", "Active Directory", "Windows Server"]
+        },
+        {
+          "what": "Developed a Python automation suite (Netmiko) for switch surveys.",
+          "why": "Manual per-device surveys took too long and wasted address space.",
+          "impact": "Reduced a 4-month manual switch survey by 50%; reclaimed 500+ unused IPs.",
+          "evidence": "Netmiko + Pandas/NetworkX analysis",
+          "skills_used": ["Python", "Netmiko", "Pandas", "NetworkX", "Cisco IOS"]
+        },
+        {
+          "what": "Automated ServiceNow privileged account provisioning using custom PowerShell (WMI/RDP) tooling.",
+          "why": "Manual provisioning took ~5 minutes per account.",
+          "impact": "95% faster provisioning (5 minutes to under 20 seconds).",
+          "evidence": "ServiceNow API + WMI/RDP automation",
+          "skills_used": ["ServiceNow API", "PowerShell", "WMI", "RDP/WinRM"]
+        },
         {
           "what": "Engineered zero-prompt PowerShell automation scripts for configuration deployments, replacing a legacy 3,000-line manual workflow and accelerating the automated provisioning pipeline.",
           "why": "Legacy manual workflow was slow, error-prone and required operator prompts at every step.",
           "impact": "Replaced 3,000-line manual workflow; faster, unattended provisioning pipeline.",
           "evidence": "Production use in enterprise deployment operations",
-          "skills_used": ["PowerShell", "Active Directory", "Windows Server"]
+          "skills_used": ["PowerShell", "Windows Autopilot", "Intune"]
+        },
+        {
+          "what": "Delivered L1/L2 enterprise endpoint support: bare-metal OS imaging, hardware provisioning and complex system configuration for high-priority deployments (Windows Autopilot / Intune enrollment).",
+          "why": "High-priority end-user deployments need reliable, repeatable provisioning.",
+          "impact": "Accelerated the Windows Autopilot / Intune enrollment pipeline.",
+          "evidence": "Hardware hash extraction + Autopilot enrollment",
+          "skills_used": ["Windows Autopilot", "Intune", "PowerShell", "Windows Server"]
+        },
+        {
+          "what": "Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets (defining firewall ports/URLs, managing AD DNS).",
+          "why": "Network reorganization to simplify routing and reduce complexity.",
+          "impact": "Clean migration across 70 subnets with no service disruption.",
+          "evidence": "Migration runbooks",
+          "skills_used": ["Active Directory DNS", "L2/L3 switching", "VLAN/trunking"]
         },
         {
           "what": "Managed enterprise infrastructure operations: automated system configurations, network access control, and platform reliability engineering for high-priority deployments.",
@@ -95,46 +137,6 @@
           "impact": "Reliable high-priority deployment operations.",
           "evidence": "Ongoing role",
           "skills_used": ["Active Directory", "NAC", "Windows Server", "PowerShell"]
-        }
-      ]
-    },
-    {
-      "role": "Network & Automation Engineer (Contract)",
-      "company": "Iron Systems",
-      "client": "Honeywell",
-      "type": "contract",
-      "start": "2025-01",
-      "end": "2026-02",
-      "location": "Bangalore, India",
-      "context": "Honeywell enterprise network estate: 1,000+ distributed systems, 70 subnets, Cisco gear managed via Active Directory + ServiceNow workflows.",
-      "achievements": [
-        {
-          "what": "Automated configuration management and vulnerability patching across 1,000+ distributed systems.",
-          "why": "Manual patching could not keep up with compliance requirements.",
-          "impact": "98% compliance across the estate.",
-          "evidence": "Client compliance reporting",
-          "skills_used": ["PowerShell", "Active Directory", "Windows Server"]
-        },
-        {
-          "what": "Developed a Python automation suite (Netmiko) for switch surveys.",
-          "why": "Manual per-device surveys took too long and wasted address space.",
-          "impact": "Reduced switch survey timelines by 50%; reclaimed 500+ unused IPs.",
-          "evidence": "Netmiko + Pandas/NetworkX analysis",
-          "skills_used": ["Python", "Netmiko", "Pandas", "NetworkX", "Cisco IOS"]
-        },
-        {
-          "what": "Automated ServiceNow privileged account provisioning using remote protocols.",
-          "why": "Manual provisioning took ~5 minutes per account.",
-          "impact": "95% faster provisioning (5 minutes to under 20 seconds).",
-          "evidence": "ServiceNow API + remote protocol automation",
-          "skills_used": ["ServiceNow API", "PowerShell", "RDP/WinRM"]
-        },
-        {
-          "what": "Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets.",
-          "why": "Network reorganization to simplify routing and reduce complexity.",
-          "impact": "Clean migration across 70 subnets with no service disruption.",
-          "evidence": "Migration runbooks",
-          "skills_used": ["Active Directory DNS", "L2/L3 switching", "VLAN/trunking"]
         }
       ]
     },
@@ -162,54 +164,68 @@
     {
       "name": "Zero-Trust Cloud Infrastructure & GitOps Pipeline",
       "url": "https://sreeramkr.com",
-      "context": "Personal portfolio infrastructure case study: a fully public GitHub repo (roguehunter7/Portfolio) demonstrating zero-ingress architecture on the free tier.",
+      "context": "Public case-study repo (roguehunter7/Portfolio) demonstrating zero-ingress infrastructure on free-tier cloud (GCP + Oracle Cloud), deployed keyless from GitHub Actions; site served at the edge on Cloudflare Pages behind a Cloudflare Tunnel.",
       "achievements": [
         {
-          "what": "Orchestrated declarative, state-locked provisioning of private VPC networks, firewalls, and Compute instances using Terraform.",
-          "why": "Reproducible infra, no click-ops, state safety.",
-          "impact": "Full IaC: VPC, firewalls, VM from one codebase.",
+          "what": "Declaratively provisioned a zero-trust GCP environment with Terraform: custom VPC, deny-all ingress firewall (0-65535), IAP-only SSH (35.235.240.0/20), e2-micro instance, state-locked GCS backend.",
+          "why": "Reproducible infra, no click-ops, and no public ingress by construction.",
+          "impact": "One codebase yields VPC + firewalls + VM; zero exposed management ports.",
           "evidence": "infra/main.tf",
-          "skills_used": ["Terraform", "GCP VPC", "Firewalls"]
+          "skills_used": ["Terraform", "GCP VPC", "Firewalls", "GCS", "GCP IAP"]
         },
         {
-          "what": "Engineered a secure, keyless CI/CD pipeline via GitHub Actions using Workload Identity Federation (WIF) and OIDC.",
-          "why": "No long-lived cloud credentials in CI.",
-          "impact": "Zero static keys; OIDC-authenticated deploys.",
-          "evidence": "deploy workflow",
-          "skills_used": ["GitHub Actions", "OIDC", "WIF"]
+          "what": "Provisioned an Oracle Cloud Always Free A1.Flex (2 OCPU/12 GB) dev box from the same IaC, with a zero-rule NSG (deny-all) and cloudflared-only SSH.",
+          "why": "Extend the zero-ingress pattern to a second cloud without paying.",
+          "impact": "$0/mo cross-cloud compute; shell access only through the Cloudflare tunnel.",
+          "evidence": "infra/oci/main.tf",
+          "skills_used": ["Oracle Cloud (OCI)", "Terraform", "cloudflared", "NSG"]
         },
         {
-          "what": "Implemented secure push-based SSH deployments over GCP Identity-Aware Proxy (IAP) to run containerized stacks.",
-          "why": "No public SSH; only Google's IAP proxy IPs allowed on port 22.",
-          "impact": "Zero exposed management ports.",
-          "evidence": "IAP TCP forwarding",
-          "skills_used": ["GCP IAP", "SSH"]
+          "what": "Enforced tenancy-wide cost guardrails in IaC: a budget alerting on any spend ($1 / $0.01 threshold) plus quota that zeros all compute/memory families then re-allows exactly the Always-Free A1 allowance.",
+          "why": "Guarantee the account stays at $0 even on PAYG.",
+          "impact": "No resource outside the free tier can launch; automatic spend alerts.",
+          "evidence": "oci_budget_budget + oci_limits_quota",
+          "skills_used": ["Oracle Cloud (OCI)", "Terraform", "cloud budgets/quota"]
         },
         {
-          "what": "Isolated services inside a private Docker Compose network routed via Cloudflare Tunnels, exposing zero host ports.",
-          "why": "Inbound-only via outbound tunnel; nothing reachable from the internet except through Cloudflare.",
-          "impact": "Zero host ports exposed; $0/month free tier.",
+          "what": "Built a keyless CI/CD pipeline on GitHub Actions using Workload Identity Federation (WIF) and OIDC, with buildx, IAP-SSH deploys, and wrangler pages deploy under a hardened _headers policy (CSP+nonce, HSTS, COOP/CORP).",
+          "why": "No long-lived cloud credentials in CI; static content served at the edge.",
+          "impact": "Zero static keys; one commit renders the ATS-safe resume PDF and publishes the site.",
+          "evidence": ".github/workflows/deploy.yml + scripts/render-pdf.sh",
+          "skills_used": ["GitHub Actions", "OIDC", "WIF", "Cloudflare Pages", "buildx"]
+        },
+        {
+          "what": "Built a lighter serverless phase: a low-latency visitor tracker + session analytics API in Go (Golang) on Google Cloud Run, with transactional state and atomic increments in Cloud Firestore (Native Mode), automated expired-session cleanup (no DB bloat), and strict HTTP Cache-Control headers.",
+          "why": "Prove the stack could run serverless on free-tier without VM maintenance.",
+          "impact": "Real-time session/page-view metrics with transactional, bloat-free state.",
+          "evidence": "Go API + Cloud Run + Firestore (later reverted to the $0 Docker/VM phase)",
+          "skills_used": ["Go (Golang)", "Google Cloud Run", "Cloud Firestore", "HTTP caching"]
+        },
+        {
+          "what": "Isolated services on a private Docker Compose network reached only through an outbound Cloudflare Tunnel (remote-managed), exposing zero host ports.",
+          "why": "Inbound-only via an outbound connection; nothing reachable from the internet except through Cloudflare.",
+          "impact": "Zero host ports exposed; $0/month across the stack.",
           "evidence": "docker-compose + cloudflared",
-          "skills_used": ["Docker Compose", "cloudflared", "Cloudflare Zero Trust"]
+          "skills_used": ["Docker Compose", "cloudflared", "Cloudflare Zero Trust", "Nginx"]
         }
       ]
     },
     {
       "name": "Hermes — Self-Hosted AI Assistant",
       "url": "https://sreeramkr.com",
-      "context": "Personal AI assistant (Telegram gateway + DeepSeek API) running on a zero-ingress GCP e2-micro VM — outbound-only traffic, no tunnel, no exposed ports; provisioned end-to-end by Terraform + an idempotent install script. Being consolidated onto an Oracle Cloud Free Tier VM.",
+      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) on a zero-ingress GCP e2-micro VM — outbound-only traffic, no exposed ports; provisioned end-to-end by Terraform + an idempotent install script.",
       "achievements": [
         {
-          "what": "Deployed a self-hosted AI assistant on a free-tier e2-micro VM with an outbound-only network posture — no tunnel, no exposed ports.",
-          "why": "Run an always-on personal assistant without paying for a VPS or exposing SSH.",
-          "impact": "24/7 assistant at $0/month on the free tier.",
+          "what": "Deployed a self-hosted AI assistant on a free-tier e2-micro VM with an outbound-only posture — no tunnel, no exposed ports, systemd user service (linger) + zram.",
+          "why": "Run an always-on assistant without paying for a VPS or exposing SSH.",
+          "impact": "24/7 assistant at $0/month.",
           "evidence": "systemd user service (linger) + IAP-only SSH",
           "skills_used": ["systemd", "GCP e2-micro", "IAP", "zram"]
         },
         {
           "what": "Wired the assistant to the DeepSeek API (v4-flash everywhere) for main and all auxiliary tasks.",
-          "why": "DeepSeek's budget tier is ~10x cheaper than Gemini paid (which required a ₹1000 minimum top-up).",
-          "impact": "Near-zero cost; single rate limit and billing bucket.",
+          "why": "DeepSeek's budget tier is ~10x cheaper than Gemini paid (which needed a ₹1000 minimum top-up).",
+          "impact": "Near-zero cost; single rate-limit and billing bucket.",
           "evidence": "config.yaml model/delegation/auxiliary sections",
           "skills_used": ["DeepSeek API", "LLM configuration", "YAML config"]
         },
@@ -219,6 +235,55 @@
           "impact": "No tunnel to maintain; invisible to internet scanners.",
           "evidence": "IAP-only SSH + outbound-only services",
           "skills_used": ["Hermes", "Telegram Bot API", "GCP IAP", "zero-trust networking"]
+        }
+      ]
+    },
+    {
+      "name": "Vaultwarden — Zero-Ingress Self-Hosted Password Vault",
+      "url": "https://vault.sreeramkr.com",
+      "context": "The freed GCP e2-micro re-purposed into a hardened self-hosted password manager: loopback-only on :8000 behind a Cloudflare Tunnel, a least-privilege service account, and nightly SQLite backups to a private GCS bucket.",
+      "achievements": [
+        {
+          "what": "Ran Vaultwarden as a single container bound to loopback :8000 with a cloudflared container behind a remote-managed Cloudflare Tunnel (vault.sreeramkr.com).",
+          "why": "A credential store must have no reachable management surface.",
+          "impact": "Deny-all firewall + IAP-only SSH; zero public ports.",
+          "evidence": "infra/vaultwarden/docker-compose.yml + main.tf firewall",
+          "skills_used": ["Vaultwarden", "Docker Compose", "cloudflared", "GCP IAP"]
+        },
+        {
+          "what": "Handled secrets with strict hygiene: Argon2 admin token and config in a root-owned 0600 .env written by CI (correct $ escaping), signups disabled, short admin session lifetime.",
+          "why": "Signups off and secrets never baked into images or the repo.",
+          "impact": "Admin reachable only through the tunnel; no leaked credentials.",
+          "evidence": ".github/workflows/vaultwarden-setup.yml env_file",
+          "skills_used": ["Vaultwarden", "GitHub Actions", "env_file", "bash"]
+        },
+        {
+          "what": "Backed up nightly using a least-privilege SA (roles/storage.objectUser) on one private GCS bucket, uploading the SQLite DB via the instance's metadata token and pruning to the newest 5.",
+          "why": "No keys on the host; the backup SA can never touch the tfstate bucket.",
+          "impact": "Credential-free, auto-pruned off-site backups at $0.",
+          "evidence": "infra/vaultwarden/backup.sh",
+          "skills_used": ["GCS", "SQLite", "bash", "IAM", "systemd/cron"]
+        }
+      ]
+    },
+    {
+      "name": "CornerSentinel — IoT Safety System (Li-Fi Communication)",
+      "url": null,
+      "context": "Capstone project: a real-time computer-vision warning system on Raspberry Pi to prevent accidents at blind corners, using Li-Fi (Visible Light Communication) for low-latency signaling.",
+      "achievements": [
+        {
+          "what": "Developed a real-time computer vision warning system (Python, YOLOv8, OpenCV) on Raspberry Pi to detect pedestrians/vehicles at blind corners and trigger a warning.",
+          "why": "Prevent accidents at blind corners where line-of-sight is obstructed.",
+          "impact": "Working edge CV prototype on commodity hardware.",
+          "evidence": "Capstone project (B.Tech ECE)",
+          "skills_used": ["Python", "YOLOv8", "OpenCV", "Raspberry Pi"]
+        },
+        {
+          "what": "Implemented Li-Fi (Visible Light Communication) signaling to transmit the warning, achieving low-latency optical data transmission and signal modulation.",
+          "why": "Traditional radio/wireless signaling had latency and cost drawbacks for a short-range autonomous warning.",
+          "impact": "1ms warning signal latency via Li-Fi.",
+          "evidence": "Optical data transmission + signal modulation",
+          "skills_used": ["Li-Fi (VLC)", "Signal Modulation", "Embedded Systems"]
         }
       ]
     }
@@ -238,6 +303,13 @@
       "status": "passed",
       "date": "2023",
       "context": "Graduate Aptitude Test in Engineering, ECE stream."
+    },
+    {
+      "name": "Google IT Support Professional",
+      "issuer": "Google / Coursera",
+      "status": "passed",
+      "date": "Prior resume history",
+      "context": "Foundational systems administration, OS management, and enterprise network protocols."
     }
   ],
 
@@ -258,9 +330,11 @@
       "coursework": [
         "Computer Communication & Networks",
         "Operating Systems",
-        "Fiber Optic Communication"
+        "Fiber Optic Communication",
+        "Digital Signal Processing",
+        "Embedded Systems"
       ],
-      "context": ""
+      "context": "Applied optical data transmission to the Li-Fi capstone (CornerSentinel). Completed certified addon coursework in Fiber Optics Technology (optical transmission principles, network infrastructure)."
     }
   ],
 
