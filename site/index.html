@@ -45,9 +45,9 @@
   </nav>
 
   <header class="hero">
-    <h1>Sreeram K R</h1>
-    <div class="subtitle">Cloud &amp; Infrastructure Automation Engineer</div>
-    <p class="tagline">
+    <h1 class="js-reveal">Sreeram K R</h1>
+    <div class="subtitle js-reveal">Cloud &amp; Infrastructure Automation Engineer</div>
+    <p class="tagline js-reveal">
       Automating secure, zero-ingress infrastructure on free-tier cloud. This project is a live
       case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
       capacity became a self-hosted password vault — all documented phase by phase.
@@ -73,32 +73,32 @@
   <p class="section-sub">Six phases, from a hand-built VM to a zero-ingress password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
 
   <ol class="timeline">
-    <li>
+    <li class="js-reveal" style="--delay: 0ms">
       <span class="tl-title">1 · Bootstrap &amp; GitOps polling</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Hand-deployed VM, then a pull-based GitOps loop; moved to push-based deploys and hardened it.</div>
     </li>
-    <li>
+    <li class="js-reveal" style="--delay: 60ms">
       <span class="tl-title">2 · Observability &amp; IaC serverless</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Live metrics daemon, LaTeX resume in CI, then a full Terraform + Cloud Run / Firestore serverless rebuild.</div>
     </li>
-    <li>
+    <li class="js-reveal" style="--delay: 120ms">
       <span class="tl-title">3 · Zero-ingress Docker Compose</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no public ports, everything through a Cloudflare Tunnel.</div>
     </li>
-    <li>
+    <li class="js-reveal" style="--delay: 180ms">
       <span class="tl-title">4 · Edge migration to Cloudflare Pages</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Static site moved to the edge; hardened headers, robots/llms.txt, JSON-LD, CI-rendered resume PDF.</div>
     </li>
-    <li>
+    <li class="js-reveal" style="--delay: 240ms">
       <span class="tl-title">5 · Repurposing the compute</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">The freed VMs became a Hermes AI host, then a zero-ingress Oracle dev box with a browser terminal.</div>
     </li>
-    <li>
+    <li class="js-reveal" style="--delay: 300ms">
       <span class="tl-title">6 · Vaultwarden host (current)</span>
       <span class="tl-status live">Live</span>
       <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>

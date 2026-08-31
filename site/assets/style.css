@@ -4,6 +4,8 @@
    ========================================================================== */
 
 :root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --bg: #0b0f19;
   --bg-alt: #111827;
   --card: #1a2332;
@@ -51,7 +53,7 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   line-height: 1.7;
@@ -61,9 +63,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a { color: var(--blue); text-decoration: none; }
+a { color: var(--blue); text-decoration: none; transition: color 0.15s ease; }
 a:hover { text-decoration: underline; }
-code { font-family: "SF Mono", Monaco, monospace; }
+code { font-family: var(--font-mono); }
+
+/* Accessible focus rings for keyboard users */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible { border-radius: 50%; }
 
 .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
 
@@ -97,9 +107,13 @@ code { font-family: "SF Mono", Monaco, monospace; }
   opacity: 0.06;
   pointer-events: none;
 }
-.hero h1 { font-size: 2.8em; font-weight: 800; color: var(--heading); margin: 0; letter-spacing: -0.02em; line-height: 1.15; }
-.hero .subtitle { font-size: 1.2em; color: var(--blue); font-weight: 500; margin: 8px 0 16px; }
-.hero .tagline { font-size: 1em; color: var(--text-dim); max-width: 700px; line-height: 1.7; }
+.hero h1 {
+  font-size: clamp(2.2rem, 6vw, 3.2rem);
+  font-weight: 800; color: var(--heading); margin: 0;
+  letter-spacing: -0.035em; line-height: 1.08;
+}
+.hero .subtitle { font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--blue); font-weight: 550; margin: 10px 0 18px; letter-spacing: -0.01em; }
+.hero .tagline { font-size: clamp(0.98rem, 1.6vw, 1.06rem); color: var(--text-dim); max-width: 720px; line-height: 1.75; }
 
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0; }
 .tag {
@@ -127,9 +141,9 @@ code { font-family: "SF Mono", Monaco, monospace; }
 }
 
 /* Sections */
-.section-title { font-size: 1.5em; font-weight: 700; color: var(--heading); margin: 48px 0 8px; display: flex; align-items: center; gap: 10px; }
+.section-title { font-size: clamp(1.35rem, 3vw, 1.6rem); font-weight: 750; color: var(--heading); margin: 48px 0 8px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.02em; }
 .section-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, var(--border), transparent); }
-.section-sub { color: var(--text-dim); font-size: 0.92em; margin: 0 0 28px; }
+.section-sub { color: var(--text-dim); font-size: clamp(0.9rem, 1.5vw, 0.97rem); margin: 0 0 28px; line-height: 1.7; }
 
 /* Timeline */
 .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
@@ -155,9 +169,10 @@ code { font-family: "SF Mono", Monaco, monospace; }
 /* Archive entries */
 .archive-entry {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 24px; margin: 20px 0;
+  padding: 24px; margin: 20px 0; transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.archive-entry h3 { margin: 0 0 6px; font-size: 1.15em; font-weight: 650; color: var(--heading); }
+.archive-entry:hover { border-color: var(--blue); box-shadow: 0 8px 30px var(--shadow); }
+.archive-entry h3 { margin: 0 0 6px; font-size: clamp(1.15rem, 2.4vw, 1.3rem); font-weight: 700; color: var(--heading); letter-spacing: -0.02em; }
 .archive-entry .archive-tagline { font-size: 0.92em; color: var(--blue); font-weight: 600; margin: 0 0 16px; }
 .archive-entry .archive-meta { font-size: 0.82em; color: var(--text-dim); margin: 0 0 16px; }
 .archive-entry .archive-block { margin-top: 18px; }
@@ -200,9 +215,20 @@ code { font-family: "SF Mono", Monaco, monospace; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 
+/* Scroll reveal (transform-only, reduced-motion-safe). Content is never hidden: opacity stays 1.
+   Under prefers-reduced-motion the transform is disabled so elements render in place immediately. */
+.js-reveal {
+  transform: translateY(14px);
+  opacity: 1;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms);
+}
+.js-reveal.is-visible { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js-reveal { transform: none; transition: none; }
+}
+
 @media (max-width: 768px) {
-  .hero h1 { font-size: 2em; }
-  .hero .subtitle { font-size: 1em; }
+  .hero .subtitle { font-size: 1.05rem; }
   .grid { grid-template-columns: 1fr; }
   .links-bar .sep { display: none; }
 }

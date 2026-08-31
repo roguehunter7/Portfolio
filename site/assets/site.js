@@ -36,6 +36,32 @@
     });
   }
 
+  function setupReveal() {
+    var targets = document.querySelectorAll('.js-reveal');
+    if (!targets.length) return;
+
+    // Respect reduced motion: show everything immediately, no animation.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      targets.forEach(function (el) { el.classList.add('is-visible'); });
+      return;
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(function (el) { el.classList.add('is-visible'); });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function (entries, obs) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        obs.unobserve(entry.target);
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -8% 0px' });
+
+    targets.forEach(function (el) { observer.observe(el); });
+  }
+
   window.__portfolioToggle = toggleTheme;
   window.__portfolioRunMermaid = runMermaid;
 
@@ -44,6 +70,7 @@
     applyTheme(saved);
     revealEmail();
     runMermaid();
+    setupReveal();
 
     var btn = document.querySelector('.theme-toggle');
     if (btn) btn.addEventListener('click', toggleTheme);
