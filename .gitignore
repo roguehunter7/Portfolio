@@ -19,6 +19,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 .claude/*
+# Agent tooling / instruction files — never deployed (matches REASONIX.md precedent)
+AGENTS.md
+REASONIX.md
 
 # Ignore CLI configuration files
 .terraformrc
