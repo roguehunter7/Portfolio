@@ -64,11 +64,12 @@ jobs:
           VAULTWARDEN_ADMIN_TOKEN: ${{ secrets.VAULTWARDEN_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
-          # Build .env locally so the Argon2 `$` in VAULTWARDEN_ADMIN_TOKEN is preserved
-          # verbatim (never interpreted by the shell or rewritten on the VM).
+          # Build .env locally. docker-compose interpolates `$`, so the Argon2 `$`
+          # must be doubled to `$$` (compose collapses `$$` -> `$` in the container env).
+          ADMIN_TOKEN_DOLLARED=$(printf '%s' "$VAULTWARDEN_ADMIN_TOKEN" | sed 's/\$/\$\$/g')
           cat > /tmp/vw.env <<EOF
           TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN_VW}
-          ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+          ADMIN_TOKEN=${ADMIN_TOKEN_DOLLARED}
           EOF
           chmod 600 /tmp/vw.env
 
@@ -83,7 +84,7 @@ jobs:
               sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
               sudo install -m 0600 -o root -g root /tmp/vw.env /opt/vaultwarden/.env && \
               rm -f /tmp/vw.env /tmp/docker-compose.yml /tmp/backup.sh && \
-              cd /opt/vaultwarden && sudo docker compose up -d"
+              cd /opt/vaultwarden && sudo docker compose up -d --force-recreate"
 
       - name: Verify stack
         run: |
