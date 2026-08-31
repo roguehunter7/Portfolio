@@ -510,7 +510,7 @@
             <p class="tagline">
                 Architecting secure, automated infrastructure at scale. This site is a live case study of a zero-ingress
                 cloud environment — spanning bare-metal constraints, serverless migration, and cost optimization, now
-                consolidating onto Oracle Cloud Free Tier.
+                running a zero-ingress stack across Cloudflare Pages, Oracle Cloud Free Tier, and a GCP Vaultwarden host.
             </p>
             <div class="tag-row">
                 <span class="tag">Terraform</span>
@@ -540,7 +540,7 @@
 
         <!-- ARCHITECTURAL EVOLUTION -->
         <h2 class="section-title">Architectural Evolution</h2>
-        <p class="section-sub">Eight phases — from bare-metal polling to serverless, back to a hardened VM, and on to Oracle Cloud Free Tier.</p>
+        <p class="section-sub">Nine phases — from bare-metal polling to serverless, back to a hardened VM, and on to a zero-ingress Vaultwarden host on GCP.</p>
 
         <div class="evolution-grid">
             <div class="phase-card p1">
@@ -616,22 +616,33 @@
             </div>
 
             <div class="phase-card p4">
-                <span class="badge badge-p4">Phase 7: AI Agent Host</span>
+                <span class="badge badge-p4">Phase 7: AI Agent Host (Historical)</span>
                 <h3>Hermes (GCP e2-micro)</h3>
                 <p class="phase-desc">
                     <strong>Architecture:</strong> VM rebuilt as a <strong>Hermes</strong> AI-assistant host —
                     outbound-only (Telegram polling + DeepSeek API), no tunnel, no Docker; admin via <strong>IAP-only
-                    SSH</strong>. Being decommissioned in Phase 8.
+                    SSH</strong>. Retired from GCP — Hermes relaunches on a fresh Oracle VM in a later phase.
                 </p>
             </div>
 
             <div class="phase-card p5">
-                <span class="badge badge-p5">Phase 8: Consolidation (In Progress)</span>
+                <span class="badge badge-p5">Phase 8: Oracle Dev Box (Done)</span>
                 <h3>Oracle Cloud Free Tier</h3>
                 <p class="phase-desc">
                     <strong>Architecture:</strong> One Oracle <code>A1.Flex</code> VM (2 OCPU / 12 GB, Always Free) —
                     a <strong>Reasonix dev box</strong> with a browser terminal (ttyd + tmux) over a Cloudflare Tunnel,
                     admin via serial console. Provisioned with Terraform + GitHub Actions; zero open ports.
+                </p>
+            </div>
+
+            <div class="phase-card p1">
+                <span class="badge badge-p1">Phase 9: Vaultwarden (Current)</span>
+                <h3>Password Vault on GCP</h3>
+                <p class="phase-desc">
+                    <strong>Architecture:</strong> The GCP <code>e2-micro</code> repurposed as a <strong>Vaultwarden</strong>
+                    host — a single Rust container on <code>127.0.0.1:8000</code> + <code>cloudflared</code> reaching
+                    <code>vault.sreeramkr.com</code>, no public ports. Runs on a least-privilege service account; nightly
+                    SQLite backup to a dedicated private bucket (5-object retention). Zero-ingress, admin via IAP-SSH.
                 </p>
             </div>
         </div>
@@ -640,13 +651,15 @@
         <h2 class="section-title section-title--tight">System Architecture</h2>
         <p class="section-sub">Current production topology and how code reaches production.</p>
 
-        <h3 class="arch-heading orange">Current Cloudflare Pages (Phase 6)</h3>
+        <h3 class="arch-heading orange">Current: Cloudflare Pages + Vaultwarden</h3>
         <p class="arch-text">
             Cloudflare Pages serves the static site directly from the edge. GitHub Actions renders the resume PDF, then
-            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM hosts
-            <strong>Hermes</strong>, a self-hosted AI assistant (Telegram + DeepSeek) — outbound-only traffic, no
-            tunnel, no exposed ports; admin access only via IAP SSH. A Phase 8 consolidation onto Oracle Cloud Free
-            Tier is in progress.
+            deploys the <code>site/</code> directory via <code>wrangler</code>. The GCP <code>e2-micro</code> VM now hosts
+            <strong>Vaultwarden</strong>, a self-hosted password manager — a single Rust container on
+            <code>127.0.0.1:8000</code> plus <code>cloudflared</code>, reached only via the <code>vault.sreeramkr.com</code>
+            tunnel route, with no public ports and admin over IAP-SSH. A nightly cron pushes the SQLite DB to a
+            dedicated private GCS bucket (5-object retention). The Oracle <code>A1.Flex</code> dev box serves as the
+            Reasonix browser terminal.
         </p>
         <div class="mermaid-container">
             <div class="mermaid">
@@ -659,9 +672,12 @@ graph TD
     P -->|serves| IDX[index.html / 404.html]
     P -->|serves| R[resume.html]
     P -->|serves| PDF
-    TG[Telegram] -->|outbound polling| VM[e2-micro VM]
-    VM -->|outbound HTTPS| G[(DeepSeek API)]
-    ADM[Admin] -->|IAP-only SSH| VM
+    VUser((Vault User)) -->|HTTPS vault.sreeramkr.com| T[Cloudflare Tunnel]
+    T -->|cloudflared| VW[Vaultwarden :8000]
+    VW -->|db.sqlite3| D[(vw-data)]
+    D -->|nightly backup| B[(Private GCS bucket)]
+    Ad[Admin] -->|IAP-only SSH| VM[e2-micro host]
+    VM -.-> VW
             </div>
         </div>
 
@@ -726,19 +742,24 @@ graph TD
                 deployments.
             </p>
 
-            <h3 style="color: var(--purple);">Since Phase 5: Hermes Host, then Oracle</h3>
+            <h3 style="color: var(--purple);">Since Phase 5: Hermes, Dev Box, then Vaultwarden</h3>
             <p>
                 The Phase 5 stack was retired when the site moved to Cloudflare Pages (Phase 6). The <code>e2-micro</code>
                 was rebuilt as a <strong>Hermes</strong> AI-assistant host (Phase 7): minimal Debian 13, zram + swap,
                 no Docker, no tunnel — outbound-only traffic (Telegram polling + DeepSeek API), admin only via
-                <strong>IAP SSH</strong>.
+                <strong>IAP SSH</strong>. Hermes has since been retired from GCP and will relaunch on a fresh Oracle VM.
             </p>
             <p>
-                <strong>Next (Phase 8, in progress):</strong> one Oracle Cloud Free Tier
-                <code>A1.Flex</code> VM as a <strong>Reasonix dev box</strong> — browser terminal (ttyd + tmux),
-                Node LTS + Reasonix via nvm, hardened host (ufw deny-incoming, sshd off), weekly maintenance,
-                all behind the same zero-ingress posture (Cloudflare Tunnel for ingress, serial console for admin),
-                provisioned entirely with Terraform + GitHub Actions.
+                <strong>Phase 8 (done):</strong> an Oracle Cloud Free Tier <code>A1.Flex</code> VM as a
+                <strong>Reasonix dev box</strong> — browser terminal (ttyd + tmux), Node LTS + Reasonix via nvm,
+                hardened host (ufw deny-incoming, sshd off), weekly maintenance, all behind the zero-ingress posture
+                (Cloudflare Tunnel for ingress, serial console for admin), provisioned with Terraform + GitHub Actions.
+            </p>
+            <p>
+                <strong>Current (Phase 9):</strong> the GCP <code>e2-micro</code> repurposed as a
+                <strong>Vaultwarden</strong> host — a single Rust container on <code>127.0.0.1:8000</code> +
+                <code>cloudflared</code> behind the <code>vault.sreeramkr.com</code> tunnel route, on a least-privilege
+                service account, with a nightly SQLite backup to a dedicated private GCS bucket. Zero public ports.
             </p>
         </div>
 

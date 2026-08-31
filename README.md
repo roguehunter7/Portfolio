@@ -82,7 +82,7 @@ Hermes ran on this VM as an unprivileged `hermes` user (Telegram with a DeepSeek
 
 ---
 
-## ⚡ Phase 6: Cloudflare Pages (Current)
+## ⚡ Phase 6: Cloudflare Pages (Live)
 
 The site is served directly from **Cloudflare Pages** — static assets at the edge, no server. Deployment is fully automated via GitHub Actions:
 
@@ -109,7 +109,7 @@ The site is served directly from **Cloudflare Pages** — static assets at the e
 * `site/.well-known/security.txt` declares the security contact.
 * Requires GitHub secrets `CLOUDFLARE_API_TOKEN` (Pages:Edit) and `CLOUDFLARE_ACCOUNT_ID`.
 
-### 3. Hermes — the VM's current job
+### 3. Vaultwarden — the VM's current job
 
 The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **Vaultwarden**, a self-hosted password manager (single Rust container on `127.0.0.1:8000` + `cloudflared` to `vault.sreeramkr.com`), managed via the automated `vaultwarden-setup` workflow. Hermes (the previous GCP occupant) has been torn down and moves to the Oracle phase; `scripts/hermes-install.sh` is reserved for that relaunch. See Phase 5 below.
 
@@ -119,7 +119,7 @@ The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **
 
 ---
 
-## 🟠 Phase 8: Oracle Free-Tier Dev Box (Current)
+## 🟠 Phase 8: Oracle Free-Tier Dev Box (Live)
 
 A single Oracle Cloud **Always Free** `A1.Flex` VM (2 OCPU / 12 GB, Ubuntu 24.04 ARM64) serving as a
 **Reasonix dev box** — zero open ports, provisioned entirely with Terraform + GitHub Actions:
@@ -144,10 +144,41 @@ A single Oracle Cloud **Always Free** `A1.Flex` VM (2 OCPU / 12 GB, Ubuntu 24.04
 - **IaC**: `infra/oci/` (VCN, NSG, cloud-init, budget + quota guardrails) applied by the manual `oci-provision` workflow (with a `destroy_first` rebuild input).
 - **Cost guardrails**: tenancy-wide budget ($1, alert at $0.01) + compartment quota allowing only the Always Free A1.Flex allocation — stays at $0.
 
+## 🟢 Phase 9: Vaultwarden on GCP (Current)
+
+The GCP `e2-micro` (Always Free) is repurposed as a **Vaultwarden** host — a self-hosted password manager,
+zero-ingress, provisioned entirely with Terraform + GitHub Actions:
+
+```
+[Vault User] ──HTTPS──► [Cloudflare Tunnel: vault.sreeramkr.com]
+                              │
+                              ▼
+                     cloudflared (container) → http://vaultwarden:80
+                              │
+                              ▼
+                     Vaultwarden (Rust) :8000 → 127.0.0.1 (host loopback only)
+                              │
+                              ▼
+                     ./vw-data (SQLite) — nightly backup → private GCS bucket
+```
+
+- **Zero ingress**: deny-all firewall + IAP-only SSH; `vault.sreeramkr.com` reached only via the tunnel's
+  `cloudflared` container. No public host ports (`8000` is loopback-only).
+- **Secret handling**: `ADMIN_TOKEN` (Argon2id) + Cloudflare tunnel token passed via a root-owned `0600` `.env`
+  (`env_file`), written by CI from GitHub Secrets — never committed, never in a command line.
+- **Account security**: `SIGNUPS_ALLOWED=false`; single user created once via the `/admin` panel (gated by `ADMIN_TOKEN`).
+- **Least-privilege**: instance runs a dedicated `vaultwarden-backup` service account with `roles/storage.objectUser`
+  on a private bucket only (uniform bucket-level access) — no broad project editor, no cross-bucket access.
+- **Backup**: nightly cron runs `backup.sh` — uses the metadata SA token (credential-free) to push `db.sqlite3`
+  to GCS and prune to the newest 5.
+- **Maintenance**: monthly cron (5th, 03:05) pulls the latest container images, upgrades the host OS, and reboots.
+- **IaC**: `infra/main.tf` (VPC, IAP firewall, Debian 13, Docker, SA + bucket IAM) + `infra/vaultwarden/`
+  (`docker-compose.yml`, `backup.sh`) applied by the manual `vaultwarden-setup` workflow (with a `rebuild_vm` input).
+
 ### Planned next steps
 
 - **Split the Oracle A1.Flex** into two 1 OCPU/6 GB instances: the `dev-box` (Reasonix) and a new `hermes` VM.
-- **Stand up Hermes fresh on OCI** (outbound-only: DeepSeek + Telegram; no tunnel, no public ports; `scripts/hermes-install.sh` reserved for it). Vaultwarden now runs on the GCP `e2-micro`.
+- **Stand up Hermes fresh on OCI** (outbound-only: DeepSeek + Telegram; no tunnel, no public ports; `scripts/hermes-install.sh` reserved for it).
 - Add further zero-ingress services as future case-study phases, each behind the Cloudflare Tunnel.
 
 ---
