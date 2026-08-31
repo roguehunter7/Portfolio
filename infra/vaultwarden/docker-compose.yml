@@ -1,0 +1,34 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:80"
+    volumes:
+      - ./vw-data:/data
+    # Secrets (ADMIN_TOKEN) come from .env, written by the vaultwarden-setup
+    # workflow over IAP-SSH from GitHub Secrets. env_file passes values verbatim,
+    # so the `$` in the Argon2 hash is preserved intact (no interpolation).
+    env_file:
+      - .env
+    environment:
+      DOMAIN: https://vault.sreeramkr.com
+      SIGNUPS_ALLOWED: "false"
+      INVITATIONS_ALLOWED: "true"
+      ENABLE_WEBSOCKET: "true"
+      DISABLE_ICON_DOWNLOAD: "false"
+      DATA_FOLDER: /data
+      # Admin panel is only reachable through the tunnel (no public ingress).
+      ADMIN_SESSION_LIFETIME: "20"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    # TUNNEL_TOKEN comes from .env (CLOUDFLARE_TUNNEL_TOKEN_VW secret authored as
+    # TUNNEL_TOKEN by the workflow). No hostname/ingress config file needed — the
+    # tunnel is remote-managed (routes live in the Cloudflare dashboard).
+    env_file:
+      - .env

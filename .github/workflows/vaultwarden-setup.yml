@@ -1,0 +1,96 @@
+name: Vaultwarden Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      rebuild_vm:
+        description: 'Fully destroy and rebuild the VM from scratch (nuke + recreate)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (OIDC/WIF)
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init -input=false
+
+      - name: Destroy VM (rebuild path)
+        if: ${{ inputs.rebuild_vm == 'true' }}
+        working-directory: infra
+        run: terraform destroy -auto-approve
+
+      - name: Terraform Apply
+        working-directory: infra
+        run: terraform apply -auto-approve
+
+      - name: Wait for VM boot + startup script
+        run: |
+          for i in $(seq 1 60); do
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap --command="true" >/dev/null 2>&1 && break
+            [ "$i" = 60 ] && { echo "VM SSH never came up" >&2; exit 1; }
+            sleep 15
+          done
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="timeout 900 bash -c 'until [ -f /var/log/startup_script_complete ]; do sleep 10; done' || \
+            { echo 'startup script did not complete (see /var/log/startup.log)'; exit 1; }; \
+            docker --version; docker compose version; gcloud --version | head -1"
+
+      - name: Push compose + secrets, start stack
+        env:
+          CLOUDFLARE_TUNNEL_TOKEN_VW: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN_VW }}
+          VAULTWARDEN_ADMIN_TOKEN: ${{ secrets.VAULTWARDEN_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Build .env locally so the Argon2 `$` in VAULTWARDEN_ADMIN_TOKEN is preserved
+          # verbatim (never interpreted by the shell or rewritten on the VM).
+          cat > /tmp/vw.env <<EOF
+          TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN_VW}
+          ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+          EOF
+          chmod 600 /tmp/vw.env
+
+          gcloud compute scp \
+            infra/vaultwarden/docker-compose.yml infra/vaultwarden/backup.sh /tmp/vw.env \
+            portfolio-zero-trust-node:/tmp/ \
+            --zone="us-central1-a" --quiet --tunnel-through-iap
+
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="sudo install -d -m 0755 -o root -g root /opt/vaultwarden && \
+              sudo install -m 0644 -o root -g root /tmp/docker-compose.yml /opt/vaultwarden/docker-compose.yml && \
+              sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
+              sudo install -m 0600 -o root -g root /tmp/vw.env /opt/vaultwarden/.env && \
+              rm -f /tmp/vw.env /tmp/docker-compose.yml /tmp/backup.sh && \
+              cd /opt/vaultwarden && sudo docker compose up -d"
+
+      - name: Verify stack
+        run: |
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="cd /opt/vaultwarden && \
+              echo '--- compose ---' && sudo docker compose ps && \
+              echo '--- alive ---' && curl -fsS http://localhost:8000/alive && echo && \
+              echo '--- env keys (values hidden) ---' && sudo grep -cE '^(TUNNEL_TOKEN|ADMIN_TOKEN)=' /opt/vaultwarden/.env && \
+              echo '--- backup ---' && sudo test -f /opt/vaultwarden/backup.sh && echo 'backup.sh present' && \
+              echo '--- tunnel ---' && sudo docker logs cloudflared --tail 30 2>&1 | grep -iE 'registered|error' | tail -5"

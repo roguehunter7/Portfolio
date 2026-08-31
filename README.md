@@ -25,11 +25,12 @@ resume.json                       Master resume data — machine-readable, long-
 scripts/render-pdf.sh              site/resume.html → site/resume.pdf via headless Chrome + ATS assertions
 archive/                           Docker-era files (Dockerfile, compose, deploy.sh, default.conf) — historical
 infra/oci/                         Terraform: Oracle A1.Flex dev box (VCN, zero-ingress NSG, cloud-init)
-infra/main.tf, infra/variables.tf  Terraform (GCP, legacy): zero-trust VPC, IAP-only SSH, e2-micro = Hermes host
+infra/main.tf, infra/variables.tf  Terraform (GCP): zero-trust VPC, IAP-only SSH, e2-micro = Vaultwarden host
+infra/vaultwarden/                 Vaultwarden + cloudflared docker-compose + backup.sh (metadata-SA → GCS)
 .github/workflows/deploy.yml       CI/CD: render resume → Cloudflare Pages deploy (manual)
 .github/workflows/oci-provision.yml Manual: provision Oracle dev box (destroy/rebuild inputs)
-.github/workflows/hermes-setup.yml Manual: provision GCP VM + install Hermes (destroy/rebuild inputs)
-scripts/hermes-install.sh          Hermes install + DeepSeek/Telegram gateway config (run on GCP VM via IAP)
+.github/workflows/vaultwarden-setup.yml Manual: provision GCP VM + start Vaultwarden stack (destroy/rebuild inputs)
+scripts/hermes-install.sh          Hermes install + DeepSeek/Telegram gateway config (reserved for the OCI Hermes phase)
 site/resume.pdf                    Generated artifact (gitignored, produced by CI)
 ```
 
@@ -61,31 +62,23 @@ site/resume.pdf                    Generated artifact (gitignored, produced by C
 
 ---
 
-## 🏁 Phase 5: Zero-Ingress VM (Historical — now the Hermes host)
+## 🏁 Phase 5: Zero-Ingress VM (Historical — now the Vaultwarden host)
 
-The `e2-micro` VM (GCP Always Free Tier, $0/month) evolved: it served the site through the tunnel (Docker/nginx, 2025–2026), the site moved to Cloudflare Pages (Phase 6, 2026-08), and the VM was **rebuilt as the Hermes agent host** — minimal Debian 13, 25 GB disk, no Docker, no tunnel. Design:
+The `e2-micro` VM (GCP Always Free Tier, $0/month) evolved: it served the site through the tunnel (Docker/nginx, 2025–2026), the site moved to Cloudflare Pages (Phase 6, 2026-08), the VM was **rebuilt as the Hermes agent host** (Phase 7), and it is now the **Vaultwarden host** (Phase 9, 2026-08) — Debian 13, 25 GB disk. Design:
 
 1. **IAP-only SSH** — the only ingress path is GCP Identity-Aware Proxy over port 22 (`35.235.240.0/20`).
 2. **No public exposure** — deny-all-ingress firewall; the VM stays invisible to internet scanners.
-3. **Hermes (Telegram bot)** — gateway connects *outbound* (Telegram polling + DeepSeek API); no inbound ports, no tunnel needed.
+3. **Vaultwarden (password vault)** — single Rust container on `127.0.0.1:8000` + `cloudflared`, reached only through the `vault.sreeramkr.com` tunnel route; admin via the `/admin` panel, no public ports.
 
-### 🤖 Hermes Agent (Phase 7)
+### 🤖 Hermes Agent (Phase 7, historical)
 
-Hermes (Nous Research) runs on the VM as an unprivileged `hermes` user, answering on Telegram with a DeepSeek backend:
+Hermes ran on this VM as an unprivileged `hermes` user (Telegram with a DeepSeek backend) until 2026-08, when it was **torn down from GCP** — it moves to a fresh Oracle `A1.Flex` VM in the OCI phase (see the master plan). Key details while it was here:
 
 - **Models**: main + all sub-agents/auxiliary `deepseek-v4-flash` (DeepSeek's budget tier; paid API, no free tier — ~10× cheaper than Gemini paid, which requires a ₹1000 minimum top-up)
 - **Memory**: 1 GB RAM + 2 GB zram + 6 GB swapfile (`vm.swappiness=180`, `vm.page-cluster=0`)
 - **Service**: user systemd unit `hermes-gateway` (official `hermes gateway install`) + `loginctl enable-linger` for boot start
-- **Security**: agent runs unprivileged (remote code-execution engine = contained to its home); DM pairing or `TELEGRAM_ALLOWED_USERS` allowlist gates access
-
-Re-provision (Actions → **Hermes Setup**, on `main`; also auto-runs on any push touching `infra/**`, `scripts/hermes-install.sh`, or the workflow itself):
-
-| Input | Effect |
-|---|---|
-| default run | Idempotent apply + install (no VM changes) |
-| `rebuild_vm` ✅ | Full `terraform destroy` + `apply` — nuke and rebuild the VM from scratch |
-
-**Secrets/vars used**: `DEEPSEEK_API_KEY` (platform.deepseek.com, prepaid top-up) + `TELEGRAM_BOT_TOKEN` (secrets), `TELEGRAM_ALLOWED_USERS` (optional var, Telegram numeric IDs), GCP WIF vars. Nothing is committed or echoed.
+- **Security**: agent ran unprivileged (remote code-execution engine = contained to its home); DM pairing or `TELEGRAM_ALLOWED_USERS` allowlist gated access
+- Re-provisioned by the **Hermes Setup** workflow (removed); reserved `scripts/hermes-install.sh` for the OCI relaunch.
 
 ---
 
@@ -118,7 +111,7 @@ The site is served directly from **Cloudflare Pages** — static assets at the e
 
 ### 3. Hermes — the VM's current job
 
-The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **Hermes**, a self-hosted AI assistant: Telegram gateway + DeepSeek API behind the same Cloudflare Tunnel, managed via `scripts/hermes-install.sh` (idempotent) and the manual `hermes-setup` workflow. See Phase 5 below.
+The Phase 5 `e2-micro` VM no longer serves the site (Pages does). It now runs **Vaultwarden**, a self-hosted password manager (single Rust container on `127.0.0.1:8000` + `cloudflared` to `vault.sreeramkr.com`), managed via the automated `vaultwarden-setup` workflow. Hermes (the previous GCP occupant) has been torn down and moves to the Oracle phase; `scripts/hermes-install.sh` is reserved for that relaunch. See Phase 5 below.
 
 ### 4. resume.json (master data)
 
@@ -153,9 +146,9 @@ A single Oracle Cloud **Always Free** `A1.Flex` VM (2 OCPU / 12 GB, Ubuntu 24.04
 
 ### Planned next steps
 
-- Migrate **Hermes** off the GCP `e2-micro` onto this VM (single consolidated free-tier host).
-- Decommission the GCP infrastructure (`terraform destroy` + remove WIF variables/secrets) once Hermes moves.
-- Add more zero-ingress services on the same VM as future case-study phases (password vault, blog, etc.), each behind the Cloudflare Tunnel.
+- **Split the Oracle A1.Flex** into two 1 OCPU/6 GB instances: the `dev-box` (Reasonix) and a new `hermes` VM.
+- **Stand up Hermes fresh on OCI** (outbound-only: DeepSeek + Telegram; no tunnel, no public ports; `scripts/hermes-install.sh` reserved for it). Vaultwarden now runs on the GCP `e2-micro`.
+- Add further zero-ingress services as future case-study phases, each behind the Cloudflare Tunnel.
 
 ---
 
