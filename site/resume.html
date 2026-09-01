@@ -41,7 +41,7 @@
 
   @page {
     size: letter;
-    margin: 0.4in 0.55in;
+    margin: 0.5in 0.55in;
   }
 
   * {
@@ -59,7 +59,7 @@
   body {
     font-family: 'Source Sans Pro', 'Segoe UI', system-ui, Arial, sans-serif;
     font-size: 10pt;
-    line-height: 1.12;
+    line-height: 1.28;
     color: var(--ink);
     background: #fff;
   }
@@ -139,8 +139,8 @@
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid var(--accent);
-    padding-bottom: 1.5pt;
-    margin: 5pt 0 2.5pt;
+    padding-bottom: 1pt;
+    margin: 6pt 0 2pt;
     break-after: avoid;
     page-break-after: avoid;
   }
@@ -151,7 +151,7 @@
   }
 
   .summary {
-    text-align: justify;
+    text-align: left;
   }
 
   /* ---------- LISTS ---------- */
@@ -180,7 +180,7 @@
   .entry {
     break-inside: avoid;
     page-break-inside: avoid;
-    margin-bottom: 1.5pt;
+    margin-bottom: 3.5pt;
   }
 
   .entry-head,
@@ -230,8 +230,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
         <a href="https://sreeramkr.com">sreeramkr.com</a>
       </span>
-    </div>
-    <div class="contact">
+      <span class="sep">|</span>
       <span class="item">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.33.95.1-.74.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18.91-.25 1.89-.38 2.86-.38s1.95.13 2.86.38c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56C20.71 21.38 24 17.07 24 12 24 5.65 18.35.5 12 .5z"/></svg>
         <a href="https://github.com/roguehunter7">github.com/roguehunter7</a>
@@ -246,7 +245,7 @@
 
   <section>
     <h2>Professional Summary</h2>
-    <p class="summary">Infrastructure Engineer automating secure, zero-ingress cloud infrastructure with Terraform, GitHub Actions (WIF/OIDC), and GCP/Oracle Cloud — from on-premises network automation (L2/L3, Active Directory, VLANs) to cloud-native CI/CD. Delivered 98% patching compliance across 1,000+ systems and reclaimed 500+ IPs via Python/Netmiko automation.</p>
+    <p class="summary">Infrastructure Engineer automating secure, zero-ingress cloud infrastructure (Terraform, GitHub Actions WIF/OIDC, GCP &amp; Oracle Cloud), with on-prem network automation across L2/L3, Active Directory, and VLANs to cloud-native CI/CD.</p>
   </section>
 
   <section>
@@ -266,8 +265,8 @@
         <li>Cut a <b>4-month manual switch survey in half</b> and reclaimed <b>500+ unused IPs</b> with a Python/Netmiko automation suite.</li>
         <li>Slashed ServiceNow privileged-account provisioning by <b>95%</b> (5 min to under 20 s) using custom <b>WMI/RDP PowerShell</b> tooling.</li>
         <li>Replaced a legacy <b>3,000-line manual workflow</b> with zero-prompt PowerShell automation, accelerating the <b>Windows Autopilot / Intune</b> enrollment pipeline.</li>
-        <li>Delivered <b>L1/L2 enterprise endpoint support</b>: bare-metal OS imaging, hardware provisioning, and complex system configuration for high-priority deployments.</li>
         <li>Ran a clean <b>L3-to-L2 migration across 70 subnets</b> (AD DNS, firewall ports/URLs, VLAN/trunking) with no service disruption.</li>
+        <li>Owned a <b>3-month night shift</b>, resolving all incidents first-line with <b>zero tickets raised to L3</b>.</li>
       </ul>
     </div>
 
@@ -276,10 +275,10 @@
   <section>
     <h2>Technical Skills</h2>
     <ul>
-      <li><b>Infrastructure &amp; SRE:</b> GCP (Compute Engine, VPC, GCS, IAP), Oracle Cloud (OCI), Terraform (IaC), Docker, Docker Compose, GitHub Actions (CI/CD, WIF/OIDC), Cloudflare Pages, Vaultwarden.</li>
-      <li><b>Networking &amp; Edge:</b> DNSSEC, HSTS, Cloudflare Zero Trust Tunnels, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.</li>
-      <li><b>Automation &amp; Scripting:</b> Python (Netmiko, Pandas, NetworkX), PowerShell, Bash Scripting, GitHub CLI, Linux System Administration.</li>
-      <li><b>Enterprise Tools:</b> ServiceNow API, Nginx Reverse Proxy, GitOps Workflows, Active Directory.</li>
+      <li><b>Infrastructure &amp; Cloud:</b> GCP (Compute Engine, VPC, GCS, IAP), Oracle Cloud (OCI), Terraform (IaC) with <code>state</code> locking, Docker, Docker Compose, GitHub Actions (CI/CD, WIF/OIDC), Cloudflare Pages.</li>
+      <li><b>Networking &amp; Edge:</b> Cloudflare Zero Trust Tunnels, DNSSEC, HSTS, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.</li>
+      <li><b>Automation &amp; Scripting:</b> Python (Netmiko, Pandas, NetworkX), PowerShell (WMI/RDP), Bash, GitHub CLI, Linux System Administration.</li>
+      <li><b>Enterprise Tools:</b> ServiceNow API, Nginx, Active Directory, Intune/Autopilot.</li>
     </ul>
   </section>
 
@@ -291,33 +290,20 @@
         <span class="entry-date"><a href="https://sreeramkr.com">sreeramkr.com</a></span>
       </div>
       <ul>
-        <li><b>Terraform</b> (state-locked): custom VPC, deny-all ingress (0-65535), IAP-only SSH, e2-micro, with a declared <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box — all zero-ingress.</li>
-        <li><b>Cost guardrails</b> in IaC: tenancy budget (alert on any spend) + quota that denies everything except the Always-Free allocation ($0/mo).</li>
-        <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: buildx, IAP-SSH deploys, <code>wrangler pages deploy</code> under hardened <code>_headers</code> (CSP+nonce, HSTS); CI renders the ATS-safe resume PDF.</li>
-        <li>Proved a <b>serverless</b> phase: a <b>Go</b> session-analytics API on <b>Cloud Run</b> with transactional state + atomic increments in <b>Cloud Firestore</b> (later reverted to the $0 Docker/VM phase).</li>
-        <li>Services isolated on a private <b>Docker Compose</b> network reached only through an outbound <b>Cloudflare Tunnel</b> — zero exposed host ports.</li>
+        <li><b>Terraform</b> (state-locked) with <b>cost guardrails</b>: custom VPC plus deny-all ingress (0-65535), IAP-only SSH, and a <b>zero-ingress</b> <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box — tenancy budget + quota that caps at the <b>$0/mo</b> allocation.</li>
+        <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: buildx + IAP-SSH deploys and <code>wrangler pages deploy</code> under hardened <code>_headers</code> (CSP+nonce, HSTS); CI renders the ATS-safe resume PDF.</li>
+        <li>All services isolated behind an outbound <b>Cloudflare Tunnel</b> on a private <b>Docker Compose</b> network — zero exposed host ports.</li>
       </ul>
     </div>
 
     <div class="entry">
       <div class="entry-head">
-        <span class="entry-title">Hermes — Self-Hosted AI Assistant</span>
-      </div>
-      <ul>
-        <li>Self-hosted AI assistant (Telegram gateway + <b>DeepSeek API</b>) on a free-tier GCP e2-micro VM — outbound-only traffic, zero exposed ports; provisioned end-to-end with <b>Terraform</b> + an idempotent install script.</li>
-        <li>Zero-ingress posture: deny-all ingress, IAP-only admin SSH, outbound Telegram polling + LLM API.</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="entry-head">
-        <span class="entry-title">Vaultwarden — Zero-Ingress Self-Hosted Password Vault</span>
+        <span class="entry-title">Hermes &amp; Vaultwarden — Self-Hosted Services</span>
         <span class="entry-date"><a href="https://vault.sreeramkr.com">vault.sreeramkr.com</a></span>
       </div>
       <ul>
-        <li>Re-purposed the freed GCP VM into a hardened password manager: <b>Vaultwarden</b> bound to loopback <b>:8000</b> behind a <b>Cloudflare Tunnel</b>; no public ports.</li>
-        <li>Secrets in a root-owned <code>0600 .env</code> written by CI (Argon2 admin token, signups disabled); <b>least-privilege SA</b> scoped to one private GCS bucket.</li>
-        <li>Nightly SQLite backup via the instance's metadata token (no keys on host), auto-pruned to the newest 5.</li>
+        <li>Provisioned an <b>AI assistant</b> (Telegram gateway + <b>DeepSeek API</b>) and a <b>Vaultwarden</b> password vault, both on free-tier VMs — loopback <code>:8000</code> + deny-all ingress, IAP-only admin SSH, outbound polling/LLM traffic only.</li>
+        <li>Secrets in a root-owned <code>0600 .env</code> (Argon2 admin token, signups disabled); nightly CLI-free SQLite backup via the metadata token, auto-pruned to the newest 5.</li>
       </ul>
     </div>
   </section>
@@ -341,9 +327,6 @@
         <span>Adi Shankara Institute of Engineering &amp; Technology</span>
         <span>Kochi, India</span>
       </div>
-      <ul>
-        <li><b>Relevant Coursework:</b> Computer Communication &amp; Networks, Operating Systems, Fiber Optic Communication.</li>
-      </ul>
     </div>
   </section>
 
