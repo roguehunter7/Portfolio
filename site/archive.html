@@ -7,26 +7,38 @@
 <meta name="description" content="Phase-by-phase archive of a zero-ingress infrastructure case study: from a bare VM to Cloudflare Pages and a self-hosted password vault.">
 <meta property="og:title" content="Infrastructure Archive — Sreeram K R">
 <meta property="og:description" content="Six phases, each with its own architecture diagram and the reason behind it.">
+<meta property="og:image" content="https://sreeramkr.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+<script nonce="p0rtfolio-s1te">
+document.documentElement.dataset.theme =
+  localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.min.js"
   integrity="sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy"
   crossorigin="anonymous" nonce="p0rtfolio-s1te"></script>
 <script src="/assets/site.js" nonce="p0rtfolio-s1te"></script>
+<link rel="preload" href="/fonts/space-grotesk-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 <div class="container">
   <nav class="site-nav">
-    <span class="brand">Sreeram K R</span>
+    <span class="brand"><span class="brand-mark">sk_</span><span class="brand-name">Sreeram K R</span></span>
     <span class="links">
       <a href="/">Home</a>
-      <a href="/archive">Archive</a>
+      <a href="/archive" aria-current="page">Archive</a>
       <a href="/resume.html">Resume</a>
     </span>
   </nav>
 
   <header class="hero" style="padding-top:32px">
-    <h1>Infrastructure Archive</h1>
+    <h1>Infrastructure <span class="grad-text">Archive</span></h1>
     <p class="tagline" style="max-width:720px">
       Every phase of this project, capture by capture. Each entry shows the architecture diagram for that
       point in time, <strong>why</strong> it was built that way, and <strong>how</strong> it was put together
@@ -38,34 +50,45 @@
     </p>
   </header>
 
-  <!-- Phase 1 -->
-  <article class="archive-entry js-reveal" style="--delay: 0ms">
-    <h3>Phase 1 — Bootstrap &amp; GitOps polling</h3>
-    <p class="archive-tagline">A hand-deployed VM learns to deploy itself.</p>
-    <p class="archive-meta">May 2026</p>
-    <div class="archive-block">
-      <h4>Why</h4>
-      <p>
-        The project started as a plain static portfolio served from a single cloud VM. Manual re-deploys didn't
-        scale and there was no way to audit what was live. We wanted the site to track the repository without
-        anyone babysitting a deploy, and we needed a repeatable way to route traffic and secure the host.
-      </p>
-    </div>
-    <div class="archive-block">
-      <h4>How</h4>
-      <p>
-        A pull-based GitOps loop polled the repository for changes and re-deployed on delta. Nginx served the site
-        from a Docker image built and pushed earlier. As it hardened, we added HSTS, Docker image CVE remediation,
-        and introduced Terraform to declare the VM and networking.
-      </p>
-      <ul>
-        <li><strong>Deploy:</strong> pull-based polling loop; Docker + nginx to serve the static site.</li>
-        <li><strong>Hardening:</strong> HSTS header, hardened base image, strict firewall posture.</li>
-        <li><strong>IaC:</strong> Terraform introduced to describe the cloud resources reproducibly.</li>
-      </ul>
-    </div>
-    <div class="mermaid-container">
-      <div class="mermaid">
+  <div class="archive-layout">
+    <aside class="phase-rail" aria-label="Phase navigation">
+      <a href="#phase-1"><span class="pr-num">01</span>Bootstrap &amp; GitOps</a>
+      <a href="#phase-2"><span class="pr-num">02</span>Observability &amp; IaC</a>
+      <a href="#phase-3"><span class="pr-num">03</span>Zero-ingress Compose</a>
+      <a href="#phase-4"><span class="pr-num">04</span>Edge migration</a>
+      <a href="#phase-5"><span class="pr-num">05</span>Repurposing compute</a>
+      <a href="#phase-6"><span class="pr-num">06</span>Vaultwarden host</a>
+    </aside>
+
+    <div class="archive-content">
+      <!-- Phase 1 -->
+      <article class="archive-entry js-reveal" id="phase-1" data-phase="01" style="--delay: 0ms">
+        <h3>Phase 1 — Bootstrap &amp; GitOps polling</h3>
+        <p class="archive-tagline">A hand-deployed VM learns to deploy itself.</p>
+        <p class="archive-meta">May 2026</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            The project started as a plain static portfolio served from a single cloud VM. Manual re-deploys didn't
+            scale and there was no way to audit what was live. We wanted the site to track the repository without
+            anyone babysitting a deploy, and we needed a repeatable way to route traffic and secure the host.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            A pull-based GitOps loop polled the repository for changes and re-deployed on delta. Nginx served the site
+            from a Docker image built and pushed earlier. As it hardened, we added HSTS, Docker image CVE remediation,
+            and introduced Terraform to declare the VM and networking.
+          </p>
+          <ul>
+            <li><strong>Deploy:</strong> pull-based polling loop; Docker + nginx to serve the static site.</li>
+            <li><strong>Hardening:</strong> HSTS header, hardened base image, strict firewall posture.</li>
+            <li><strong>IaC:</strong> Terraform introduced to describe the cloud resources reproducibly.</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
 flowchart TD
     Dev[Developer] -->|push commit| Repo[(GitHub Repo)]
     Repo -->|poll for SHA delta| VM
@@ -75,40 +98,40 @@ flowchart TD
       Site --> Users[Visitors]
     end
     Terraform[Terraform] -->|declares| VM
-      </div>
-    </div>
-  </article>
+          </div>
+        </div>
+      </article>
 
-  <!-- Phase 2 -->
-  <article class="archive-entry js-reveal" style="--delay: 60ms">
-    <h3>Phase 2 — Observability &amp; IaC serverless</h3>
-    <p class="archive-tagline">Knowing what's happening, then rebuilding the whole thing declaratively.</p>
-    <p class="archive-meta">June 2026</p>
-    <div class="archive-block">
-      <h4>Why</h4>
-      <p>
-        Hand-rolled sidecar scripts gave no real-time signal, and the growing fleet of bespoke shell scripts
-        became unmaintainable. We wanted live observability and a path where the deployment was fully declared
-        in code — and we wanted to prove the whole stack could run serverless.
-      </p>
-    </div>
-    <div class="archive-block">
-      <h4>How</h4>
-      <p>
-        We added an Nginx <code>stub_status</code>/frontend-polling metrics daemon with a systemd service and
-        containerized the resume build (LaTeX compiled in CI). Then we rebuilt the deployment on
-        <strong>Terraform + GitHub Actions</strong> with a proper migration to
-        <strong>Cloud Run + Firestore</strong>: a Go visitor-tracker API authenticated via
-        <strong>Workload Identity Federation</strong>, shipped as a multi-stage image.
-      </p>
-      <ul>
-        <li><strong>Observability:</strong> stub_status polling + a metrics daemon with chaos injection.</li>
-        <li><strong>Resume:</strong> LaTeX compiled in CI and served from the container (later migrated to HTML+CSS — see Phase 4).</li>
-        <li><strong>Serverless:</strong> Terraform + Actions; Cloud Run, Firestore, WIF keyless auth, multi-stage Go image.</li>
-      </ul>
-    </div>
-    <div class="mermaid-container">
-      <div class="mermaid">
+      <!-- Phase 2 -->
+      <article class="archive-entry js-reveal" id="phase-2" data-phase="02" style="--delay: 60ms">
+        <h3>Phase 2 — Observability &amp; IaC serverless</h3>
+        <p class="archive-tagline">Knowing what's happening, then rebuilding the whole thing declaratively.</p>
+        <p class="archive-meta">June 2026</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            Hand-rolled sidecar scripts gave no real-time signal, and the growing fleet of bespoke shell scripts
+            became unmaintainable. We wanted live observability and a path where the deployment was fully declared
+            in code — and we wanted to prove the whole stack could run serverless.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            We added an Nginx <code>stub_status</code>/frontend-polling metrics daemon with a systemd service and
+            containerized the resume build (LaTeX compiled in CI). Then we rebuilt the deployment on
+            <strong>Terraform + GitHub Actions</strong> with a proper migration to
+            <strong>Cloud Run + Firestore</strong>: a Go visitor-tracker API authenticated via
+            <strong>Workload Identity Federation</strong>, shipped as a multi-stage image.
+          </p>
+          <ul>
+            <li><strong>Observability:</strong> stub_status polling + a metrics daemon with chaos injection.</li>
+            <li><strong>Resume:</strong> LaTeX compiled in CI and served from the container (later migrated to HTML+CSS — see Phase 4).</li>
+            <li><strong>Serverless:</strong> Terraform + Actions; Cloud Run, Firestore, WIF keyless auth, multi-stage Go image.</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
 flowchart TD
     Dev[Developer] -->|git push| GH[GitHub Actions]
     GH -->|build + push image| AR[Artifact Registry]
@@ -120,41 +143,41 @@ flowchart TD
     subgraph VM2[Cloud VM]
       Nginx --> Site[Resume + site]
     end
-      </div>
-    </div>
-  </article>
+          </div>
+        </div>
+      </article>
 
-  <!-- Phase 3 -->
-  <article class="archive-entry js-reveal" style="--delay: 120ms">
-    <h3>Phase 3 — Zero-ingress Docker Compose</h3>
-    <p class="archive-tagline">The cost of serverless pushed everything back behind a no-public-ports host.</p>
-    <p class="archive-meta">July 2026</p>
-    <div class="archive-block">
-      <h4>Why</h4>
-      <p>
-        Cloud Run + Artifact Registry + Firestore read/write fees accumulated for a low-traffic portfolio,
-        breaking the "$0/month" goal. The lesson was honest: serverless removed VM maintenance but added a cost
-        vector the workload didn't justify. We returned to a single free-tier VM — but this time with a
-        fundamentally more secure posture: <strong>zero exposed ports</strong>.
-      </p>
-    </div>
-    <div class="archive-block">
-      <h4>How</h4>
-      <p>
-        We removed the tracker API and rebuilt the stack as a <strong>Docker Compose</strong> project: Nginx and
-        <code>cloudflared</code> containers on an isolated Compose network. All ingress arrives via a
-        <strong>Cloudflare Tunnel</strong> (outbound connection), so the host exposes no public port. We pinned the
-        tunnel image, hardened the VM bootstrap and Nginx, added a VM-readiness check to the deploy, and released
-        the project under MIT.
-      </p>
-      <ul>
-        <li><strong>Ingress:</strong> Cloudflare Tunnel only — zero public ports, no host firewall exposure.</li>
-        <li><strong>Runtime:</strong> Docker Compose v2, pinned tunnel image, hardened Nginx + VM bootstrapping.</li>
-        <li><strong>Pipeline:</strong> VM-readiness check before deploy; images built in CI and pulled anonymously.</li>
-      </ul>
-    </div>
-    <div class="mermaid-container">
-      <div class="mermaid">
+      <!-- Phase 3 -->
+      <article class="archive-entry js-reveal" id="phase-3" data-phase="03" style="--delay: 120ms">
+        <h3>Phase 3 — Zero-ingress Docker Compose</h3>
+        <p class="archive-tagline">The cost of serverless pushed everything back behind a no-public-ports host.</p>
+        <p class="archive-meta">July 2026</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            Cloud Run + Artifact Registry + Firestore read/write fees accumulated for a low-traffic portfolio,
+            breaking the "$0/month" goal. The lesson was honest: serverless removed VM maintenance but added a cost
+            vector the workload didn't justify. We returned to a single free-tier VM — but this time with a
+            fundamentally more secure posture: <strong>zero exposed ports</strong>.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            We removed the tracker API and rebuilt the stack as a <strong>Docker Compose</strong> project: Nginx and
+            <code>cloudflared</code> containers on an isolated Compose network. All ingress arrives via a
+            <strong>Cloudflare Tunnel</strong> (outbound connection), so the host exposes no public port. We pinned the
+            tunnel image, hardened the VM bootstrap and Nginx, added a VM-readiness check to the deploy, and released
+            the project under MIT.
+          </p>
+          <ul>
+            <li><strong>Ingress:</strong> Cloudflare Tunnel only — zero public ports, no host firewall exposure.</li>
+            <li><strong>Runtime:</strong> Docker Compose v2, pinned tunnel image, hardened Nginx + VM bootstrapping.</li>
+            <li><strong>Pipeline:</strong> VM-readiness check before deploy; images built in CI and pulled anonymously.</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
 flowchart TD
     V[Visitor] -->|HTTPS| CF[Cloudflare Edge]
     CF -->|tunnel| Tunnel[cloudflared]
@@ -169,41 +192,41 @@ flowchart TD
     end
     GH2[GitHub Actions] -->|build image| Pull[VM pulls anonymous]
     Pull --> Nginx
-      </div>
-    </div>
-  </article>
+          </div>
+        </div>
+      </article>
 
-  <!-- Phase 4 -->
-  <article class="archive-entry js-reveal" style="--delay: 180ms">
-    <h3>Phase 4 — Edge migration to Cloudflare Pages</h3>
-    <p class="archive-tagline">Static assets move to the edge; the VM stops serving the site.</p>
-    <p class="archive-meta">August 2026</p>
-    <div class="archive-block">
-      <h4>Why</h4>
-      <p>
-        A static resume/portfolio doesn't need an origin server at all. Serving it at the edge is faster, has
-        first-class security-header control, and frees the VM for real work. The deploy also became simpler:
-        push a commit, render the PDF, publish to Pages.
-      </p>
-    </div>
-    <div class="archive-block">
-      <h4>How</h4>
-      <p>
-        We migrated the static site to <strong>Cloudflare Pages</strong> with a <code>_headers</code> policy that
-        hardens CSP, HSTS, COOP/CORP, and permissions. The resume PDF is rendered by CI (headless Chrome) with
-        ATS assertions. We made the site AI-friendly with <code>robots.txt</code>, <code>llms.txt</code>, and a
-        JSON-LD Person schema, and documented the HTML-resume rationale.
-      </p>
-      <ul>
-        <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
-        <li><strong>Hardening:</strong> strict CSP + nonce, HSTS, COOP/CORP, Permissions-Policy, header route rules.</li>
-        <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
-        <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now a single self-contained HTML+CSS doc rendered to PDF by headless Chrome, with the ATS assertions in CI (dropping the TeX toolchain).</li>
-        <li><strong>Diagrams:</strong> the site's architecture diagrams use Mermaid (client-side, pinned <code>mermaid@11.16.1</code> with an SRI hash so CDN drift can't break it); themes/layout were tuned for readability across dark/light.</li>
-      </ul>
-    </div>
-    <div class="mermaid-container">
-      <div class="mermaid">
+      <!-- Phase 4 -->
+      <article class="archive-entry js-reveal" id="phase-4" data-phase="04" style="--delay: 180ms">
+        <h3>Phase 4 — Edge migration to Cloudflare Pages</h3>
+        <p class="archive-tagline">Static assets move to the edge; the VM stops serving the site.</p>
+        <p class="archive-meta">August 2026</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            A static resume/portfolio doesn't need an origin server at all. Serving it at the edge is faster, has
+            first-class security-header control, and frees the VM for real work. The deploy also became simpler:
+            push a commit, render the PDF, publish to Pages.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            We migrated the static site to <strong>Cloudflare Pages</strong> with a <code>_headers</code> policy that
+            hardens CSP, HSTS, COOP/CORP, and permissions. The resume PDF is rendered by CI (headless Chrome) with
+            ATS assertions. We made the site AI-friendly with <code>robots.txt</code>, <code>llms.txt</code>, and a
+            JSON-LD Person schema, and documented the HTML-resume rationale.
+          </p>
+          <ul>
+            <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
+            <li><strong>Hardening:</strong> strict CSP + nonce, HSTS, COOP/CORP, Permissions-Policy, header route rules.</li>
+            <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
+            <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now a single self-contained HTML+CSS doc rendered to PDF by headless Chrome.</li>
+            <li><strong>Diagrams:</strong> Mermaid (client-side, pinned <code>mermaid@11.16.1</code> with an SRI hash); themes/layout tuned for readability across dark/light.</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
 flowchart TD
     Dev[Developer] -->|git push| GH[GitHub Actions]
     GH -->|render resume| PDF[Resume PDF]
@@ -213,40 +236,40 @@ flowchart TD
     Pages --> IDX[index.html]
     Pages --> R[resume.html]
     Pages --> PDF
-      </div>
-    </div>
-  </article>
+          </div>
+        </div>
+      </article>
 
-  <!-- Phase 5 -->
-  <article class="archive-entry js-reveal" style="--delay: 240ms">
-    <h3>Phase 5 — Repurposing the compute</h3>
-    <p class="archive-tagline">Freed VMs become an AI host and a zero-ingress dev box.</p>
-    <p class="archive-meta">August 2026</p>
-    <div class="archive-block">
-      <h4>Why</h4>
-      <p>
-        Once the site was on Pages, the free-tier VMs were idle capacity. Rather than shut them down, we
-        re-purposed them: first a self-hosted AI assistant, then a browser-accessible development box — both
-        keeping the zero-ingress posture so no port is ever reachable from the internet.
-      </p>
-    </div>
-    <div class="archive-block">
-      <h4>How</h4>
-      <p>
-        We provisioned a <strong>Hermes</strong> AI-assistant host (outbound-only: Telegram polling + an LLM API,
-        admin via IAP SSH), with a <code>resume.json</code> master data file and DeepSeek backend. Then we built an
-        <strong>Oracle Cloud Always-Free A1.Flex</strong> dev box provisioned by Terraform + GitHub Actions: a
-        ttyd + tmux browser terminal, Node LTS via nvm, a hardened firewall, and cost guardrails (tenancy-wide
-        budget + quota that denies everything except the Always-Free allocation).
-      </p>
-      <ul>
-        <li><strong>Hermes host:</strong> outbound-only AI assistant, DeepSeek backend, Telegram pairing, IAP SSH admin.</li>
-        <li><strong>Oracle dev box:</strong> A1.Flex (2 OCPU / 12 GB), cloudflared SSH, browser terminal, weekly maintenance.</li>
-        <li><strong>Guardrails:</strong> tenancy budget + compute/storage quotas limiting to the Always-Free tier ($0).</li>
-      </ul>
-    </div>
-    <div class="mermaid-container">
-      <div class="mermaid">
+      <!-- Phase 5 -->
+      <article class="archive-entry js-reveal" id="phase-5" data-phase="05" style="--delay: 240ms">
+        <h3>Phase 5 — Repurposing the compute</h3>
+        <p class="archive-tagline">Freed VMs become an AI host and a zero-ingress dev box.</p>
+        <p class="archive-meta">August 2026</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            Once the site was on Pages, the free-tier VMs were idle capacity. Rather than shut them down, we
+            re-purposed them: first a self-hosted AI assistant, then a browser-accessible development box — both
+            keeping the zero-ingress posture so no port is ever reachable from the internet.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            We provisioned a <strong>Hermes</strong> AI-assistant host (outbound-only: Telegram polling + an LLM API,
+            admin via IAP SSH), with a <code>resume.json</code> master data file and DeepSeek backend. Then we built an
+            <strong>Oracle Cloud Always-Free A1.Flex</strong> dev box provisioned by Terraform + GitHub Actions: a
+            ttyd + tmux browser terminal, Node LTS via nvm, a hardened firewall, and cost guardrails (tenancy-wide
+            budget + quota that denies everything except the Always-Free allocation).
+          </p>
+          <ul>
+            <li><strong>Hermes host:</strong> outbound-only AI assistant, DeepSeek backend, Telegram pairing, IAP SSH admin.</li>
+            <li><strong>Oracle dev box:</strong> A1.Flex (2 OCPU / 12 GB), cloudflared SSH, browser terminal, weekly maintenance.</li>
+            <li><strong>Guardrails:</strong> tenancy budget + compute/storage quotas limiting to the Always-Free tier ($0).</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
 flowchart TD
     subgraph GCPVM[GCP e2-micro]
       Hermes[Hermes host]
@@ -262,41 +285,41 @@ flowchart TD
     DevBox[Developer] --> CF2
     TF[GitHub Actions + Terraform] -->|provision, cost-guarded| Tz
     Admin2[Admin] -->|serial console| Tz
-      </div>
-    </div>
-  </article>
+          </div>
+        </div>
+      </article>
 
-  <!-- Phase 6 -->
-  <article class="archive-entry js-reveal" style="--delay: 300ms">
-    <h3>Phase 6 — Vaultwarden host (current)</h3>
-    <p class="archive-tagline">The GCP VM becomes a zero-ingress self-hosted password vault.</p>
-    <p class="archive-meta">August 2026 — current</p>
-    <div class="archive-block">
-      <h4>Why</h4>
-      <p>
-        With Hermes relocated to Oracle, the GCP <code>e2-micro</code> was available again. A self-hosted
-        password manager is a great use of free-tier compute, and it must be maximally locked down: a credential
-        store is exactly the workload that demands zero public exposure and least-privilege access.
-      </p>
-    </div>
-    <div class="archive-block">
-      <h4>How</h4>
-      <p>
-        The VM now runs <strong>Vaultwarden</strong> (single Rust container on loopback <code>:8000</code> plus a
-        <code>cloudflared</code> container) reached only via the <code>vault.sreeramkr.com</code> tunnel route.
-        Secrets live in a root-owned <code>0600 .env</code> written by CI, and the Argon2 admin token is
-        interpolated correctly (<code>$</code> doubled). It runs on a <strong>least-privilege service account</strong>
-        scoped to one private GCS bucket, with a nightly SQLite backup that prunes to the newest five. Admin is
-        over IAP SSH; no public ports.
-      </p>
-      <ul>
-        <li><strong>Zero ingress:</strong> deny-all firewall + IAP-only SSH; loopback-only <code>:8000</code>.</li>
-        <li><strong>Secrets:</strong> <code>0600 .env</code> via <code>env_file</code>, correct <code>$</code> escaping.</li>
-        <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 5.</li>
-      </ul>
-    </div>
-    <div class="mermaid-container">
-      <div class="mermaid">
+      <!-- Phase 6 -->
+      <article class="archive-entry js-reveal" id="phase-6" data-phase="06" style="--delay: 300ms">
+        <h3>Phase 6 — Vaultwarden host (current)</h3>
+        <p class="archive-tagline">The GCP VM becomes a zero-ingress self-hosted password vault.</p>
+        <p class="archive-meta">August 2026 — current</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            With Hermes relocated to Oracle, the GCP <code>e2-micro</code> was available again. A self-hosted
+            password manager is a great use of free-tier compute, and it must be maximally locked down: a credential
+            store is exactly the workload that demands zero public exposure and least-privilege access.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            The VM now runs <strong>Vaultwarden</strong> (single Rust container on loopback <code>:8000</code> plus a
+            <code>cloudflared</code> container) reached only via the <code>vault.sreeramkr.com</code> tunnel route.
+            Secrets live in a root-owned <code>0600 .env</code> written by CI, and the Argon2 admin token is
+            interpolated correctly (<code>$</code> doubled). It runs on a <strong>least-privilege service account</strong>
+            scoped to one private GCS bucket, with a nightly SQLite backup that prunes to the newest five. Admin is
+            over IAP SSH; no public ports.
+          </p>
+          <ul>
+            <li><strong>Zero ingress:</strong> deny-all firewall + IAP-only SSH; loopback-only <code>:8000</code>.</li>
+            <li><strong>Secrets:</strong> <code>0600 .env</code> via <code>env_file</code>, correct <code>$</code> escaping.</li>
+            <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 5.</li>
+          </ul>
+        </div>
+        <div class="mermaid-container">
+          <div class="mermaid">
 flowchart TD
     VUser[Vault user] -->|HTTPS vault.sreeramkr.com| CF[Cloudflare Edge]
     CF -->|tunnel| CFd[cloudflared]
@@ -309,12 +332,14 @@ flowchart TD
     end
     Admin[Admin] -->|IAP-only SSH| VW
     CI[GitHub Actions] -->|writes .env 0600| VW
+          </div>
+        </div>
+      </article>
+
+      <div class="links-bar" style="margin-top:16px">
+        <a href="/" class="btn-ghost">&larr; Back to home</a>
       </div>
     </div>
-  </article>
-
-  <div class="links-bar" style="margin-top:16px">
-    <a href="/" class="btn-primary">&larr; Back to home</a>
   </div>
 
   <div class="footer-status">
@@ -322,8 +347,8 @@ flowchart TD
     Uptime: 100% &middot; Cloudflare Pages &middot; $0/mo
   </div>
   <div class="footer-links">
-    <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
-    <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
+    <a href="https://linkedin.com/in/sreeram-k-r" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="https://github.com/roguehunter7" target="_blank" rel="noopener">GitHub</a>
     <a href="#" class="email-link"></a>
     <a href="/resume.pdf" target="_blank">Resume (PDF)</a>
     <a href="/resume.html" target="_blank">Resume (HTML)</a>

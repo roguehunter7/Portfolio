@@ -9,8 +9,18 @@
 <meta property="og:description" content="Zero-ingress cloud infrastructure case study — Terraform, GCP, Oracle Cloud, Docker, Cloudflare. Full archive at /archive.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sreeramkr.com">
+<meta property="og:image" content="https://sreeramkr.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+<script nonce="p0rtfolio-s1te">
+document.documentElement.dataset.theme =
+  localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
 <script type="application/ld+json" nonce="p0rtfolio-s1te">
 {
   "@context": "https://schema.org",
@@ -27,45 +37,71 @@
   }
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.min.js"
-  integrity="sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy"
-  crossorigin="anonymous" nonce="p0rtfolio-s1te"></script>
+<link rel="preload" href="/fonts/space-grotesk-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script src="/assets/site.js" nonce="p0rtfolio-s1te"></script>
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 <div class="container">
   <nav class="site-nav">
-    <span class="brand">Sreeram K R</span>
+    <span class="brand"><span class="brand-mark">sk_</span><span class="brand-name">Sreeram K R</span></span>
     <span class="links">
-      <a href="/">Home</a>
+      <a href="/" aria-current="page">Home</a>
       <a href="/archive">Archive</a>
       <a href="/resume.html">Resume</a>
     </span>
   </nav>
 
   <header class="hero">
-    <h1 class="js-reveal">Sreeram K R</h1>
-    <div class="subtitle js-reveal">Cloud &amp; Infrastructure Automation Engineer</div>
-    <p class="tagline js-reveal">
-      Automating secure, zero-ingress infrastructure on free-tier cloud. This project is a live
-      case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
-      capacity became a self-hosted password vault — all documented phase by phase.
-    </p>
-    <div class="tag-row">
-      <span class="tag">Terraform</span><span class="tag">GCP</span><span class="tag">Oracle Cloud</span>
-      <span class="tag">GitHub Actions</span><span class="tag">Zero Trust</span><span class="tag">Cloudflare</span>
-      <span class="tag">IAP</span><span class="tag">Docker</span><span class="tag">WIF</span>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <h1 class="js-reveal">Sreeram <span class="grad-text">K R</span></h1>
+        <div class="subtitle js-reveal">Cloud &amp; Infrastructure Automation Engineer</div>
+        <p class="tagline js-reveal">
+          Automating secure, zero-ingress infrastructure on free-tier cloud. This project is a live
+          case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
+          capacity became a self-hosted password vault — all documented phase by phase.
+        </p>
+        <div class="tag-row js-reveal">
+          <span class="tag">Terraform</span><span class="tag">GCP</span><span class="tag">Oracle Cloud</span>
+          <span class="tag">GitHub Actions</span><span class="tag">Zero Trust</span><span class="tag">Cloudflare</span>
+          <span class="tag">IAP</span><span class="tag">Docker</span><span class="tag">WIF</span>
+        </div>
+        <div class="links-bar js-reveal">
+          <a href="/resume.html" class="btn-primary">View Resume</a>
+          <a href="/resume.pdf" class="btn-ghost">Download PDF</a>
+          <span class="sep" aria-hidden="true">|</span>
+          <a href="#" class="email-link"></a>
+          <button type="button" class="copy-email" aria-label="Copy email address">copy</button>
+          <span class="sep" aria-hidden="true">|</span>
+          <a href="https://linkedin.com/in/sreeram-k-r" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/roguehunter7" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+
+      <div class="terminal js-terminal" role="img"
+           aria-label="Terminal session: terraform plan and apply complete, then cloudflared tunnel online for vault.sreeramkr.com"
+           aria-hidden="false">
+        <div class="terminal-bar">
+          <span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span>
+          <span class="t-title">sreeramkr — zsh</span>
+        </div>
+        <div class="terminal-body">
+          <div class="t-line"><span class="t-prompt">$</span> <span class="t-cmd" data-type="terraform apply --auto-approve"></span><span class="t-caret" aria-hidden="true"></span></div>
+          <div class="t-line t-dim" aria-hidden="true">&#10003; Plan: 3 to add, 0 to change, 0 to destroy</div>
+          <div class="t-line t-dim" aria-hidden="true">&#10003; Apply complete! Resources: 3 added.</div>
+          <div class="t-line" aria-hidden="true"><span class="t-prompt">$</span> cloudflared tunnel run vault</div>
+          <div class="t-line t-ok" aria-hidden="true">&#10003; tunnel online &#183; vault.sreeramkr.com</div>
+        </div>
+      </div>
     </div>
-    <div class="links-bar">
-      <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
-      <span class="sep" aria-hidden="true">|</span>
-      <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
-      <span class="sep" aria-hidden="true">|</span>
-      <a href="#" class="email-link"></a>
-      <span class="sep" aria-hidden="true">|</span>
-      <a href="/resume.html" class="btn-primary">View Resume</a>
-      <a href="/resume.pdf" class="btn-primary">Download PDF</a>
+
+    <div class="stats">
+      <div class="stat"><span class="stat-num">$0</span><span class="stat-label">per month</span></div>
+      <div class="stat"><span class="stat-num">100%</span><span class="stat-label">uptime</span></div>
+      <div class="stat"><span class="stat-num">6</span><span class="stat-label">phases documented</span></div>
+      <div class="stat"><span class="stat-num">0</span><span class="stat-label">exposed ports</span></div>
     </div>
   </header>
 
@@ -74,32 +110,32 @@
 
   <ol class="timeline">
     <li class="js-reveal" style="--delay: 0ms">
-      <span class="tl-title">1 · Bootstrap &amp; GitOps polling</span>
+      <span class="tl-num">01</span><span class="tl-title">Bootstrap &amp; GitOps polling</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Hand-deployed VM, then a pull-based GitOps loop; moved to push-based deploys and hardened it.</div>
     </li>
     <li class="js-reveal" style="--delay: 60ms">
-      <span class="tl-title">2 · Observability &amp; IaC serverless</span>
+      <span class="tl-num">02</span><span class="tl-title">Observability &amp; IaC serverless</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Live metrics daemon, LaTeX resume in CI, then a full Terraform + Cloud Run / Firestore serverless rebuild.</div>
     </li>
     <li class="js-reveal" style="--delay: 120ms">
-      <span class="tl-title">3 · Zero-ingress Docker Compose</span>
+      <span class="tl-num">03</span><span class="tl-title">Zero-ingress Docker Compose</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no public ports, everything through a Cloudflare Tunnel.</div>
     </li>
     <li class="js-reveal" style="--delay: 180ms">
-      <span class="tl-title">4 · Edge migration to Cloudflare Pages</span>
+      <span class="tl-num">04</span><span class="tl-title">Edge migration to Cloudflare Pages</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Static site moved to the edge; hardened headers, robots/llms.txt, JSON-LD, CI-rendered resume PDF.</div>
     </li>
     <li class="js-reveal" style="--delay: 240ms">
-      <span class="tl-title">5 · Repurposing the compute</span>
+      <span class="tl-num">05</span><span class="tl-title">Repurposing the compute</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">The freed VMs became a Hermes AI host, then a zero-ingress Oracle dev box with a browser terminal.</div>
     </li>
-    <li class="js-reveal" style="--delay: 300ms">
-      <span class="tl-title">6 · Vaultwarden host (current)</span>
+    <li class="js-reveal status-live" style="--delay: 300ms">
+      <span class="tl-num">06</span><span class="tl-title">Vaultwarden host</span>
       <span class="tl-status live">Live</span>
       <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>
     </li>
@@ -115,8 +151,8 @@
     Uptime: 100% &middot; Cloudflare Pages &middot; $0/mo
   </div>
   <div class="footer-links">
-    <a href="https://linkedin.com/in/sreeram-k-r" target="_blank">LinkedIn</a>
-    <a href="https://github.com/roguehunter7" target="_blank">GitHub</a>
+    <a href="https://linkedin.com/in/sreeram-k-r" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="https://github.com/roguehunter7" target="_blank" rel="noopener">GitHub</a>
     <a href="#" class="email-link"></a>
     <a href="/resume.pdf" target="_blank">Resume (PDF)</a>
     <a href="/resume.html" target="_blank">Resume (HTML)</a>

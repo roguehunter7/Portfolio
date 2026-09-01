@@ -79,6 +79,25 @@
     }
   }
 
+  /* Browser-only helper: leave the document without leaving the document. */
+  .resume-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9pt;
+    margin-bottom: 10pt;
+  }
+  .resume-nav a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .resume-nav a:hover { text-decoration: underline; }
+  .resume-nav .crumb { color: #777; }
+  @media print {
+    .resume-nav { display: none; }
+  }
+
   /* ---------- HEADER ---------- */
   header {
     text-align: center;
@@ -211,6 +230,11 @@
 </style>
 </head>
 <body>
+
+  <nav class="resume-nav" aria-label="Back to site">
+    <span class="crumb">sreeramkr.com / resume</span>
+    <a href="/">&larr; Back to site</a>
+  </nav>
 
   <header>
     <h1>Sreeram K R</h1>

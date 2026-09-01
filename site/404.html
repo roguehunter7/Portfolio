@@ -4,29 +4,59 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 — Not Found</title>
+<script nonce="p0rtfolio-s1te">
+document.documentElement.dataset.theme =
+  localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
 <style>
   :root {
-    --bg: #0b0f19; --text: #e2e8f0; --text-dim: #94a3b8;
-    --blue: #60a5fa; --border: #1e293b;
+    --bg: #0b0f19; --bg-alt: #1a2332; --text: #e2e8f0; --text-dim: #94a3b8;
+    --blue: #60a5fa; --violet: #a78bfa; --border: #1e293b;
+    --acc-1: #60a5fa; --acc-2: #a78bfa;
   }
+  [data-theme="light"] {
+    --bg: #ffffff; --bg-alt: #f1f5f9; --text: #1e293b; --text-dim: #64748b;
+    --blue: #2563eb; --violet: #7c3aed; --border: #e2e8f0;
+    --acc-1: #2563eb; --acc-2: #7c3aed;
+  }
+  * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, sans-serif;
     background: var(--bg); color: var(--text); line-height: 1.7;
     margin: 0; display: flex; align-items: center; justify-content: center;
     min-height: 100vh; -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(circle at 85% 10%, rgba(96,165,250,0.08), transparent 55%);
   }
-  .box { text-align: center; padding: 40px; }
-  h1 { font-size: 4em; color: var(--blue); margin: 0; font-weight: 700; letter-spacing: -0.03em; }
-  p { color: var(--text-dim); margin: 8px 0 24px; }
-  a { color: var(--blue); text-decoration: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 20px; transition: 0.2s; }
-  a:hover { background: var(--blue); color: var(--bg); }
+  .term {
+    font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
+    text-align: left; padding: 24px 8px; max-width: 560px; width: 100%;
+  }
+  .term .line { margin: 4px 0; }
+  .term .prompt { color: var(--acc-1); font-weight: 600; }
+  .term .code { color: var(--text); font-weight: 700; letter-spacing: 0.04em; }
+  .term .err { color: #f87171; }
+  .term .dim { color: var(--text-dim); }
+  .term .ok { color: #4ade80; }
+  .term .cursor { display: inline-block; width: 9px; height: 16px; background: var(--acc-1);
+    vertical-align: -2px; animation: blink 1.1s steps(2, start) infinite; }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .cursor { animation: none; opacity: 0.8; } }
+  .term a {
+    color: var(--acc-1); text-decoration: none; display: inline-block;
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 20px; margin-top: 20px;
+    transition: 0.2s;
+  }
+  .term a:hover { background: linear-gradient(135deg, var(--acc-1), var(--acc-2)); color: var(--bg); border-color: transparent; text-decoration: none; }
 </style>
 </head>
 <body>
-<div class="box">
-  <h1>404</h1>
-  <p>This page doesn't exist.</p>
-  <a href="/">Back to Home</a>
+<div class="term" aria-label="404 error in terminal style">
+  <div class="line"><span class="prompt">$</span> <span class="code">curl -I /this-page</span></div>
+  <div class="line err">HTTP/1.1 404 Not Found</div>
+  <div class="line dim">error: route not found. this page was never deployed.</div>
+  <div class="line ok">&#10003; the vault is still online &#183; uptime 100%</div>
+  <div class="line"><span class="prompt">$</span> cd ~ &amp;&amp; <a href="/">go home</a><span class="cursor" aria-hidden="true"></span></div>
 </div>
 </body>
 </html>
