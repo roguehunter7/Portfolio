@@ -150,6 +150,10 @@
     page-break-inside: avoid;
   }
 
+  .summary {
+    text-align: justify;
+  }
+
   /* ---------- LISTS ---------- */
   ul {
     list-style: none;
@@ -210,7 +214,7 @@
 
   <header>
     <h1>Sreeram K R</h1>
-    <div class="subtitle">Cloud &amp; Infrastructure Automation Engineer</div>
+    <div class="subtitle">Infrastructure Engineer</div>
     <div class="contact">
       <span class="item">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
@@ -239,6 +243,35 @@
       </span>
     </div>
   </header>
+
+  <section>
+    <h2>Professional Summary</h2>
+    <p class="summary">Infrastructure Engineer automating secure, zero-ingress cloud infrastructure with Terraform, GitHub Actions (WIF/OIDC), and GCP/Oracle Cloud — from on-premises network automation (L2/L3, Active Directory, VLANs) to cloud-native CI/CD. Delivered 98% patching compliance across 1,000+ systems and reclaimed 500+ IPs via Python/Netmiko automation.</p>
+  </section>
+
+  <section>
+    <h2>Professional Experience</h2>
+
+    <div class="entry">
+      <div class="entry-head">
+        <span class="entry-title">Infrastructure Engineer</span>
+        <span class="entry-date"><b>Jan 2025 – Present</b></span>
+      </div>
+      <div class="entry-sub">
+        <span>Iron Systems (Client: Honeywell)</span>
+        <span>Pune / Bangalore, India</span>
+      </div>
+      <ul>
+        <li>Achieved <b>98% compliance</b> and eliminated configuration drift by automating patching and config management across <b>1,000+ distributed systems</b> (Tanium + PowerShell).</li>
+        <li>Cut a <b>4-month manual switch survey in half</b> and reclaimed <b>500+ unused IPs</b> with a Python/Netmiko automation suite.</li>
+        <li>Slashed ServiceNow privileged-account provisioning by <b>95%</b> (5 min to under 20 s) using custom <b>WMI/RDP PowerShell</b> tooling.</li>
+        <li>Replaced a legacy <b>3,000-line manual workflow</b> with zero-prompt PowerShell automation, accelerating the <b>Windows Autopilot / Intune</b> enrollment pipeline.</li>
+        <li>Delivered <b>L1/L2 enterprise endpoint support</b>: bare-metal OS imaging, hardware provisioning, and complex system configuration for high-priority deployments.</li>
+        <li>Ran a clean <b>L3-to-L2 migration across 70 subnets</b> (AD DNS, firewall ports/URLs, VLAN/trunking) with no service disruption.</li>
+      </ul>
+    </div>
+
+  </section>
 
   <section>
     <h2>Technical Skills</h2>
@@ -287,40 +320,6 @@
         <li>Nightly SQLite backup via the instance's metadata token (no keys on host), auto-pruned to the newest 5.</li>
       </ul>
     </div>
-
-    <div class="entry">
-      <div class="entry-head">
-        <span class="entry-title">CornerSentinel — IoT Safety System (Li-Fi Communication)</span>
-      </div>
-      <ul>
-        <li>Built a real-time computer vision (Python, <b>YOLOv8</b>, OpenCV) warning system on Raspberry Pi to prevent accidents at blind corners.</li>
-        <li>Used <b>Li-Fi (Visible Light Communication)</b> signaling for a <b>1ms</b> warning latency via optical transmission and signal modulation.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section>
-    <h2>Professional Experience</h2>
-
-    <div class="entry">
-      <div class="entry-head">
-        <span class="entry-title">Infrastructure Engineer</span>
-        <span class="entry-date"><b>Jan 2025 – Present</b></span>
-      </div>
-      <div class="entry-sub">
-        <span>Iron Systems (Client: Honeywell)</span>
-        <span>Pune / Bangalore, India</span>
-      </div>
-      <ul>
-        <li>Achieved <b>98% compliance</b> and eliminated configuration drift by automating patching and config management across <b>1,000+ distributed systems</b> (Tanium + PowerShell).</li>
-        <li>Cut a <b>4-month manual switch survey in half</b> and reclaimed <b>500+ unused IPs</b> with a Python/Netmiko automation suite.</li>
-        <li>Slashed ServiceNow privileged-account provisioning by <b>95%</b> (5 min to under 20 s) using custom <b>WMI/RDP PowerShell</b> tooling.</li>
-        <li>Replaced a legacy <b>3,000-line manual workflow</b> with zero-prompt PowerShell automation, accelerating the <b>Windows Autopilot / Intune</b> enrollment pipeline.</li>
-        <li>Delivered <b>L1/L2 enterprise endpoint support</b>: bare-metal OS imaging, hardware provisioning, and complex system configuration for high-priority deployments.</li>
-        <li>Ran a clean <b>L3-to-L2 migration across 70 subnets</b> (AD DNS, firewall ports/URLs, VLAN/trunking) with no service disruption.</li>
-      </ul>
-    </div>
-
   </section>
 
   <section>
