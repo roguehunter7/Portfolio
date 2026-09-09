@@ -443,12 +443,18 @@ h1, h2, h3, h4 {
    column past the viewport on narrow screens. min-width:0 keeps the column
    inside the page and lets .diagram-container scroll instead. */
 .archive-content { min-width: 0; }
+
+/* Wide archive layout: cards wide enough for legible diagrams, while the prose
+   keeps a comfortable measure (a wide card must not mean 100-character lines).
+   Archive page only. */
+@media (min-width: 1000px) {
+  .container--wide { max-width: 1040px; }
+}
+.archive-entry > h3,
+.archive-entry > p,
+.archive-entry .archive-block { max-width: 640px; }
 @media (min-width: 1000px) {
   .archive-layout { grid-template-columns: 190px minmax(0, 1fr); }
-  /* Diagrams use the full column: bleed left into the grid gap + entry padding
-     and right into the entry padding. The prose measure is unchanged, but the
-     SVG gets ~15% more width, which is what makes the diagram labels readable. */
-  .diagram-container { width: calc(100% + 88px); margin-left: -62px; }
 }
 .phase-rail {
   display: none;
@@ -525,6 +531,31 @@ h1, h2, h3, h4 {
   margin: 16px 0 0;
   border: 1px solid var(--border);
   overflow-x: auto;
+  position: relative;
+}
+/* When the frame actually scrolls (set by site.js), show a right-edge fade so
+   the hidden part is discoverable instead of silently cut off. */
+.diagram-container.is-scrollable::after {
+  content: "";
+  position: sticky;
+  right: 0;
+  float: right;
+  width: 28px;
+  height: 100%;
+  margin-left: -28px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--diagram-bg));
+}
+.diagram-container > figcaption {
+  margin: 10px 2px 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.diagram-container.is-scrollable {
+  -webkit-mask-image: none;
+  scrollbar-width: thin;
 }
 
 /* ---------- Architecture diagrams (inline SVG) ----------

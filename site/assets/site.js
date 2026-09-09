@@ -93,6 +93,23 @@
     activate(0);
   }
 
+  // Wide diagrams scroll sideways inside their frame; flag that so the fade
+  // affordance only appears when there really is hidden content.
+  function setupDiagramScroll() {
+    var frames = document.querySelectorAll('.diagram-container');
+    if (!frames.length) return;
+    var update = function (el) {
+      el.classList.toggle('is-scrollable', el.scrollWidth > el.clientWidth + 1);
+    };
+    frames.forEach(function (el) {
+      update(el);
+      el.addEventListener('scroll', function () { update(el); }, { passive: true });
+    });
+    window.addEventListener('resize', function () {
+      frames.forEach(update);
+    });
+  }
+
   function setupReveal() {
     var targets = document.querySelectorAll('.js-reveal');
     if (!targets.length) return;
@@ -123,6 +140,7 @@
     revealEmail();
     setupCopyEmail();
     setupTerminal();
+    setupDiagramScroll();
     setupPhaseRail();
     setupReveal();
 
