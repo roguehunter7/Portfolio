@@ -16,7 +16,11 @@
 <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-<script src="/assets/theme.js"></script>
+<script>
+document.documentElement.dataset.theme =
+  localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

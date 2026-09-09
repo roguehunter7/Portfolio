@@ -13,7 +13,11 @@
 <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-<script src="/assets/theme.js"></script>
+<script>
+document.documentElement.dataset.theme =
+  localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
 <script src="/assets/site.js"></script>
 <link rel="preload" href="/fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -321,7 +325,7 @@
           </p>
           <ul>
             <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
-            <li><strong>Hardening:</strong> strict CSP (hash-pinned JSON-LD, no nonce, no inline scripts or styles), HSTS, COOP/CORP, Permissions-Policy, header route rules.</li>
+            <li><strong>Hardening:</strong> HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, immutable font caching, preview noindex. No CSP — see below.</li>
             <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
             <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now plain HTML+CSS rendered to PDF by headless Chrome.</li>
             <li><strong>Diagrams:</strong> hand-authored inline SVG (no client-side render, no CDN); styled from the site stylesheet, so dark/light theming is a pure CSS variable swap.</li>

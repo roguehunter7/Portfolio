@@ -17,9 +17,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Validate JSON-LD + CSP hash
-        run: node scripts/check-jsonld.mjs site/index.html
-
       - name: Render HTML resume to PDF
         run: bash scripts/render-pdf.sh site/resume.html site/resume.pdf
 
