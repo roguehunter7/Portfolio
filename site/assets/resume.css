@@ -1,0 +1,210 @@
+/* Resume stylesheet — external so the strict CSP (style-src 'self')
+   applies to /resume.html with no per-route exception. */
+  @font-face {
+    font-family: 'Inter';
+    src: url('../fonts/inter-latin-400-normal.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Inter';
+    src: url('../fonts/inter-latin-600-normal.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --ink: #1E1E1E;
+    --accent: #00529C;
+  }
+
+  @page {
+    size: letter;
+    margin: 0.5in 0.55in;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html {
+    background: #eee;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.25;
+    color: var(--ink);
+    background: #fff;
+  }
+
+  @media screen {
+    body {
+      max-width: 8.5in;
+      margin: 0.55in auto;
+      padding: 0 0.5in;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  @media print {
+    html {
+      background: #fff;
+    }
+  }
+
+  /* Browser-only helper: leave the document without leaving the document. */
+  .resume-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9pt;
+    margin-bottom: 10pt;
+  }
+  .resume-nav a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .resume-nav a:hover { text-decoration: underline; }
+  .resume-nav .crumb { color: #777; }
+  @media print {
+    .resume-nav { display: none; }
+  }
+
+  /* ---------- HEADER ---------- */
+  header {
+    text-align: center;
+    margin-bottom: 6pt;
+  }
+
+  h1 {
+    font-size: 20pt;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-size: 12pt;
+    margin-top: 1pt;
+  }
+
+  .contact {
+    font-size: 9pt;
+    margin-top: 3pt;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 2pt 0;
+  }
+
+  .contact a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .contact .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3pt;
+    white-space: nowrap;
+  }
+
+  .contact svg {
+    width: 8.5pt;
+    height: 8.5pt;
+    fill: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .contact .sep {
+    margin: 0 5pt;
+    color: #999;
+  }
+
+  /* ---------- SECTIONS ---------- */
+  h2 {
+    color: var(--accent);
+    font-size: 11pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1pt;
+    margin: 5pt 0 1pt;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .summary {
+    text-align: left;
+  }
+
+  /* ---------- LISTS ---------- */
+  ul {
+    list-style: none;
+  }
+
+  li {
+    margin: 0 0 0 12pt;
+    position: relative;
+  }
+
+  li::before {
+    content: '\2022';
+    position: absolute;
+    left: -11pt;
+    color: var(--accent);
+  }
+
+  b,
+  strong,
+  .entry-title {
+    font-weight: 600;
+  }
+
+  /* ---------- ENTRIES ---------- */
+  .entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 3.5pt;
+  }
+
+  .entry-head,
+  .entry-sub {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8pt;
+  }
+
+  .entry-title {
+    font-weight: 600;
+  }
+
+  .entry-sub {
+    color: #333;
+  }
+
+  .entry-sub a {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  .entry-date {
+    white-space: nowrap;
+  }
