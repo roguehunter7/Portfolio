@@ -99,11 +99,6 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-}
-
 body {
   font-family: var(--font-sans);
   background: var(--bg);
@@ -285,7 +280,6 @@ h1, h2, h3, h4 {
   animation: caret 1.1s steps(2, start) infinite;
 }
 @keyframes caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .t-caret { animation: none; opacity: 0.8; } }
 
 /* Stats strip — proof, mono numerals */
 .stats {
@@ -451,6 +445,10 @@ h1, h2, h3, h4 {
 .archive-content { min-width: 0; }
 @media (min-width: 1000px) {
   .archive-layout { grid-template-columns: 190px minmax(0, 1fr); }
+  /* Diagrams use the full column: bleed left into the grid gap + entry padding
+     and right into the entry padding. The prose measure is unchanged, but the
+     SVG gets ~15% more width, which is what makes the diagram labels readable. */
+  .diagram-container { width: calc(100% + 88px); margin-left: -62px; }
 }
 .phase-rail {
   display: none;
@@ -477,7 +475,9 @@ h1, h2, h3, h4 {
 .phase-rail a.active .pr-num { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
 /* Archive entries */
+/* Sticky nav is 58px tall; keep anchor targets clear of it. */
 .archive-entry {
+  scroll-margin-top: 72px;
   position: relative;
   overflow: hidden;
   background: var(--card);
@@ -559,7 +559,7 @@ h1, h2, h3, h4 {
   font-family: var(--font-mono); font-size: 0.82em; color: var(--text-dim);
   margin-top: 56px; padding: 20px 0; border-top: 1px solid var(--border);
 }
-.footer-links { display: flex; justify-content: center; gap: 20px; padding: 16px 0 0; font-size: 0.85em; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 16px 0 0; font-size: 0.85em; }
 .footer-links a { color: var(--text-dim); }
 .footer-links a:hover { color: var(--blue); }
 .status-dot {
@@ -569,7 +569,6 @@ h1, h2, h3, h4 {
   animation: pulse 2s infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-@media (prefers-reduced-motion: reduce) { .status-dot { animation: none; } }
 
 /* Theme toggle */
 .theme-toggle {
@@ -598,10 +597,6 @@ h1, h2, h3, h4 {
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms);
 }
 .js-reveal.is-visible { transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  .js-reveal { transform: none; transition: none; }
-}
-
 @media (max-width: 768px) {
   .hero .subtitle { font-size: 1.05rem; }
   .grid { grid-template-columns: 1fr; }
@@ -636,3 +631,15 @@ h1, h2, h3, h4 {
 .measure { max-width: 720px; }
 .timeline + .links-bar { margin-top: 8px; }
 .archive-content > .links-bar { margin-top: 16px; }
+
+/* ---------- Reduced motion (single consolidated block) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  .t-caret { animation: none; opacity: 0.8; }
+  .status-dot { animation: none; }
+  .js-reveal { transform: none; transition: none; }
+}

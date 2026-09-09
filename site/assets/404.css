@@ -1,5 +1,15 @@
 /* 404 page — external so the CSP needs no style-src unsafe-inline */
-:root {
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("/fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2");
+    font-weight: 600; font-style: normal; font-display: swap;
+  }
+  :root {
     --bg: #0b0f19; --bg-alt: #1a2332; --text: #e2e8f0; --text-dim: #94a3b8;
     --blue: #60a5fa; --violet: #a78bfa; --border: #1e293b;
     --acc-1: #60a5fa; --acc-2: #a78bfa;
@@ -23,7 +33,7 @@
   }
   .term .line { margin: 4px 0; }
   .term .prompt { color: var(--acc-1); font-weight: 600; }
-  .term .code { color: var(--text); font-weight: 700; letter-spacing: 0.04em; }
+  .term .code { color: var(--text); font-weight: 600; letter-spacing: 0.04em; }
   .term .err { color: #f87171; }
   .term .dim { color: var(--text-dim); }
   .term .ok { color: #4ade80; }

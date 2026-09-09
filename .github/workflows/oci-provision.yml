@@ -16,14 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # oracle/oci terraform provider auth (API key; OIDC migration comes later)
-  OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
-  OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
-  OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-  OCI_PRIVATE_KEY: ${{ secrets.OCI_API_KEY }}
-  OCI_REGION: ap-hyderabad-1
-  OCI_AUTH: ApiKey
-  # Terraform variables (tenancy OCID doubles as the root compartment OCID)
+  # Auth is configured once, in the "Configure OCI CLI from secrets" step below,
+  # which writes ~/.oci/config + the API key file. Both the oci CLI and the
+  # Terraform provider read that profile, so no duplicate OCI_* env vars here.
+  # (Terraform variables: tenancy OCID doubles as the root compartment OCID.)
   TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
 
 jobs:

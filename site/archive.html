@@ -100,7 +100,7 @@
   <text class="d-l" x="226" y="42" text-anchor="middle">push commit</text>
 
   <rect class="d-z" x="230" y="130" width="640" height="120"/>
-  <text class="d-zl" x="246" y="152">Cloud VM</text>
+  <text class="d-zl" x="246" y="162">Cloud VM</text>
 
   <path class="d-e" d="M340 74 V180" marker-end="url(#d-arrow)"/>
   <text class="d-l" x="348" y="122">poll for SHA delta</text>
@@ -196,7 +196,7 @@
   <text class="d-l" x="788" y="112">SDK writes</text>
 
   <rect class="d-z" x="30" y="240" width="500" height="150"/>
-  <text class="d-zl" x="46" y="262">Cloud VM</text>
+  <text class="d-zl" x="46" y="271">Cloud VM</text>
 
   <rect class="d-n" x="60" y="290" width="180" height="44"/>
   <text class="d-m" x="150" y="318">Nginx</text>
@@ -208,7 +208,7 @@
   <text class="d-l" x="700" y="200">API</text>
 
   <path class="d-e" d="M120 184 V226 H380 V282" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="130" y="220">telemetry</text>
+  <text class="d-l" x="200" y="220">telemetry</text>
 
   <path class="d-e" d="M240 312 H282" marker-end="url(#d-arrow)"/>
 </svg>
@@ -259,12 +259,12 @@
   <text class="d-l" x="281" y="42" text-anchor="middle">HTTPS</text>
 
   <rect class="d-z" x="40" y="130" width="800" height="350"/>
-  <text class="d-zl" x="56" y="152">VM — zero public ports</text>
+  <text class="d-zl" x="56" y="162">VM — zero public ports</text>
 
   <rect class="d-z2" x="70" y="180" width="740" height="270"/>
-  <text class="d-zl2" x="86" y="202">Docker Compose network (private)</text>
+  <text class="d-zl2" x="794" y="211" text-anchor="end">Docker Compose network (private)</text>
 
-  <path class="d-e acc" d="M405 74 V150 H165 V242" marker-end="url(#d-arrow)"/>
+  <path class="d-e acc" d="M405 74 V172 H165 V242" marker-end="url(#d-arrow)"/>
   <text class="d-l" x="415" y="146">tunnel (outbound)</text>
 
   <rect class="d-n acc" x="90" y="250" width="150" height="44"/>
@@ -304,7 +304,8 @@
           <p>
             A static resume/portfolio doesn't need an origin server at all. Serving it at the edge is faster, has
             first-class security-header control, and frees the VM for real work. The deploy also became simpler:
-            push a commit, render the PDF, publish to Pages.
+            render the PDF, publish to Pages — one <code>workflow_dispatch</code> run (deliberately manual, so a
+            push never publishes unreviewed).
           </p>
         </div>
         <div class="archive-block">
@@ -410,7 +411,7 @@
   <desc id="p5d">A GCP e2-micro runs a Hermes AI assistant that polls Telegram outbound and calls the DeepSeek API, administered over IAP SSH. An Oracle A1.Flex dev box runs a browser terminal into ttyd and tmux with Node LTS, reached through a Cloudflare Tunnel, provisioned by Terraform with cost guardrails, and administered via serial console.</desc>
 
   <rect class="d-z" x="30" y="30" width="400" height="240"/>
-  <text class="d-zl" x="46" y="52">GCP e2-micro</text>
+  <text class="d-zl" x="46" y="62">GCP e2-micro</text>
 
   <rect class="d-n" x="55" y="70" width="150" height="44"/>
   <text class="d-t" x="130" y="98">Hermes</text>
@@ -434,7 +435,7 @@
   <text class="d-l" x="138" y="154">IAP SSH</text>
 
   <rect class="d-z" x="470" y="30" width="400" height="330"/>
-  <text class="d-zl" x="486" y="52">Oracle A1.Flex</text>
+  <text class="d-zl" x="486" y="62">Oracle A1.Flex</text>
 
   <rect class="d-n" x="487" y="70" width="175" height="44"/>
   <text class="d-t" x="575" y="98">Browser terminal</text>
@@ -463,8 +464,8 @@
   <path class="d-e" d="M787.5 170 V122" marker-end="url(#d-arrow)"/>
 
   <path class="d-e" d="M700 292 H665 V92 H658" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="672" y="186">provision,</text>
-  <text class="d-l" x="672" y="200">cost-guarded</text>
+  <text class="d-l" x="668" y="140">provision,</text>
+  <text class="d-l" x="668" y="154">cost-guarded</text>
 
   <rect class="d-n" x="700" y="400" width="175" height="44"/>
   <text class="d-t" x="787.5" y="428">Admin (serial)</text>
@@ -519,9 +520,9 @@
   <text class="d-l" x="286" y="36" text-anchor="middle">HTTPS vault.sreeramkr.com</text>
 
   <rect class="d-z" x="250" y="118" width="620" height="316"/>
-  <text class="d-zl" x="266" y="140">GCP e2-micro — zero ingress · deny-all firewall · IAP-only SSH</text>
+  <text class="d-zl" x="854" y="148" text-anchor="end">GCP e2-micro — zero ingress</text>
 
-  <path class="d-e acc" d="M460 68 V150 H392" marker-end="url(#d-arrow)"/>
+  <path class="d-e acc" d="M460 68 V120 H380 V152" marker-end="url(#d-arrow)"/>
   <text class="d-l" x="470" y="110">tunnel</text>
 
   <rect class="d-n" x="300" y="158" width="160" height="44"/>
@@ -556,7 +557,7 @@
   <rect class="d-n" x="40" y="300" width="160" height="44"/>
   <text class="d-t" x="120" y="328">GitHub Actions</text>
   <path class="d-e" d="M200 322 H300 V262 H522" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="210" y="314">writes .env 0600</text>
+  <text class="d-l" x="310" y="314">writes .env 0600</text>
 
   <text class="d-note" x="40" y="400">&#10003; 0 public ports</text>
   <text class="d-note" x="40" y="422">&#10003; secrets root-owned 0600</text>

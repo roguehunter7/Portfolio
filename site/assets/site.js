@@ -3,6 +3,13 @@
 (function () {
   'use strict';
 
+  function reducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  function hasObserver() {
+    return 'IntersectionObserver' in window;
+  }
+
   function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
   }
@@ -48,7 +55,7 @@
     var el = document.querySelector('[data-type]');
     if (!el) return;
     var text = el.getAttribute('data-type');
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (reducedMotion()) {
       el.textContent = text;
       return;
     }
@@ -71,9 +78,7 @@
     var sections = links.length
       ? Array.prototype.map.call(links, function (a) { return document.querySelector(a.getAttribute('href')); })
       : [];
-    if (!('IntersectionObserver' in window) || sections.some(function (s) { return !s; })) {
-      return;
-    }
+    if (!hasObserver() || sections.some(function (s) { return !s; })) return;
     var activate = function (idx) {
       links.forEach(function (a, i) { a.classList.toggle('active', i === idx); });
     };
@@ -92,13 +97,8 @@
     var targets = document.querySelectorAll('.js-reveal');
     if (!targets.length) return;
 
-    // Respect reduced motion: show everything immediately, no animation.
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      targets.forEach(function (el) { el.classList.add('is-visible'); });
-      return;
-    }
-
-    if (!('IntersectionObserver' in window)) {
+    // Respect reduced motion (and older browsers): show everything immediately.
+    if (reducedMotion() || !hasObserver()) {
       targets.forEach(function (el) { el.classList.add('is-visible'); });
       return;
     }
