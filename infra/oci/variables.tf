@@ -16,14 +16,8 @@ variable "region" {
 # --- VM access --------------------------------------------------------------
 
 variable "ssh_public_key" {
-  description = "Public SSH key injected into the VM (ubuntu user). Passed from GitHub var OCI_SSH_PUBLIC_KEY."
+  description = "Public SSH key injected into the VM (opc user). sshd is disabled, so this is a fallback/console path only. Passed from GitHub var OCI_SSH_PUBLIC_KEY."
   type        = string
-}
-
-variable "ssh_hostname" {
-  description = "Public hostname on the Cloudflare tunnel mapped to SSH (localhost:22)."
-  type        = string
-  default     = "ssh.sreeramkr.com"
 }
 
 # --- Cloudflare tunnel ------------------------------------------------------
@@ -46,11 +40,12 @@ variable "ttyd_password" {
   sensitive   = true
 }
 
-# --- Hermes Agent (runs as a container on this box) -------------------------
-# These land in /opt/hermes/.env (0600, root) via cloud-init. Because user_data
-# is stored in the instance metadata, the same values are also readable from
-# the instance's own IMDS and appear in the tfstate bucket — both private to
-# this tenancy. Trade-off documented in infra/oci/README.md.
+# --- Hermes Agent + DeepSeek Harness (run natively on this box) -------------
+# These land in 0600 files (/etc/hermes/hermes.env, /etc/dsh-web.env) via
+# cloud-init. Because user_data is stored in the instance metadata, the same
+# values are also readable from the instance's own IMDS and appear in the
+# tfstate bucket — both private to this tenancy. Trade-off documented in
+# infra/oci/README.md.
 
 variable "deepseek_api_key" {
   description = "DeepSeek API key for the Hermes gateway. Passed from GitHub secret DEEPSEEK_API_KEY."

@@ -32,7 +32,57 @@ env:
   TF_VAR_telegram_allowed_users: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
 
 jobs:
+  # Cheap static guards. Both of these caught real bugs during development (a
+  # nested-quote syntax error in provision.sh, and a literal ${...} in a
+  # template comment that Terraform tried to evaluate).
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Shell syntax
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive infra/oci
+
+      - name: Render and validate cloud-init
+        run: python3 scripts/check-cloud-init.py
+
+  # Prove every package name resolves on the exact image the VM boots: the
+  # packages are installed for real in an oraclelinux:10 container (throwaway),
+  # which also confirms the EPEL and Cloudflare repos serve aarch64/x86_64.
+  deps:
+    runs-on: ubuntu-latest
+    container: oraclelinux:10
+    timeout-minutes: 20
+    steps:
+      - name: Install the exact package set
+        run: |
+          set -euo pipefail
+          dnf install -y curl dnf-plugins-core
+          curl -fsSL https://pkg.cloudflare.com/cloudflared.repo > /etc/yum.repos.d/cloudflared.repo
+          dnf install -y oracle-epel-release-el10
+          dnf install -y \
+            ca-certificates curl git gnupg2 jq tmux cronie firewalld \
+            python3 make gcc-c++ unzip xz nodejs dnf-plugins-core policycoreutils-python-utils \
+            ttyd ripgrep htop gh cloudflared \
+            nss atk at-spi2-core cups-libs libdrm libxkbcommon mesa-libgbm pango cairo alsa-lib
+          echo '--- resolved versions ---'
+          node --version
+          npm --version
+          gh --version | head -1
+          ttyd --version
+          cloudflared --version
+          jq --version
+
   provision:
+    needs: [checks, deps]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

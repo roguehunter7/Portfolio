@@ -26,6 +26,9 @@ locals {
     "TELEGRAM_BOT_TOKEN=${var.telegram_bot_token}",
     var.telegram_allowed_users != "" ? "TELEGRAM_ALLOWED_USERS=${var.telegram_allowed_users}" : "",
   ]))
+  # The harness reads its LLM key from the service environment (the credentials
+  # provider ranks the inherited env above ~/.dsh/.credentials.yaml).
+  dsh_env = "DEEPSEEK_API_KEY=${var.deepseek_api_key}"
 }
 
 # ---------------------------------------------------------------------------
@@ -37,11 +40,16 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
 }
 
-# Latest Canonical Ubuntu 24.04 image for the A1.Flex (ARM64) shape.
-data "oci_core_images" "ubuntu_arm" {
+# Latest Oracle Linux 10 image for the A1.Flex (aarch64) shape.
+# Oracle Linux is the RPM distro OCI is built around: the agent, the
+# ol10_oci_included repo, dnf module streams and Ksplice all come for free, and
+# its 2035 support window beats Ubuntu's 2029. Ubuntu 26.04 is not published on
+# OCI, and 24.04's nodejs (18.19) is below DSH's engine floor — OL10's appstream
+# ships Node 22.23.2, so no nvm and no NodeSource are needed.
+data "oci_core_images" "oracle_linux_arm" {
   compartment_id           = var.tenancy_ocid
-  operating_system         = "Canonical Ubuntu"
-  operating_system_version = "24.04"
+  operating_system         = "Oracle Linux"
+  operating_system_version = "10"
   shape                    = "VM.Standard.A1.Flex"
   sort_by                  = "TIMECREATED"
   sort_order               = "DESC"
@@ -96,8 +104,8 @@ resource "oci_core_network_security_group" "instance_nsg" {
 
 # ---------------------------------------------------------------------------
 # Compute — Always Free A1.Flex: 2 OCPU / 12 GB (June-2026 limits).
-# cloud-init installs + runs cloudflared so SSH is reachable only via the
-# existing Cloudflare tunnel (ssh.sreeramkr.com -> localhost:22).
+# cloud-init brings up cloudflared, the ttyd browser terminal, the DeepSeek
+# Harness service and a native Hermes install; sshd is disabled at the end.
 # ---------------------------------------------------------------------------
 
 resource "oci_core_instance" "portfolio_node" {
@@ -118,7 +126,7 @@ resource "oci_core_instance" "portfolio_node" {
 
   source_details {
     source_type             = "image"
-    source_id               = data.oci_core_images.ubuntu_arm.images[0].id
+    source_id               = data.oci_core_images.oracle_linux_arm.images[0].id
     boot_volume_size_in_gbs = 50 # min size; counts toward the 200 GB Always Free block storage
   }
 
@@ -130,23 +138,23 @@ resource "oci_core_instance" "portfolio_node" {
   }
 
   # File bodies are passed encoded and written with cloud-init's `encoding`
-  # field, so YAML indentation can never corrupt them and the rendered
-  # provision.sh never contains a secret.
-  # OCI caps user data + metadata at 32,000 bytes, so the multi-kilobyte
-  # scripts and configs use `gz+b64` (base64gzip) — text compresses ~4x, which
-  # buys ~10 KB of headroom. The tiny .env files stay plain `b64`; gzip would
-  # cost more than it saves there.
+  # field, so YAML indentation can never corrupt them and the rendered scripts
+  # never contain a secret.
+  # OCI caps user data + metadata at 32,000 bytes: the multi-kilobyte scripts
+  # and the Hermes config use `gz+b64` (base64gzip), the small secret files use
+  # plain `b64` (gzip would cost more than it saves there).
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      cloudflare_tunnel_token = var.cloudflare_tunnel_token
-      ttyd_password           = var.ttyd_password
-      hermes_compose_gzb64    = base64gzip(file("${path.module}/../hermes/docker-compose.yml"))
-      hermes_config_gzb64     = base64gzip(file("${path.module}/../hermes/config.yaml"))
-      hermes_env_b64          = base64encode(local.hermes_env)
-      dsh_env_b64             = base64encode("DEEPSEEK_API_KEY=${var.deepseek_api_key}")
-      dsh_setup_gzb64         = base64gzip(file("${path.module}/../../scripts/dsh-setup.sh"))
-      dsh_update_gzb64        = base64gzip(file("${path.module}/../../scripts/dsh-update.sh"))
+      ttyd_password       = var.ttyd_password
+      tunnel_token_b64    = base64encode(var.cloudflare_tunnel_token)
+      hermes_env_b64      = base64encode(local.hermes_env)
+      dsh_env_b64         = base64encode(local.dsh_env)
+      hermes_config_gzb64 = base64gzip(file("${path.module}/../hermes/config.yaml"))
+      provision_gzb64     = base64gzip(file("${path.module}/../../scripts/provision.sh"))
+      dsh_setup_gzb64     = base64gzip(file("${path.module}/../../scripts/dsh-setup.sh"))
+      hermes_setup_gzb64  = base64gzip(file("${path.module}/../../scripts/hermes-setup.sh"))
+      dsh_update_gzb64    = base64gzip(file("${path.module}/../../scripts/dsh-update.sh"))
     }))
   }
 

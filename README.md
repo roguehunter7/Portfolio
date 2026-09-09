@@ -18,10 +18,10 @@ VM and evolved through six phases — from a pull-based GitOps loop, to a server
 zero-public-ports Docker Compose host behind a Cloudflare Tunnel, to the edge, and on to re-purposing the
 compute into an AI host and a self-hosted password vault.
 
-The Oracle A1.Flex dev box is the zero-ingress workhorse: a browser terminal over the
-Cloudflare Tunnel, the DeepSeek Harness web UI behind an authenticated reverse proxy
-(`dsh.sreeramkr.com`), and the Hermes AI assistant running as a container that only
-ever talks outbound. No port is reachable from the internet.
+The Oracle A1.Flex dev box is the zero-ingress workhorse, running Oracle Linux 10:
+a browser terminal over the Cloudflare Tunnel, the DeepSeek Harness web UI behind an
+authenticated reverse proxy (`dsh.sreeramkr.com`), and the Hermes AI assistant
+installed natively as a systemd user service. No container runtime, no public ports.
 
 **The single source of truth for the story is the site's [`/archive`](https://sreeramkr.com/archive).**
 Each phase there has its own architecture diagram plus the *why* and *how* behind it, all grounded in the
@@ -32,9 +32,10 @@ commit history in this repository.
 ```
 site/                 Static site (Cloudflare Pages) — index.html, archive.html, resume.html, assets/
 infra/                Terraform for GCP (main.tf) + Oracle (oci/) + Vaultwarden compose + backup.sh
-infra/hermes/         Hermes Agent container stack (official image) + DeepSeek model config
-infra/oci/            Oracle A1.Flex dev box — Terraform, cloud-init, runbook
-scripts/              render-pdf.sh (ATS-safe resume PDF), dsh-setup.sh + dsh-update.sh (Harness)
+infra/hermes/         Hermes Agent model config (DeepSeek v4-pro main / v4-flash aux)
+infra/oci/            Oracle Linux 10 dev box — Terraform, cloud-init, runbook
+scripts/              provision.sh (first boot), dsh-setup.sh + hermes-setup.sh (workloads),
+                      dsh-update.sh (weekly), check-cloud-init.py (CI guard), render-pdf.sh
 tools/                og-source.html — source for the 1200x630 social card (not deployed)
 resume.json           Master resume data (machine-readable, long-form)
 .github/workflows/    Deploy (Pages), OCI Provision, Vaultwarden Setup (all manual dispatch)

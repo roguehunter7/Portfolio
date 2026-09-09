@@ -1,43 +1,54 @@
-# infra/oci — Oracle Cloud dev box (Phase 8+)
+# infra/oci — Oracle Linux 10 dev box
 
 Zero-ingress Oracle A1.Flex provisioned by GitHub Actions + Terraform. The VM has
-**no public ports**: the NSG has zero ingress rules, `ufw` denies incoming, and
-`sshd` is disabled at the end of provisioning. Everything reachable arrives over
+**no public ports**: the NSG has zero ingress rules, `firewalld` allows nothing in,
+and `sshd` is disabled at the end of provisioning. Everything reachable arrives over
 the outbound Cloudflare Tunnel.
+
+## Why Oracle Linux 10
+
+* It is a first-class OCI platform image for Arm (`Oracle-Linux-10.2-aarch64`), with a
+  support window to 2035 — Ubuntu 24.04 ends in 2029, and **Ubuntu 26.04 is not
+  published on OCI at all**.
+* Its appstream carries **nodejs 22.23.2**, above DeepSeek Harness's `^22.19.0` floor.
+  Ubuntu 24.04 ships 18.19, which is why the previous design needed nvm. No nvm, no
+  NodeSource here — Node is a dnf package that the monthly upgrade patches.
+* The Oracle Cloud Agent ships as an rpm and Run Command is officially supported
+  (on Ubuntu it is an unofficial snap).
 
 ## Workloads
 
 | Workload | How it runs | Reachable at |
 |---|---|---|
 | Cloudflare Tunnel | `cloudflared.service`, outbound | the only ingress path |
-| Browser terminal | `ttyd` + tmux, loopback `:7681` | `ssh.sreeramkr.com` |
+| Browser terminal | `ttyd` + tmux, loopback `:7681`, user `opc` | `ssh.sreeramkr.com` |
 | DeepSeek Harness | `dsh-web.service` (loopback `:3082`) behind the `dsh-full-remote` auth proxy (`:3080`) | `dsh.sreeramkr.com` |
-| Hermes Agent | Docker container from the official image, no published port | Telegram (long poll outbound) |
+| Hermes Agent | native install, systemd **user** service `hermes-gateway` for user `hermes` | Telegram (long poll outbound) |
 
-## Always Free compliance (verified against official docs, 2026-08)
+There is **no container runtime** — no Docker, no podman. Hermes runs natively, which
+also removes the SELinux volume-label and podman-conflict friction that containers
+would bring on this distro.
+
+## Always Free compliance
 
 | Component | Config | Always Free limit | Verdict |
 |---|---|---|---|
-| Compute | `VM.Standard.A1.Flex`, 2 OCPU / 12 GB | 1,500 OCPU-hrs + 9,000 GB-hrs/mo (= 2 OCPU / 12 GB continuous; Oracle halved the old 4/24 in June 2026) | ✅ within |
+| Compute | `VM.Standard.A1.Flex`, 2 OCPU / 12 GB | 1,500 OCPU-hrs + 9,000 GB-hrs/mo (= 2 OCPU / 12 GB continuous) | ✅ within |
 | Block volume | boot volume 50 GB | 200 GB total (boot + block) | ✅ within |
 | Object Storage | tfstate bucket (KB-size) | 20 GB | ✅ within |
-| Networking | VCN, IGW, route table, subnet, NSG, 1 ephemeral public IP | all $0; no NAT gateway used | ✅ within |
-| SSH transport | none — `sshd` disabled; admin is the browser terminal | — | ✅ |
-| Image | Canonical Ubuntu 24.04 (ARM64) | Always Free-eligible platform image, no license fee | ✅ within |
-| Egress | 10 TB/mo outbound | not approached | ✅ |
+| Networking | VCN, IGW, route table, subnet, NSG, 1 ephemeral public IP | all $0 | ✅ within |
+| Image | Oracle Linux 10 (aarch64) | Always Free-eligible platform image | ✅ within |
 
 **Caveats**
 - Oracle may **reclaim idle A1 instances** (CPU 95th pct <20%, network <20%, and — A1 only — memory <20% over 7 days). Keep the box busy.
-- The tunnel token and the Hermes secrets are injected via cloud-init, so they land in
+- The tunnel token and the app secrets are injected via cloud-init, so they land in
   the OCI tfstate (private bucket) and in instance metadata (readable from the box
-  itself). Both are scoped to this tenancy; neither can manage OCI. Accepted trade-off.
-- `user_data` is only executed on **first boot**. Editing `cloud-init.yaml.tftpl` changes
+  itself). Both are scoped to this tenancy. Accepted trade-off.
+- `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
   nothing on a running instance — use `destroy_first` to rebuild.
-- OCI caps user data + metadata at **32,000 bytes**. The multi-kilobyte embedded
-  files (both scripts, compose, config) are written with `encoding: gz+b64`
-  (`base64gzip` in Terraform) because text compresses ~2x — that keeps the
-  rendered `user_data` at ~24 KB. Adding another embedded file still means
-  checking that number first.
+- OCI caps user data + metadata at **32,000 bytes**. The rendered payload is ~19 KB
+  (scripts and configs are embedded `gz+b64`); `scripts/check-cloud-init.py` fails CI
+  if that ever grows past the cap.
 
 ## Architecture
 
@@ -49,35 +60,32 @@ browser ── https://dsh.sreeramkr.com ─> Cloudflare edge ─> cloudflared (
 
 browser ── https://ssh.sreeramkr.com ─> Cloudflare edge ─> cloudflared ─> 127.0.0.1:7681  ttyd -> tmux
 
-Telegram  <── long poll (outbound) ── hermes container ──> api.deepseek.com
+Telegram  <── long poll (outbound) ── hermes-gateway ──> api.deepseek.com
 ```
 
 - VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
-- NSG `instance-nsg`: **no rules** (= deny-all ingress)
-- A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 ARM64, 50 GB boot, ephemeral public IP (egress only)
-- cloud-init: cloudflared + nvm/Node LTS + repo checkout, Docker Engine + compose,
-  the Hermes stack, `dsh-web` + its auth proxy, the monthly maintenance cron,
-  then hardening
+- NSG `instance-nsg`: **no rules** (= deny-all ingress); firewalld allows nothing in
+- A1.Flex 2 OCPU / 12 GB, Oracle Linux 10 aarch64 (UEK R8), 50 GB boot, ephemeral public IP
+- SELinux stays **enforcing** (no container labels needed, since there is no container runtime)
 
 ## Why DSH sits behind a proxy
 
 `dsh web --trusted-host dsh.sreeramkr.com` opens the harness's Host/Origin fence to a
 public hostname and leaves the per-process startup token as the only credential —
-which then has to be pasted into the URL after every restart. `dsh-full-remote` is
-placed in front instead:
+pasted into the URL after every restart. `dsh-full-remote` is placed in front instead:
 
-- one login per device, 30-day session cookie — no token in the URL, ever
+- one login per device, 30-day session cookie — no token in the URL
 - 192-bit access token in a `0600` state file (`~/.dsh/reverse-proxy.json`)
 - audit log, login lockout, optional CIDR allowlist / first-visit approval
 - Host/Origin rewritten back to loopback, so `settings.*`, `credentials.*` and
   `host.listDirectory` keep working remotely
-- the harness port (`:3082`) is never exposed: if the proxy is down, `:3080` is
-  simply closed (fail-closed), and the tunnel route does not change
+- the harness port (`:3082`) is never exposed: if the proxy is down, `:3080` is simply
+  closed (fail-closed), and the tunnel route does not change
 
-## One-time setup (Console)
+## One-time setup
 
-CI reads credentials from GitHub **Secrets / Variables** (exact names are in
-`.github/workflows/oci-provision.yml`). Required secrets:
+CI reads credentials from GitHub **Secrets / Variables** (names are in
+`.github/workflows/oci-provision.yml`):
 
 `OCI_API_KEY`, `OCI_USER_OCID`, `OCI_FINGERPRINT`, `OCI_TENANCY_OCID`,
 `CLOUDFLARE_TUNNEL_TOKEN`, `TTYD_PASSWORD`, `DEEPSEEK_API_KEY`,
@@ -91,18 +99,19 @@ Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 
 ## Deploy
 
-Run **Actions → OCI Provision → Run workflow**. `destroy_first` destroys the VM and
-re-applies, which is the only way to re-run cloud-init.
+Run **Actions → OCI Provision → Run workflow**. The workflow runs two guards first
+(`checks`: shell syntax, `terraform fmt`, render + validate cloud-init; `deps`: install
+the exact package set in an `oraclelinux:10` container), then applies. `destroy_first`
+destroys the VM and re-applies, which is the only way to re-run cloud-init.
 
 ## Access
 
-- **DSH:** open https://dsh.sreeramkr.com → login page. The access token is in the
-  state file; read it once in the terminal:
-  `jq -r .accessToken ~/.dsh/reverse-proxy.json`
-  Log in once per device — the session cookie lasts 30 days.
+- **DSH:** open https://dsh.sreeramkr.com → login page. Read the access token once in
+  the terminal: `jq -r .accessToken ~/.dsh/reverse-proxy.json`. One login per device.
 - **Terminal:** https://ssh.sreeramkr.com → user `sreeram` + the `TTYD_PASSWORD`
   secret → tmux session `main`.
-- **Hermes:** message the bot on Telegram. Nothing to open.
+- **Hermes:** message the bot on Telegram. It cannot message you first — open the bot
+  once and send `/start`. The setup log prints the bot username.
 
 Emergency backdoor (tunnel down): OCI serial console
 (`Compute → instance → Resources → Console connection`).
@@ -117,81 +126,66 @@ ls /var/log/cloud_init_complete                       # cloud-init ran to the en
 systemctl status dsh-web --no-pager                   # harness service
 curl -fsS http://127.0.0.1:3080/_dsh_reverse_proxy/healthz   # auth proxy
 jq -r .accessToken ~/.dsh/reverse-proxy.json          # DSH login token
-docker compose -f /opt/hermes/docker-compose.yml ps   # Hermes container
-docker logs hermes --tail 40                          # gateway + Telegram
-curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
+sudo -u hermes XDG_RUNTIME_DIR=/run/user/$(id -u hermes) systemctl --user status hermes-gateway
+hermes doctor                                         # installed by the setup script
+journalctl --user -u hermes-gateway -n 50 | grep -i telegram
 ```
 
-## Hermes
+## Hermes (native)
 
-- Official image `nousresearch/hermes-agent` (arm64 manifest), tracking
-  `latest` in `infra/hermes/docker-compose.yml`. Everything Hermes needs —
-  Python, Node, Chromium — lives in the image, so the host gains nothing but the
-  container runtime. The monthly maintenance job pulls new releases.
-- Model routing (`infra/hermes/config.yaml`): the main loop runs
-  `deepseek-v4-pro`; delegation and every auxiliary task run
-  `deepseek-v4-flash`.
-- `/opt/hermes` is mounted at `/opt/data` (config, sessions, skills, memories).
-  Updating = `docker compose pull && docker compose up -d`; `hermes update` is not
-  supported inside Docker by design.
-- Secrets are written to `/opt/hermes/.env` (root-owned `0600`) by cloud-init.
-- `restart: unless-stopped` + the s6-supervised gateway means the monthly
-  maintenance reboot brings the assistant back on its own.
+- Installed by the official installer as the `hermes` service user:
+  `--skip-setup --skip-computer-use --non-interactive`. No container, no Docker.
+- **Browser toolset works**, unlike a naive RPM install: `provision.sh` installs the
+  Chromium system libraries (Playwright does not do that on RPM hosts), and the
+  installer runs with `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-arm64` because
+  Playwright does not recognise Oracle Linux (`ID=ol`); OL10 is glibc 2.39, the same
+  as that build.
+- `--skip-computer-use` skips the `cua-driver` (GUI desktop control). This box is
+  headless, so it would be a 660-second download with nothing to control.
+- Gateway is a **user** service made boot-persistent by `loginctl enable-linger hermes`.
+- Secrets and model config live in `~/.hermes/.env` (0600) and `~/.hermes/config.yaml`,
+  written from `/etc/hermes/*` by cloud-init. Model routing: main loop
+  `deepseek-v4-pro`, delegation and auxiliary tasks `deepseek-v4-flash`.
+- **Telegram is verified at install time**: the script calls `getMe` (token valid),
+  clears any webhook that would block long polling (`getWebhookInfo` / `deleteWebhook`),
+  then checks the gateway is active and greps its log for Telegram errors.
+- `/usr/local/bin/hermes` is a symlink to the venv launcher, so root and cron can call
+  it (the repo script with system Python raises `ModuleNotFoundError: dotenv`).
+- **Updates are manual**: `sudo -u hermes /usr/local/bin/hermes update` in the terminal.
+  There is no automated Hermes update — it moves on rebuild or when you run it.
 
 ## DeepSeek Harness
 
-- `dsh-web.service` runs `dsh web --port 3082 --no-open` as `ubuntu`
-  (`Restart=always`, so a crash or reboot no longer takes the URL down).
-- Installed as a global npm package tracking the **`alpha` channel**
-  (`npm install -g @deepseek-ai/dsh@alpha`) — DSH is in developer preview and
-  `latest` currently trails `alpha` by two minor lines. The repo's own
-  source-build path (`git clone && pnpm install && pnpm run build && pnpm dsh web`)
-  was considered and skipped: it adds a multi-GB toolchain and a build step that
-  can fail on an unattended box, for commits published only hours apart.
-- `scripts/dsh-setup.sh` is idempotent: it installs DSH, adds the plugin, seeds the
-  proxy state, rewrites the unit, and **restarts** the service. Re-run it after
-  `nvm install --lts`, because the unit's `PATH` carries the Node bin directory
-  resolved at setup time.
-- `scripts/dsh-update.sh` is the weekly guarded refresh described above.
-- The harness's LLM key is provisioned in `/etc/dsh-web.env` (root-owned `0600`).
-  The credentials provider layers the inherited environment **above**
-  `~/.dsh/.credentials.yaml`, so a rebuilt box works without a manual key entry.
-  To rotate it: update the `DEEPSEEK_API_KEY` secret and rebuild, or edit that
-  file and `systemctl restart dsh-web`.
+- `dsh-web.service` runs `dsh web --port 3082 --no-open` as `opc` (`Restart=always`).
+- Node comes from dnf (appstream 22.23.2); npm installs `@deepseek-ai/dsh@alpha` into
+  `~/.npm-global` as `opc`, never as root — DSH's dependency tree compiles `node-pty`
+  and `koffi`, and running install scripts as root is the `sudo npm install` trap.
+  npm 10 (bundled with Node 22) has no `allow-scripts` gate, so the allowlist is seeded
+  only when npm is new enough to honour it.
+- `scripts/dsh-setup.sh` is idempotent: install, plugin, proxy state, unit, restart.
+- The LLM key is in `/etc/dsh-web.env` (`EnvironmentFile`); the credentials provider
+  ranks the inherited environment above `~/.dsh/.credentials.yaml`.
 
-### Migrating a box that still runs dsh by hand
-
-The first build ran `dsh web` manually inside tmux, which is why the URL died on
-every restart and needed the token pasted again. To adopt the service on a running
-box **without** rebuilding (this stops the hand-run process, so it drops any open
-GUI session):
+### Migrating a box that runs dsh by hand
 
 ```bash
-tmux kill-session -t main
+tmux kill-session -t main          # stops the hand-run process (drops the GUI session)
 sudo bash ~/Portfolio/scripts/dsh-setup.sh
 ```
 
 ## Maintenance — two cadences
 
-**Monthly, 5th at 03:05** (`/etc/cron.d/maintenance`, same cycle as the
-Vaultwarden host, one line like that host):
+**Monthly, 5th at 03:05** (`/etc/cron.d/maintenance`, one line, mirrors the
+Vaultwarden host): `dnf -y upgrade ; systemctl reboot`. Covers the kernel, Node,
+cloudflared, ttyd, ripgrep, htop, gh — everything from the repos. `;` separators on
+purpose: a failed upgrade must not skip the reboot. Every workload is supervised, so
+the reboot costs ~30 seconds.
 
-1. `docker compose pull && up -d` — Hermes follows `:latest`
-2. `apt-get update && apt-get upgrade` — OS packages, cloudflared included
-3. reboot
-
-`;` separators on purpose: a failed pull must not skip the OS upgrade or the
-reboot. Every workload is supervised, so the reboot costs ~30 seconds.
-
-**Weekly, Sunday at 03:05** (`/etc/cron.d/dsh-update` →
-`/usr/local/sbin/dsh-update.sh`): DSH moves faster than monthly and ships
-`alpha` builds ahead of `latest`, so this job runs `dsh-setup.sh`
-(`npm install -g @deepseek-ai/dsh@alpha` + plugin + unit), waits for
-`/_dsh_reverse_proxy/healthz`, and **rolls back to the previous version and
-restarts if the proxy does not come back**. The proxy is the only way in and it
-fails closed, so "updated but unreachable" must not survive the night; if even
-the rollback fails, ttyd is the escape hatch. Logs:
-`/var/log/dsh-update.log`.
+**Weekly, Sunday at 02:05** (`/etc/cron.d/dsh-update` →
+`/usr/local/sbin/dsh-update.sh`): `npm install -g @deepseek-ai/dsh@alpha` + plugin
+refresh + `systemctl restart dsh-web`. One hour before the monthly window, so a reboot
+can never land mid-update. No health check and no rollback by design: if a bad alpha
+lands, the box is still reachable through ttyd and `journalctl -u dsh-web` says why.
 
 ## Destroy
 
