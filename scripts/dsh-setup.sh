@@ -43,6 +43,19 @@ set -euo pipefail
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 export PATH="$HOME/.npm-global/bin:$PATH"
+
+# npm 11 gates install-time lifecycle scripts on global installs behind
+# `allow-scripts` (empty = blocked, warning only), and DSH's native deps build
+# there — node-pty and dsh-subprocess-local. Without the allowlist a fresh box
+# gets a DSH whose terminal/subprocess tools are dead. Bare names, not pins, so
+# a version bump cannot silently re-block them.
+# The prefix matters too: it is what puts `dsh` in ~/.npm-global/bin, where the
+# systemd unit below expects it (nvm's default global prefix is the node dir).
+NPMRC="$HOME/.npmrc"
+touch "$NPMRC"
+grep -q '^prefix=' "$NPMRC" || echo "prefix=$HOME/.npm-global" >> "$NPMRC"
+grep -q '^allow-scripts=' "$NPMRC" || echo 'allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs' >> "$NPMRC"
+
 npm install -g @deepseek-ai/dsh
 # `dsh plugin` is a thin pnpm forwarder and hard-fails without pnpm on PATH.
 npm install -g pnpm
