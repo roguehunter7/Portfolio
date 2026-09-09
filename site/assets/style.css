@@ -1,7 +1,7 @@
 /* ==========================================================================
    Sreeram K R — portfolio + infrastructure archive
    Shared theme & layout. Theme toggled via <html data-theme> + localStorage.
-   Type system: Inter (body) / Space Grotesk (display) / JetBrains Mono (accent),
+   Type system: Inter (text + display) / JetBrains Mono (code, labels),
    self-hosted latin subsets in /fonts (CSP: font-src 'self').
    ========================================================================== */
 
@@ -22,16 +22,6 @@
   font-weight: 600; font-style: normal; font-display: swap;
 }
 @font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-500-normal.woff2") format("woff2");
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "Space Grotesk";
-  src: url("/fonts/space-grotesk-latin-700-normal.woff2") format("woff2");
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-@font-face {
   font-family: "JetBrains Mono";
   src: url("/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
   font-weight: 400; font-style: normal; font-display: swap;
@@ -50,7 +40,7 @@
 /* ---------- Design tokens ---------- */
 :root {
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-display: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
   --bg: #0b0f19;
@@ -69,7 +59,7 @@
   --radius: 12px;
   --tag-bg: rgba(96, 165, 250, 0.08);
   --tag-border: rgba(96, 165, 250, 0.2);
-  --mermaid-bg: #1a2332;
+  --diagram-bg: #1a2332;
   --shadow: rgba(0, 0, 0, 0.3);
   --btn-hover-text: #0b0f19;
 
@@ -97,7 +87,7 @@
   --border: #e2e8f0;
   --tag-bg: rgba(37, 99, 235, 0.06);
   --tag-border: rgba(37, 99, 235, 0.2);
-  --mermaid-bg: #f8fafc;
+  --diagram-bg: #f8fafc;
   --shadow: rgba(0, 0, 0, 0.08);
   --btn-hover-text: #ffffff;
   --acc-1: #2563eb;
@@ -156,7 +146,7 @@ button:focus-visible { border-radius: 50%; }
 /* Typography utilities */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
@@ -192,7 +182,7 @@ h1, h2, h3, h4 {
   align-items: center;
   gap: 10px;
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.02em;
   color: var(--heading);
   letter-spacing: -0.01em;
@@ -251,7 +241,7 @@ h1, h2, h3, h4 {
 }
 .hero h1 {
   font-size: clamp(2.4rem, 6vw, 3.6rem);
-  font-weight: 700; color: var(--heading); margin: 0;
+  font-weight: 600; color: var(--heading); margin: 0;
   letter-spacing: -0.03em; line-height: 1.06;
 }
 .hero .subtitle { font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--blue); font-weight: 600; margin: 10px 0 18px; letter-spacing: -0.01em; font-family: var(--font-display); }
@@ -393,7 +383,7 @@ h1, h2, h3, h4 {
 .section-title {
   font-family: var(--font-display);
   font-size: clamp(1.4rem, 2.8vw, 1.7rem);
-  font-weight: 700; color: var(--heading);
+  font-weight: 600; color: var(--heading);
   margin: 56px 0 10px;
   display: flex; align-items: center; gap: 14px;
   letter-spacing: -0.02em;
@@ -440,10 +430,10 @@ h1, h2, h3, h4 {
   margin-right: 10px;
   letter-spacing: 0.02em;
 }
-.timeline .tl-title { font-weight: 650; color: var(--heading); font-family: var(--font-display); }
+.timeline .tl-title { font-weight: 600; color: var(--heading); font-family: var(--font-display); }
 .timeline .tl-gist { color: var(--text-dim); font-size: 0.9em; margin-top: 2px; }
 .timeline .tl-status {
-  display: inline-block; font-size: 0.68em; font-weight: 700; text-transform: uppercase;
+  display: inline-block; font-size: 0.68em; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.04em; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle;
 }
 .tl-status.live { background: rgba(74, 222, 128, 0.12); color: var(--green); border: 1px solid rgba(74, 222, 128, 0.25); }
@@ -455,6 +445,10 @@ h1, h2, h3, h4 {
   grid-template-columns: 1fr;
   gap: 36px;
 }
+/* Grid items default to min-width:auto, which lets a wide diagram blow the
+   column past the viewport on narrow screens. min-width:0 keeps the column
+   inside the page and lets .diagram-container scroll instead. */
+.archive-content { min-width: 0; }
 @media (min-width: 1000px) {
   .archive-layout { grid-template-columns: 190px minmax(0, 1fr); }
 }
@@ -510,12 +504,12 @@ h1, h2, h3, h4 {
   pointer-events: none;
 }
 .archive-entry > * { position: relative; z-index: 1; }
-.archive-entry h3 { margin: 0 0 6px; font-size: clamp(1.15rem, 2.4vw, 1.3rem); font-weight: 700; color: var(--heading); letter-spacing: -0.02em; }
+.archive-entry h3 { margin: 0 0 6px; font-size: clamp(1.15rem, 2.4vw, 1.3rem); font-weight: 600; color: var(--heading); letter-spacing: -0.02em; }
 .archive-entry .archive-tagline { font-size: 0.92em; color: var(--blue); font-weight: 600; margin: 0 0 16px; }
 .archive-entry .archive-meta { font-size: 0.82em; color: var(--text-dim); margin: 0 0 16px; font-family: var(--font-mono); }
 .archive-entry .archive-block { margin-top: 18px; }
 .archive-entry .archive-block h4 {
-  margin: 0 0 6px; font-size: 0.78em; font-weight: 700; text-transform: uppercase;
+  margin: 0 0 6px; font-size: 0.78em; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.09em; color: var(--text-dim); font-family: var(--font-sans);
 }
 .archive-entry .archive-block h4::before { content: "› "; color: var(--acc-1); }
@@ -524,13 +518,40 @@ h1, h2, h3, h4 {
 .archive-entry .archive-block li { font-size: 0.9em; color: var(--text-dim); margin-bottom: 6px; line-height: 1.6; }
 .archive-entry .archive-block code { font-size: 0.9em; background: rgba(255, 255, 255, 0.04); padding: 1px 5px; border-radius: 3px; }
 
-.mermaid-container {
-  background: var(--mermaid-bg);
+.diagram-container {
+  background: var(--diagram-bg);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 10px;
   margin: 16px 0 0;
   border: 1px solid var(--border);
+  overflow-x: auto;
 }
+
+/* ---------- Architecture diagrams (inline SVG) ----------
+   One stylesheet styles every diagram: no per-diagram <style> block, so a theme
+   switch is a pure CSS variable swap — no JS, no re-render, nothing to parse. */
+.d-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.diagram { display: block; width: 100%; height: auto; min-width: 560px; }
+
+.diagram .d-n { fill: var(--card); stroke: var(--border); stroke-width: 1.2; rx: 8px; }
+.diagram .d-n.acc { stroke: var(--blue); }
+.diagram .d-n.dim { stroke-dasharray: 4 3; }
+.diagram .d-z { fill: none; stroke: var(--blue); stroke-width: 1.4; stroke-dasharray: 6 4; opacity: .45; rx: 10px; }
+.diagram .d-z2 { fill: none; stroke: var(--text-dim); stroke-width: 1.2; stroke-dasharray: 4 4; opacity: .5; rx: 8px; }
+
+.diagram .d-zl { fill: var(--blue); font-family: var(--font-mono); font-size: 15.5px; font-weight: 600; }
+.diagram .d-zl2 { fill: var(--text-dim); font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+.diagram .d-t { fill: var(--heading); font-family: var(--font-sans); font-size: 17.5px; font-weight: 600; text-anchor: middle; }
+.diagram .d-m { fill: var(--heading); font-family: var(--font-mono); font-size: 16.5px; font-weight: 500; text-anchor: middle; }
+.diagram .d-s { fill: var(--text-dim); font-family: var(--font-sans); font-size: 14px; font-weight: 500; text-anchor: middle; }
+
+.diagram .d-e { fill: none; stroke: var(--text-dim); stroke-width: 1.4; }
+.diagram .d-e.acc { stroke: var(--blue); }
+.diagram .d-l {
+  fill: var(--text-dim); font-family: var(--font-mono); font-size: 15px;
+  paint-order: stroke; stroke: var(--diagram-bg); stroke-width: 4px; stroke-linejoin: round;
+}
+.diagram .d-note { fill: var(--green); font-family: var(--font-mono); font-size: 14.5px; font-weight: 600; }
 
 /* Footer */
 .footer-status {
@@ -595,3 +616,23 @@ h1, h2, h3, h4 {
 @media (max-width: 480px) {
   .brand-name { display: none; }
 }
+
+/* ---------- Layout helpers (replaced inline style attributes) ---------- */
+/* Reveal stagger: was an inline --delay on each element. */
+.timeline > li:nth-child(1),
+.archive-content > .archive-entry:nth-child(1) { --delay: 0ms; }
+.timeline > li:nth-child(2),
+.archive-content > .archive-entry:nth-child(2) { --delay: 60ms; }
+.timeline > li:nth-child(3),
+.archive-content > .archive-entry:nth-child(3) { --delay: 120ms; }
+.timeline > li:nth-child(4),
+.archive-content > .archive-entry:nth-child(4) { --delay: 180ms; }
+.timeline > li:nth-child(5),
+.archive-content > .archive-entry:nth-child(5) { --delay: 240ms; }
+.timeline > li:nth-child(6),
+.archive-content > .archive-entry:nth-child(6) { --delay: 300ms; }
+
+.hero--compact { padding-top: 32px; }
+.measure { max-width: 720px; }
+.timeline + .links-bar { margin-top: 8px; }
+.archive-content > .links-bar { margin-top: 16px; }

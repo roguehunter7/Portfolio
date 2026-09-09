@@ -16,12 +16,8 @@
 <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-<script nonce="p0rtfolio-s1te">
-document.documentElement.dataset.theme =
-  localStorage.getItem('theme') ||
-  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-</script>
-<script type="application/ld+json" nonce="p0rtfolio-s1te">
+<script src="/assets/theme.js"></script>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "ProfilePage",
@@ -37,9 +33,9 @@ document.documentElement.dataset.theme =
   }
 }
 </script>
-<link rel="preload" href="/fonts/space-grotesk-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script src="/assets/site.js" nonce="p0rtfolio-s1te"></script>
+<script src="/assets/site.js"></script>
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
@@ -109,39 +105,39 @@ document.documentElement.dataset.theme =
   <p class="section-sub">Six phases, from a hand-built VM to a zero-ingress password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
 
   <ol class="timeline">
-    <li class="js-reveal" style="--delay: 0ms">
+    <li class="js-reveal">
       <span class="tl-num">01</span><span class="tl-title">Bootstrap &amp; GitOps polling</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Hand-deployed VM, then a pull-based GitOps loop; moved to push-based deploys and hardened it.</div>
     </li>
-    <li class="js-reveal" style="--delay: 60ms">
+    <li class="js-reveal">
       <span class="tl-num">02</span><span class="tl-title">Observability &amp; IaC serverless</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Live metrics daemon, LaTeX resume in CI, then a full Terraform + Cloud Run / Firestore serverless rebuild.</div>
     </li>
-    <li class="js-reveal" style="--delay: 120ms">
+    <li class="js-reveal">
       <span class="tl-num">03</span><span class="tl-title">Zero-ingress Docker Compose</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no public ports, everything through a Cloudflare Tunnel.</div>
     </li>
-    <li class="js-reveal" style="--delay: 180ms">
+    <li class="js-reveal">
       <span class="tl-num">04</span><span class="tl-title">Edge migration to Cloudflare Pages</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">Static site moved to the edge; hardened headers, robots/llms.txt, JSON-LD, CI-rendered resume PDF.</div>
     </li>
-    <li class="js-reveal" style="--delay: 240ms">
+    <li class="js-reveal">
       <span class="tl-num">05</span><span class="tl-title">Repurposing the compute</span>
       <span class="tl-status historical">Historical</span>
       <div class="tl-gist">The freed VMs became a Hermes AI host, then a zero-ingress Oracle dev box with a browser terminal.</div>
     </li>
-    <li class="js-reveal status-live" style="--delay: 300ms">
+    <li class="js-reveal status-live">
       <span class="tl-num">06</span><span class="tl-title">Vaultwarden host</span>
       <span class="tl-status live">Live</span>
       <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>
     </li>
   </ol>
 
-  <div class="links-bar" style="margin-top:8px">
+  <div class="links-bar">
     <a href="/archive" class="btn-primary">Read the full archive &rarr;</a>
   </div>
 

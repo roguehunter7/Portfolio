@@ -1,17 +1,23 @@
 <!DOCTYPE html>
+<!-- Social-card source (1200x630). Not deployed — lives outside site/ so the
+     strict CSP doesn't apply to its inline <style>.
+     Regenerate:  chrome --headless --screenshot=site/assets/og.png \
+                    --window-size=1200,630 --default-background-color=00000000 \
+                    file://$PWD/tools/og-source.html -->
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>og</title>
 <style>
   @font-face {
-    font-family: "Space Grotesk";
-    src: url("../fonts/space-grotesk-latin-700-normal.woff2") format("woff2");
-    font-weight: 700; font-display: swap;
+    font-family: "Inter";
+    src: url("../site/fonts/inter-latin-600-normal.woff2") format("woff2");
+    font-weight: 600; font-display: swap;
   }
   @font-face {
     font-family: "JetBrains Mono";
-    src: url("../fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+    src: url("../site/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
     font-weight: 400; font-display: swap;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,7 +40,7 @@
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
   h1 {
-    font-family: "Space Grotesk", sans-serif; font-weight: 700;
+    font-family: "Inter", sans-serif; font-weight: 600;
     font-size: 88px; line-height: 1.05; letter-spacing: -0.03em; margin-top: 26px;
   }
   h1 .grad {

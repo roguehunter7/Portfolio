@@ -28,6 +28,7 @@ commit history in this repository.
 site/                 Static site (Cloudflare Pages) — index.html, archive.html, resume.html, assets/
 infra/                Terraform for GCP (main.tf) + Oracle (oci/) + Vaultwarden compose + backup.sh
 scripts/              render-pdf.sh (ATS-safe resume PDF), check-jsonld.mjs, hermes-install.sh
+tools/                og-source.html — source for the 1200x630 social card (not deployed)
 resume.json           Master resume data (machine-readable, long-form)
 .github/workflows/    Deploy (Pages), OCI Provision, Vaultwarden Setup (all manual dispatch)
 ```

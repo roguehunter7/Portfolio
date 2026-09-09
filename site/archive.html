@@ -13,20 +13,18 @@
 <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
-<script nonce="p0rtfolio-s1te">
-document.documentElement.dataset.theme =
-  localStorage.getItem('theme') ||
-  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.min.js"
-  integrity="sha384-aBQXj4hK6Jm05i7aQAsUV3bLdSUrHX1BGYfMB0166TtWt/RRaw+h0Eelme9OCOvy"
-  crossorigin="anonymous" nonce="p0rtfolio-s1te"></script>
-<script src="/assets/site.js" nonce="p0rtfolio-s1te"></script>
-<link rel="preload" href="/fonts/space-grotesk-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="/assets/theme.js"></script>
+<script src="/assets/site.js"></script>
+<link rel="preload" href="/fonts/inter-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
+<svg class="d-sprite" aria-hidden="true" focusable="false"><defs>
+  <marker id="d-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/>
+  </marker>
+</defs></svg>
 <div class="container">
   <nav class="site-nav">
     <span class="brand"><span class="brand-mark">sk_</span><span class="brand-name">Sreeram K R</span></span>
@@ -37,14 +35,14 @@ document.documentElement.dataset.theme =
     </span>
   </nav>
 
-  <header class="hero" style="padding-top:32px">
+  <header class="hero hero--compact">
     <h1>Infrastructure <span class="grad-text">Archive</span></h1>
-    <p class="tagline" style="max-width:720px">
+    <p class="tagline measure">
       Every phase of this project, capture by capture. Each entry shows the architecture diagram for that
       point in time, <strong>why</strong> it was built that way, and <strong>how</strong> it was put together
       — so the reasoning is as visible as the code. Everything here is grounded in the repository's commit history.
     </p>
-    <p class="archive-meta" style="max-width:720px">
+    <p class="archive-meta measure">
       The repo previously told this as phases 1-9 across its own README and site. It's consolidated here into six
       phases grouped by the real architectural arc; the commit history still shows the full, finer-grained sequence.
     </p>
@@ -62,7 +60,7 @@ document.documentElement.dataset.theme =
 
     <div class="archive-content">
       <!-- Phase 1 -->
-      <article class="archive-entry js-reveal" id="phase-1" data-phase="01" style="--delay: 0ms">
+      <article class="archive-entry js-reveal" id="phase-1" data-phase="01">
         <h3>Phase 1 — Bootstrap &amp; GitOps polling</h3>
         <p class="archive-tagline">A hand-deployed VM learns to deploy itself.</p>
         <p class="archive-meta">May 2026</p>
@@ -87,23 +85,49 @@ document.documentElement.dataset.theme =
             <li><strong>IaC:</strong> Terraform introduced to describe the cloud resources reproducibly.</li>
           </ul>
         </div>
-        <div class="mermaid-container">
-          <div class="mermaid">
-flowchart TD
-    Dev[Developer] -->|push commit| Repo[(GitHub Repo)]
-    Repo -->|poll for SHA delta| VM
-    subgraph VM[Cloud VM]
-      direction TB
-      Nginx[Nginx] --> Site[Static site]
-      Site --> Users[Visitors]
-    end
-    Terraform[Terraform] -->|declares| VM
-          </div>
+        <div class="diagram-container">
+          <svg class="diagram" viewBox="22 19 856 239" role="img" aria-labelledby="p1t p1d" xmlns="http://www.w3.org/2000/svg">
+  <title id="p1t">Phase 1 — Bootstrap and GitOps polling</title>
+  <desc id="p1d">A developer pushes a commit to the GitHub repository. The cloud VM polls the repository for a SHA delta and redeploys. Inside the VM, Nginx serves the static site to visitors. Terraform declares the VM.</desc>
+
+  <rect class="d-n" x="30" y="30" width="180" height="44"/>
+  <text class="d-t" x="120" y="58">Developer</text>
+
+  <rect class="d-n" x="250" y="30" width="180" height="44"/>
+  <text class="d-m" x="340" y="58">GitHub Repo</text>
+
+  <path class="d-e" d="M210 52 H242" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="226" y="42" text-anchor="middle">push commit</text>
+
+  <rect class="d-z" x="230" y="130" width="640" height="120"/>
+  <text class="d-zl" x="246" y="152">Cloud VM</text>
+
+  <path class="d-e" d="M340 74 V180" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="348" y="122">poll for SHA delta</text>
+
+  <rect class="d-n" x="250" y="180" width="180" height="44"/>
+  <text class="d-m" x="340" y="208">Nginx</text>
+
+  <rect class="d-n" x="470" y="180" width="180" height="44"/>
+  <text class="d-t" x="560" y="208">Static site</text>
+
+  <rect class="d-n" x="690" y="180" width="180" height="44"/>
+  <text class="d-t" x="780" y="208">Visitors</text>
+
+  <path class="d-e" d="M430 202 H462" marker-end="url(#d-arrow)"/>
+  <path class="d-e" d="M650 202 H682" marker-end="url(#d-arrow)"/>
+
+  <rect class="d-n dim" x="30" y="180" width="180" height="44"/>
+  <text class="d-t" x="120" y="208">Terraform</text>
+
+  <path class="d-e" d="M210 202 H224" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="222" y="192" text-anchor="end">declares</text>
+</svg>
         </div>
       </article>
 
       <!-- Phase 2 -->
-      <article class="archive-entry js-reveal" id="phase-2" data-phase="02" style="--delay: 60ms">
+      <article class="archive-entry js-reveal" id="phase-2" data-phase="02">
         <h3>Phase 2 — Observability &amp; IaC serverless</h3>
         <p class="archive-tagline">Knowing what's happening, then rebuilding the whole thing declaratively.</p>
         <p class="archive-meta">June 2026</p>
@@ -130,25 +154,69 @@ flowchart TD
             <li><strong>Serverless:</strong> Terraform + Actions; Cloud Run, Firestore, WIF keyless auth, multi-stage Go image.</li>
           </ul>
         </div>
-        <div class="mermaid-container">
-          <div class="mermaid">
-flowchart TD
-    Dev[Developer] -->|git push| GH[GitHub Actions]
-    GH -->|build + push image| AR[Artifact Registry]
-    GH -->|OIDC / WIF| WIF[Workload Identity]
-    WIF -->|deploy| CR[Cloud Run]
-    CR -->|API| Nginx[Nginx frontend]
-    CR -->|SDK writes| FS[(Firestore)]
-    Obs[stub_status + metrics daemon] -->|telemetry| Site
-    subgraph VM2[Cloud VM]
-      Nginx --> Site[Resume + site]
-    end
-          </div>
+        <div class="diagram-container">
+          <svg class="diagram" viewBox="22 19 863 379" role="img" aria-labelledby="p2t p2d" xmlns="http://www.w3.org/2000/svg">
+  <title id="p2t">Phase 2 — Observability and IaC serverless</title>
+  <desc id="p2d">A developer pushes to GitHub Actions, which builds and pushes an image to Artifact Registry and authenticates through Workload Identity to deploy Cloud Run. Cloud Run writes to Firestore and serves an API to the Nginx frontend on the VM. A stub_status metrics daemon sends telemetry to the site.</desc>
+
+  <rect class="d-n" x="30" y="30" width="180" height="44"/>
+  <text class="d-t" x="120" y="58">Developer</text>
+
+  <rect class="d-n acc" x="250" y="30" width="180" height="44"/>
+  <text class="d-m" x="340" y="58">GitHub Actions</text>
+
+  <rect class="d-n" x="470" y="30" width="180" height="44"/>
+  <text class="d-t" x="560" y="58">Artifact Registry</text>
+
+  <rect class="d-n" x="690" y="30" width="180" height="44"/>
+  <text class="d-t" x="780" y="58">Firestore</text>
+
+  <path class="d-e" d="M210 52 H242" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="226" y="42" text-anchor="middle">git push</text>
+
+  <path class="d-e" d="M430 52 H462" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="446" y="42" text-anchor="middle">build + push</text>
+
+  <rect class="d-n" x="30" y="140" width="180" height="44"/>
+  <text class="d-t" x="120" y="168">Metrics daemon</text>
+
+  <rect class="d-n" x="470" y="140" width="180" height="44"/>
+  <text class="d-t" x="560" y="168">Workload Identity</text>
+
+  <rect class="d-n acc" x="690" y="140" width="180" height="44"/>
+  <text class="d-m" x="780" y="168">Cloud Run</text>
+
+  <path class="d-e" d="M340 74 V118 H560 V132" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="352" y="112">OIDC / WIF</text>
+
+  <path class="d-e" d="M650 162 H682" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="666" y="152" text-anchor="middle">deploy</text>
+
+  <path class="d-e" d="M780 140 V82" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="788" y="112">SDK writes</text>
+
+  <rect class="d-z" x="30" y="240" width="500" height="150"/>
+  <text class="d-zl" x="46" y="262">Cloud VM</text>
+
+  <rect class="d-n" x="60" y="290" width="180" height="44"/>
+  <text class="d-m" x="150" y="318">Nginx</text>
+
+  <rect class="d-n" x="290" y="290" width="180" height="44"/>
+  <text class="d-t" x="380" y="318">Site + resume</text>
+
+  <path class="d-e" d="M690 184 V206 H150 V282" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="700" y="200">API</text>
+
+  <path class="d-e" d="M120 184 V226 H380 V282" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="130" y="220">telemetry</text>
+
+  <path class="d-e" d="M240 312 H282" marker-end="url(#d-arrow)"/>
+</svg>
         </div>
       </article>
 
       <!-- Phase 3 -->
-      <article class="archive-entry js-reveal" id="phase-3" data-phase="03" style="--delay: 120ms">
+      <article class="archive-entry js-reveal" id="phase-3" data-phase="03">
         <h3>Phase 3 — Zero-ingress Docker Compose</h3>
         <p class="archive-tagline">The cost of serverless pushed everything back behind a no-public-ports host.</p>
         <p class="archive-meta">July 2026</p>
@@ -176,28 +244,58 @@ flowchart TD
             <li><strong>Pipeline:</strong> VM-readiness check before deploy; images built in CI and pulled anonymously.</li>
           </ul>
         </div>
-        <div class="mermaid-container">
-          <div class="mermaid">
-flowchart TD
-    V[Visitor] -->|HTTPS| CF[Cloudflare Edge]
-    CF -->|tunnel| Tunnel[cloudflared]
-    subgraph Host[VM]
-      direction TB
-      subgraph Compose[Docker Compose]
-        direction TB
-        Tunnel --> Nets[private network]
-        Nets --> Nginx[Nginx]
-        Nginx --> Site[Site + resume]
-      end
-    end
-    GH2[GitHub Actions] -->|build image| Pull[VM pulls anonymous]
-    Pull --> Nginx
-          </div>
+        <div class="diagram-container">
+          <svg class="diagram" viewBox="32 18 816 594" role="img" aria-labelledby="p3t p3d" xmlns="http://www.w3.org/2000/svg">
+  <title id="p3t">Phase 3 — Zero-ingress Docker Compose</title>
+  <desc id="p3d">A visitor reaches Cloudflare Edge over HTTPS; the edge forwards through a cloudflared tunnel into a VM with no public ports. Inside the VM, a Docker Compose network links the tunnel to Nginx and the static site. GitHub Actions builds the image, which the VM pulls anonymously.</desc>
+
+  <rect class="d-n" x="90" y="30" width="150" height="44"/>
+  <text class="d-t" x="165" y="58">Visitor</text>
+
+  <rect class="d-n acc" x="330" y="30" width="150" height="44"/>
+  <text class="d-t" x="405" y="58">Cloudflare Edge</text>
+
+  <path class="d-e acc" d="M240 52 H322" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="281" y="42" text-anchor="middle">HTTPS</text>
+
+  <rect class="d-z" x="40" y="130" width="800" height="350"/>
+  <text class="d-zl" x="56" y="152">VM — zero public ports</text>
+
+  <rect class="d-z2" x="70" y="180" width="740" height="270"/>
+  <text class="d-zl2" x="86" y="202">Docker Compose network (private)</text>
+
+  <path class="d-e acc" d="M405 74 V150 H165 V242" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="415" y="146">tunnel (outbound)</text>
+
+  <rect class="d-n acc" x="90" y="250" width="150" height="44"/>
+  <text class="d-m" x="165" y="278">cloudflared</text>
+
+  <rect class="d-n" x="330" y="250" width="150" height="44"/>
+  <text class="d-m" x="405" y="278">Nginx</text>
+
+  <rect class="d-n" x="570" y="250" width="150" height="44"/>
+  <text class="d-t" x="645" y="278">Site + resume</text>
+
+  <path class="d-e" d="M240 272 H322" marker-end="url(#d-arrow)"/>
+  <path class="d-e" d="M480 272 H562" marker-end="url(#d-arrow)"/>
+
+  <rect class="d-n" x="90" y="560" width="150" height="44"/>
+  <text class="d-m" x="165" y="588">GitHub Actions</text>
+
+  <rect class="d-n" x="330" y="560" width="150" height="44"/>
+  <text class="d-t" x="405" y="588">Image pull</text>
+
+  <path class="d-e" d="M240 582 H322" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="281" y="572" text-anchor="middle">build</text>
+
+  <path class="d-e" d="M405 560 V500 H645 V302" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="415" y="514">anonymous pull</text>
+</svg>
         </div>
       </article>
 
       <!-- Phase 4 -->
-      <article class="archive-entry js-reveal" id="phase-4" data-phase="04" style="--delay: 180ms">
+      <article class="archive-entry js-reveal" id="phase-4" data-phase="04">
         <h3>Phase 4 — Edge migration to Cloudflare Pages</h3>
         <p class="archive-tagline">Static assets move to the edge; the VM stops serving the site.</p>
         <p class="archive-meta">August 2026</p>
@@ -219,29 +317,67 @@ flowchart TD
           </p>
           <ul>
             <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
-            <li><strong>Hardening:</strong> strict CSP + nonce, HSTS, COOP/CORP, Permissions-Policy, header route rules.</li>
+            <li><strong>Hardening:</strong> strict CSP (hash-pinned JSON-LD, no nonce, no inline scripts or styles), HSTS, COOP/CORP, Permissions-Policy, header route rules.</li>
             <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
             <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now a single self-contained HTML+CSS doc rendered to PDF by headless Chrome.</li>
-            <li><strong>Diagrams:</strong> Mermaid (client-side, pinned <code>mermaid@11.16.1</code> with an SRI hash); themes/layout tuned for readability across dark/light.</li>
+            <li><strong>Diagrams:</strong> hand-authored inline SVG (no client-side render, no CDN); styled from the site stylesheet, so dark/light theming is a pure CSS variable swap.</li>
           </ul>
         </div>
-        <div class="mermaid-container">
-          <div class="mermaid">
-flowchart TD
-    Dev[Developer] -->|git push| GH[GitHub Actions]
-    GH -->|render resume| PDF[Resume PDF]
-    GH -->|wrangler deploy| Pages[Cloudflare Pages]
-    User[Visitor] -->|HTTPS| Edge[Cloudflare Edge]
-    Edge --> Pages
-    Pages --> IDX[index.html]
-    Pages --> R[resume.html]
-    Pages --> PDF
-          </div>
+        <div class="diagram-container">
+          <svg class="diagram" viewBox="22 19 856 273" role="img" aria-labelledby="p4t p4d" xmlns="http://www.w3.org/2000/svg">
+  <title id="p4t">Phase 4 — Edge migration to Cloudflare Pages</title>
+  <desc id="p4d">A developer pushes to GitHub Actions, which renders the resume PDF and deploys the static site to Cloudflare Pages with wrangler. Visitors reach Cloudflare Edge over HTTPS, which serves index.html, resume.html and the PDF from Pages.</desc>
+
+  <rect class="d-n" x="30" y="30" width="180" height="44"/>
+  <text class="d-t" x="120" y="58">Developer</text>
+
+  <rect class="d-n acc" x="250" y="30" width="180" height="44"/>
+  <text class="d-m" x="340" y="58">GitHub Actions</text>
+
+  <rect class="d-n" x="470" y="30" width="180" height="44"/>
+  <text class="d-t" x="560" y="58">Resume PDF</text>
+
+  <rect class="d-n" x="30" y="140" width="180" height="44"/>
+  <text class="d-t" x="120" y="168">Visitor</text>
+
+  <rect class="d-n acc" x="250" y="140" width="180" height="44"/>
+  <text class="d-t" x="340" y="168">Cloudflare Edge</text>
+
+  <rect class="d-n acc" x="470" y="140" width="180" height="44"/>
+  <text class="d-t" x="560" y="168">Cloudflare Pages</text>
+
+  <rect class="d-n" x="690" y="140" width="180" height="44"/>
+  <text class="d-m" x="780" y="168">index.html</text>
+
+  <rect class="d-n" x="690" y="240" width="180" height="44"/>
+  <text class="d-m" x="780" y="268">resume.html</text>
+
+  <path class="d-e" d="M210 52 H242" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="226" y="42" text-anchor="middle">git push</text>
+
+  <path class="d-e" d="M430 52 H462" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="446" y="42" text-anchor="middle">render</text>
+
+  <path class="d-e" d="M340 74 V110 H560 V132" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="352" y="104">wrangler deploy</text>
+
+  <path class="d-e acc" d="M210 162 H242" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="226" y="152" text-anchor="middle">HTTPS</text>
+
+  <path class="d-e" d="M430 162 H462" marker-end="url(#d-arrow)"/>
+
+  <path class="d-e" d="M560 140 V82" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="568" y="112">serves</text>
+
+  <path class="d-e" d="M650 162 H682" marker-end="url(#d-arrow)"/>
+
+  <path class="d-e" d="M560 184 V240 H682" marker-end="url(#d-arrow)"/>
+</svg>
         </div>
       </article>
 
       <!-- Phase 5 -->
-      <article class="archive-entry js-reveal" id="phase-5" data-phase="05" style="--delay: 240ms">
+      <article class="archive-entry js-reveal" id="phase-5" data-phase="05">
         <h3>Phase 5 — Repurposing the compute</h3>
         <p class="archive-tagline">Freed VMs become an AI host and a zero-ingress dev box.</p>
         <p class="archive-meta">August 2026</p>
@@ -268,29 +404,79 @@ flowchart TD
             <li><strong>Guardrails:</strong> tenancy budget + compute/storage quotas limiting to the Always-Free tier ($0).</li>
           </ul>
         </div>
-        <div class="mermaid-container">
-          <div class="mermaid">
-flowchart TD
-    subgraph GCPVM[GCP e2-micro]
-      Hermes[Hermes host]
-      Hermes -->|outbound poll| TG[Telegram]
-      Hermes -->|API| LLM[DeepSeek API]
-      Admin1[Admin] -->|IAP SSH| Hermes
-    end
-    subgraph Oracle[Oracle A1.Flex]
-      Tz[Browser terminal] --> Tm[ttyd + tmux]
-      Tm --> Node[Node LTS + Reasonix]
-    end
-    CF2[Cloudflare Tunnel] -->|HTTPS| Tz
-    DevBox[Developer] --> CF2
-    TF[GitHub Actions + Terraform] -->|provision, cost-guarded| Tz
-    Admin2[Admin] -->|serial console| Tz
-          </div>
+        <div class="diagram-container">
+          <svg class="diagram" viewBox="22 22 856 452" role="img" aria-labelledby="p5t p5d" xmlns="http://www.w3.org/2000/svg">
+  <title id="p5t">Phase 5 — Repurposing the compute</title>
+  <desc id="p5d">A GCP e2-micro runs a Hermes AI assistant that polls Telegram outbound and calls the DeepSeek API, administered over IAP SSH. An Oracle A1.Flex dev box runs a browser terminal into ttyd and tmux with Node LTS, reached through a Cloudflare Tunnel, provisioned by Terraform with cost guardrails, and administered via serial console.</desc>
+
+  <rect class="d-z" x="30" y="30" width="400" height="240"/>
+  <text class="d-zl" x="46" y="52">GCP e2-micro</text>
+
+  <rect class="d-n" x="55" y="70" width="150" height="44"/>
+  <text class="d-t" x="130" y="98">Hermes</text>
+
+  <rect class="d-n" x="255" y="70" width="150" height="44"/>
+  <text class="d-t" x="330" y="98">Telegram</text>
+
+  <rect class="d-n" x="55" y="180" width="150" height="44"/>
+  <text class="d-t" x="130" y="208">Admin</text>
+
+  <rect class="d-n" x="255" y="180" width="150" height="44"/>
+  <text class="d-t" x="330" y="208">DeepSeek API</text>
+
+  <path class="d-e" d="M205 92 H247" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="226" y="84" text-anchor="middle">poll</text>
+
+  <path class="d-e" d="M205 92 H230 V202 H247" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="238" y="150">API</text>
+
+  <path class="d-e" d="M130 180 V122" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="138" y="154">IAP SSH</text>
+
+  <rect class="d-z" x="470" y="30" width="400" height="330"/>
+  <text class="d-zl" x="486" y="52">Oracle A1.Flex</text>
+
+  <rect class="d-n" x="487" y="70" width="175" height="44"/>
+  <text class="d-t" x="575" y="98">Browser terminal</text>
+
+  <rect class="d-n" x="487" y="170" width="175" height="44"/>
+  <text class="d-m" x="575" y="198">ttyd + tmux</text>
+
+  <rect class="d-n" x="487" y="270" width="175" height="44"/>
+  <text class="d-t" x="575" y="298">Node LTS</text>
+
+  <path class="d-e" d="M575 114 V162" marker-end="url(#d-arrow)"/>
+  <path class="d-e" d="M575 214 V262" marker-end="url(#d-arrow)"/>
+
+  <rect class="d-n acc" x="700" y="70" width="175" height="44"/>
+  <text class="d-t" x="787.5" y="98">Cloudflare Tunnel</text>
+
+  <rect class="d-n" x="700" y="170" width="175" height="44"/>
+  <text class="d-t" x="787.5" y="198">Developer</text>
+
+  <rect class="d-n" x="700" y="270" width="175" height="44"/>
+  <text class="d-m" x="787.5" y="298">Terraform + CI</text>
+
+  <path class="d-e acc" d="M700 92 H662" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="681" y="82" text-anchor="middle">HTTPS</text>
+
+  <path class="d-e" d="M787.5 170 V122" marker-end="url(#d-arrow)"/>
+
+  <path class="d-e" d="M700 292 H665 V92 H658" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="672" y="186">provision,</text>
+  <text class="d-l" x="672" y="200">cost-guarded</text>
+
+  <rect class="d-n" x="700" y="400" width="175" height="44"/>
+  <text class="d-t" x="787.5" y="428">Admin (serial)</text>
+
+  <path class="d-e" d="M787.5 400 V366 H680 V118 H658" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="686" y="360">serial console</text>
+</svg>
         </div>
       </article>
 
       <!-- Phase 6 -->
-      <article class="archive-entry js-reveal" id="phase-6" data-phase="06" style="--delay: 300ms">
+      <article class="archive-entry js-reveal" id="phase-6" data-phase="06">
         <h3>Phase 6 — Vaultwarden host (current)</h3>
         <p class="archive-tagline">The GCP VM becomes a zero-ingress self-hosted password vault.</p>
         <p class="archive-meta">August 2026 — current</p>
@@ -318,25 +504,68 @@ flowchart TD
             <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 5.</li>
           </ul>
         </div>
-        <div class="mermaid-container">
-          <div class="mermaid">
-flowchart TD
-    VUser[Vault user] -->|HTTPS vault.sreeramkr.com| CF[Cloudflare Edge]
-    CF -->|tunnel| CFd[cloudflared]
-    subgraph Host[GCP e2-micro]
-      direction TB
-      CFd --> VW[Vaultwarden :8000 loopback]
-      VW --> DB[(vw-data SQLite)]
-      DB -->|nightly| Backup[backup.sh]
-      Backup -->|metadata SA token| GCS[(Private GCS bucket)]
-    end
-    Admin[Admin] -->|IAP-only SSH| VW
-    CI[GitHub Actions] -->|writes .env 0600| VW
-          </div>
+        <div class="diagram-container">
+          <svg class="diagram" viewBox="32 13 846 527" role="img" aria-labelledby="p6t p6d" xmlns="http://www.w3.org/2000/svg">
+  <title id="p6t">Phase 6 — Vaultwarden host, zero-ingress password vault</title>
+  <desc id="p6d">A vault user reaches Cloudflare Edge over HTTPS at vault.sreeramkr.com. The edge forwards through a cloudflared tunnel into a GCP e2-micro with a deny-all firewall. Inside the host, Vaultwarden listens only on loopback port 8000, stores state in a SQLite database, and a nightly backup script uploads it to a private GCS bucket using the instance metadata service-account token. Admin access is IAP-only SSH; CI writes a 0600 .env file over IAP.</desc>
+
+  <rect class="d-n" x="40" y="24" width="160" height="44"/>
+  <text class="d-t" x="120" y="52">Vault user</text>
+
+  <rect class="d-n acc" x="380" y="24" width="160" height="44"/>
+  <text class="d-t" x="460" y="52">Cloudflare Edge</text>
+
+  <path class="d-e acc" d="M200 46 H372" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="286" y="36" text-anchor="middle">HTTPS vault.sreeramkr.com</text>
+
+  <rect class="d-z" x="250" y="118" width="620" height="316"/>
+  <text class="d-zl" x="266" y="140">GCP e2-micro — zero ingress · deny-all firewall · IAP-only SSH</text>
+
+  <path class="d-e acc" d="M460 68 V150 H392" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="470" y="110">tunnel</text>
+
+  <rect class="d-n" x="300" y="158" width="160" height="44"/>
+  <text class="d-m" x="380" y="186">cloudflared</text>
+
+  <rect class="d-n acc" x="530" y="158" width="230" height="44"/>
+  <text class="d-m" x="645" y="180">Vaultwarden</text>
+  <text class="d-s" x="645" y="196">loopback :8000 only</text>
+
+  <path class="d-e" d="M460 180 H522" marker-end="url(#d-arrow)"/>
+
+  <rect class="d-n" x="555" y="248" width="180" height="44"/>
+  <text class="d-m" x="645" y="276">vw-data (SQLite)</text>
+  <path class="d-e" d="M645 202 V240" marker-end="url(#d-arrow)"/>
+
+  <rect class="d-n" x="555" y="336" width="180" height="44"/>
+  <text class="d-m" x="645" y="364">backup.sh</text>
+  <path class="d-e" d="M645 292 V328" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="655" y="316">nightly 03:00</text>
+
+  <rect class="d-n" x="555" y="486" width="180" height="46"/>
+  <text class="d-t" x="645" y="506">Private GCS bucket</text>
+  <text class="d-s" x="645" y="522">storage.objectUser</text>
+  <path class="d-e" d="M645 380 V478" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="655" y="432">metadata SA token</text>
+
+  <rect class="d-n" x="40" y="200" width="160" height="44"/>
+  <text class="d-t" x="120" y="228">Admin</text>
+  <path class="d-e" d="M200 222 H522" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="210" y="214">IAP-only SSH</text>
+
+  <rect class="d-n" x="40" y="300" width="160" height="44"/>
+  <text class="d-t" x="120" y="328">GitHub Actions</text>
+  <path class="d-e" d="M200 322 H300 V262 H522" marker-end="url(#d-arrow)"/>
+  <text class="d-l" x="210" y="314">writes .env 0600</text>
+
+  <text class="d-note" x="40" y="400">&#10003; 0 public ports</text>
+  <text class="d-note" x="40" y="422">&#10003; secrets root-owned 0600</text>
+  <text class="d-note" x="40" y="444">&#10003; backup pruned to newest 5</text>
+</svg>
         </div>
       </article>
 
-      <div class="links-bar" style="margin-top:16px">
+      <div class="links-bar">
         <a href="/" class="btn-ghost">&larr; Back to home</a>
       </div>
     </div>

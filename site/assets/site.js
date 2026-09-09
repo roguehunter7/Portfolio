@@ -1,47 +1,10 @@
-// Shared site behavior: theme toggle + email obfuscation + mermaid init + hero terminal + phase rail.
-// CSP allows 'self' scripts; mermaid loaded from the pinned CDN on pages that render diagrams.
+// Shared site behavior: theme toggle + email obfuscation + hero terminal + phase rail.
+// CSP allows 'self' scripts only; diagrams are inline SVG themed by CSS variables.
 (function () {
   'use strict';
 
   function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
-    if (window.mermaid) {
-      window.mermaid.initialize({
-        startOnLoad: false,
-        // 'base' + explicit variables so diagrams match the site palette in both themes
-        theme: 'base',
-        themeVariables: theme === 'light'
-          ? {
-              fontFamily: '"JetBrains Mono", Menlo, monospace',
-              fontSize: '14px',
-              primaryColor: '#f1f5f9',
-              primaryTextColor: '#0f172a',
-              primaryBorderColor: '#2563eb',
-              secondaryColor: '#e2e8f0',
-              tertiaryColor: '#f8fafc',
-              lineColor: '#64748b'
-            }
-          : {
-              fontFamily: '"JetBrains Mono", Menlo, monospace',
-              fontSize: '14px',
-              primaryColor: '#1a2332',
-              primaryTextColor: '#e2e8f0',
-              primaryBorderColor: '#60a5fa',
-              secondaryColor: '#111827',
-              tertiaryColor: '#1f2a3d',
-              lineColor: '#94a3b8'
-            }
-      });
-      document.querySelectorAll('.mermaid').forEach(function (el) {
-        el.removeAttribute('data-processed');
-      });
-    }
-  }
-
-  function runMermaid() {
-    if (window.mermaid) {
-      window.mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
-    }
   }
 
   function toggleTheme() {
@@ -49,7 +12,6 @@
     var next = html.dataset.theme === 'light' ? 'dark' : 'light';
     localStorage.setItem('theme', next);
     applyTheme(next);
-    runMermaid();
   }
 
   function revealEmail() {
@@ -153,7 +115,6 @@
   }
 
   window.__portfolioToggle = toggleTheme;
-  window.__portfolioRunMermaid = runMermaid;
 
   document.addEventListener('DOMContentLoaded', function () {
     var saved = localStorage.getItem('theme');
@@ -162,7 +123,6 @@
     revealEmail();
     setupCopyEmail();
     setupTerminal();
-    runMermaid();
     setupPhaseRail();
     setupReveal();
 
