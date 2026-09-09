@@ -1,11 +1,14 @@
-# Hermes model configuration — one provider, one budget tier everywhere.
+# Hermes model configuration.
 #
-# v4-flash for the main loop, delegation and every auxiliary task (titles,
-# compression, web extract, vision, triage...): one rate limit and one billing
-# bucket, ~10x cheaper than the Gemini paid tier that needed a top-up.
+# Main loop: DeepSeek-V4-Pro — stronger agentic reasoning, knowledge and
+# difficult-reasoning work, which is what actually drives the assistant.
+# Delegation and every auxiliary task (titles, compression, web extract,
+# vision, triage...) stay on V4-Flash: high-volume, latency-sensitive work
+# where the budget tier is the right call, and it keeps one rate limit and one
+# billing bucket for everything except the main loop.
 model:
   provider: deepseek
-  default: deepseek-v4-flash
+  default: deepseek-v4-pro
 delegation:
   provider: deepseek
   model: deepseek-v4-flash

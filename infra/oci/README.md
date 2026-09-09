@@ -121,6 +121,9 @@ curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
 - Official image `nousresearch/hermes-agent` (arm64 manifest), pinned in
   `infra/hermes/docker-compose.yml`. Everything Hermes needs — Python, Node,
   Chromium — lives in the image, so the host gains nothing but the container runtime.
+- Model routing (`infra/hermes/config.yaml`): the main loop runs
+  `deepseek-v4-pro`; delegation and every auxiliary task run
+  `deepseek-v4-flash`.
 - `/opt/hermes` is mounted at `/opt/data` (config, sessions, skills, memories).
   Updating = `docker compose pull && docker compose up -d`; `hermes update` is not
   supported inside Docker by design.
