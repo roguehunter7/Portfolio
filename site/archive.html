@@ -319,13 +319,14 @@ document.documentElement.dataset.theme =
           <h4>How</h4>
           <p>
             We migrated the static site to <strong>Cloudflare Pages</strong> with a <code>_headers</code> policy that
-            hardens CSP, HSTS, COOP/CORP, and permissions. The resume PDF is rendered by CI (headless Chrome) with
+            hardens HSTS, nosniff, framing and permissions. The resume PDF is rendered by CI (headless Chrome) with
             ATS assertions. We made the site AI-friendly with <code>robots.txt</code>, <code>llms.txt</code>, and a
             JSON-LD Person schema, and documented the HTML-resume rationale.
           </p>
           <ul>
             <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
-            <li><strong>Hardening:</strong> HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, immutable font caching, preview noindex. No CSP — see below.</li>
+            <li><strong>Hardening:</strong> HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, immutable font caching, preview noindex.</li>
+            <li><strong>No CSP (deliberate):</strong> a static site with no input, no forms and no third-party origins has nothing for a policy to protect — and <code>script-src 'self'</code> would not stop the one plausible attack, since a compromised repo or deploy token can publish a same-origin script. The strict policy's per-route exception broke the resume twice, so it was cut.</li>
             <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
             <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now plain HTML+CSS rendered to PDF by headless Chrome.</li>
             <li><strong>Diagrams:</strong> hand-authored inline SVG (no client-side render, no CDN); styled from the site stylesheet, so dark/light theming is a pure CSS variable swap.</li>

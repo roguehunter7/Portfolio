@@ -1,5 +1,5 @@
 // Shared site behavior: theme toggle + email obfuscation + hero terminal + phase rail.
-// CSP allows 'self' scripts only; diagrams are inline SVG themed by CSS variables.
+// Diagrams are inline SVG themed by CSS variables — no client-side renderer.
 (function () {
   'use strict';
 

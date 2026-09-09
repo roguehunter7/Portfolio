@@ -2,7 +2,7 @@
    Sreeram K R — portfolio + infrastructure archive
    Shared theme & layout. Theme toggled via <html data-theme> + localStorage.
    Type system: Inter (text + display) / JetBrains Mono (code, labels),
-   self-hosted latin subsets in /fonts (CSP: font-src 'self').
+   self-hosted latin subsets in /fonts.
    ========================================================================== */
 
 /* ---------- Self-hosted fonts (latin subsets, OFL 1.1) ---------- */
