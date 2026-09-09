@@ -58,7 +58,7 @@ firewall-cmd --reload >/dev/null 2>&1 || true
 sysctl --system
 
 # --- 8. Verify the tunnel registered (wait up to 120s) ---------------------
-for i in $(seq 1 24); do
+for _ in $(seq 1 24); do
   if journalctl -u cloudflared --no-pager -n 200 2>/dev/null | grep -q "Registered tunnel connection"; then
     echo "cloudflared registered with Cloudflare"
     break
