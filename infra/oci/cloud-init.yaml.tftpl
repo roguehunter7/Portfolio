@@ -1,51 +1,50 @@
 #cloud-config
-# Phase 8+: Oracle A1.Flex dev box — cloudflared tunnel + ttyd/tmux browser
-# terminal (Reasonix dev box). Zero open ports: NSG deny-all, host firewall
-# deny-incoming, sshd disabled. Admin = browser terminal via tunnel.
-# Terraform template: ${cloudflare_tunnel_token} / ${ttyd_password} are
-# rendered by templatefile() before cloud-init runs.
+# Oracle A1.Flex dev box (Always Free 2 OCPU / 12 GB, ARM64).
+#
+# Workloads:
+#   - cloudflared tunnel (outbound) — the only way in; NSG has zero ingress
+#   - ttyd + tmux browser terminal  — admin shell (sshd is disabled)
+#   - DeepSeek Harness (systemd)    — dsh web on loopback :3082 behind the
+#                                     dsh-full-remote auth proxy on :3080,
+#                                     which is the cloudflared target
+#   - Hermes Agent (Docker)         — Telegram polling + DeepSeek API, no port
+#
+# Terraform template: every $${...} below is rendered by templatefile(). File
+# bodies that contain credentials or shell metacharacters are passed in
+# base64-encoded, so provision.sh itself never holds a secret.
 
 package_update: true
 package_upgrade: true   # full apt upgrade once at first boot, before packages/scripts
 
 packages:
-  - build-essential
+  - build-essential     # node-gyp for dsh-subprocess-local / node-pty
   - ca-certificates
   - curl
+  - gh                  # workflow dispatch + repo work from the box
   - git
   - gnupg
   - htop
-  - jq
-  - neofetch
-  - python3-dev
-  - python3-full
+  - jq                  # dsh-setup.sh edits the reverse-proxy state file with it
   - python3-pip
   - ripgrep
   - tmux
   - ttyd
   - ufw
   - vim
-  - zsh
-  - zsh-autosuggestions
-  - zsh-syntax-highlighting
 
 write_files:
-  # --- Memory/network tuning for a 12 GB dev box ---------------------------
-  # swappiness 10: keep 12 GB in RAM (default 60 is for small-memory boxes).
-  # vfs_cache_pressure 50: keep more dentry/inode cache — snappier repeated
-  # file reads (Reasonix reads code constantly).
-  # BBR: better throughput/latency for the tunnel + DeepSeek API traffic.
+  # --- Network tuning -------------------------------------------------------
+  # BBR only: this box has no swap, so a swappiness/vfs_cache_pressure tune
+  # would be a no-op. BBR helps the tunnel + DeepSeek API traffic.
   - path: /etc/sysctl.d/99-devbox.conf
     content: |
-      vm.swappiness=10
-      vm.vfs_cache_pressure=50
       net.core.default_qdisc=fq
       net.ipv4.tcp_congestion_control=bbr
 
   # --- Weekly maintenance: upgrade + forced reboot, Monday 02:00 -----------
-  # Simpler than unattended-upgrades + conditional reboot: one timer, one
-  # oneshot service. A forced weekly reboot is good hygiene for a long-running
-  # dev box (clears memory drift, resets tmux/ttyd/cloudflared state).
+  # Safe to force a reboot because every workload is supervised and comes back
+  # on its own: dsh-web.service (Restart=always) and the Hermes container
+  # (restart: unless-stopped). Clears memory drift and resets tmux/ttyd state.
   - path: /etc/systemd/system/weekly-maintenance.service
     content: |
       [Unit]
@@ -71,9 +70,10 @@ write_files:
       WantedBy=timers.target
 
   # --- ttyd systemd unit: browser terminal -> tmux "main" session -----------
-  # Runs as the ubuntu user so node/npm/reasonix (installed via nvm in
-  # $HOME/.nvm) are on PATH without sudo. Emergency backdoor = OCI serial console.
+  # 0600: the login credential is in ExecStart, so the unit file must not be
+  # world-readable. Emergency backdoor if ttyd/DSH break = OCI serial console.
   - path: /etc/systemd/system/ttyd.service
+    permissions: "0600"
     content: |
       [Unit]
       Description=ttyd web terminal (tmux main session)
@@ -93,20 +93,55 @@ write_files:
       [Install]
       WantedBy=multi-user.target
 
+  # --- Hermes Agent (official image; nothing Hermes needs is on the host) ---
+  # /opt/hermes is mounted at /opt/data in the container: config, sessions,
+  # skills and memories all live there, so the image stays replaceable.
+  - path: /opt/hermes/docker-compose.yml
+    permissions: "0644"
+    encoding: b64
+    content: ${hermes_compose_b64}
+
+  - path: /opt/hermes/config.yaml
+    permissions: "0644"
+    encoding: b64
+    content: ${hermes_config_b64}
+
+  # Secrets from GitHub Actions -> Terraform -> here. Root-owned 0600; the
+  # instance metadata copy is the accepted trade-off (see infra/oci/README.md).
+  - path: /opt/hermes/.env
+    permissions: "0600"
+    encoding: b64
+    content: ${hermes_env_b64}
+
+  # DeepSeek Harness credentials. The credentials provider layers the inherited
+  # process environment ABOVE ~/.dsh/.credentials.yaml, so this makes a rebuilt
+  # box usable immediately instead of waiting for a manual entry in Settings.
+  # Rotating the key means updating the GitHub secret + rebuilding, or editing
+  # this file and restarting dsh-web (the env deliberately wins over the store).
+  - path: /etc/dsh-web.env
+    permissions: "0600"
+    encoding: b64
+    content: ${dsh_env_b64}
+
+  - path: /usr/local/sbin/dsh-setup.sh
+    permissions: "0755"
+    encoding: b64
+    content: ${dsh_setup_b64}
+
   - path: /usr/local/sbin/provision.sh
     permissions: "0755"
     content: |
       #!/bin/bash
       set -euo pipefail
 
-      # =========================================================================
-      # One-shot provisioning for the dev box. Runs once via cloud-init runcmd.
-      # Order matters: cloudflared first (bootstraps admin access), then the
-      # dev-box stack, then hardening LAST (so we never lock ourselves out
-      # mid-setup). Emergency backdoor if anything fails: OCI serial console.
-      # =========================================================================
+      # =======================================================================
+      # One-shot provisioning. Order matters: cloudflared first (bootstraps
+      # admin access through the tunnel), then the workloads, then hardening
+      # LAST so a failure never locks us out. Emergency backdoor if anything
+      # fails: OCI serial console.
+      # =======================================================================
 
-      # --- cloudflared tunnel (remote-managed; routes live in the dashboard) ---
+      # --- cloudflared tunnel (remote-managed; routes live in the dashboard) --
       sudo mkdir -p --mode=0755 /usr/share/keyrings
       curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
       echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list >/dev/null
@@ -116,47 +151,51 @@ write_files:
       sudo cloudflared service install '${cloudflare_tunnel_token}'
       sudo systemctl enable --now cloudflared
 
-      # --- Node.js LTS via nvm (user-level, no sudo; Reasonix needs >= 22) ---
-      # Installed for the ubuntu user; ttyd runs as ubuntu so node/npm land on
-      # PATH from ~/.nvm. Maintenance: `nvm install --lts` as ubuntu.
+      # --- Node.js LTS via nvm (DeepSeek Harness runs on it) -----------------
+      # User-level, no sudo. dsh-setup.sh resolves the bin dir when it writes
+      # the systemd unit, so no version is hardcoded anywhere.
       sudo -u ubuntu bash -lc '
         export NVM_DIR="$HOME/.nvm"
         curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
         . "$NVM_DIR/nvm.sh"
         nvm install --lts
         nvm alias default lts/*
-        npm install -g reasonix
       '
 
-      # --- zsh + oh-my-zsh + powerlevel10k (dev shell) ---
-      sudo -u ubuntu bash -lc '
-        # oh-my-zsh (non-interactive; runs with `--unattended` to skip chsh prompt)
-        RUNZSH=no CHSH=no \
-          sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-        # powerlevel10k theme (cloned into omz custom themes dir)
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-          "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
-        # pre-made theme config (skips the interactive wizard) + instant prompt
-        cp "$HOME/.oh-my-zsh/custom/themes/powerlevel10k/config/p10k-lean.zsh" "$HOME/.p10k.zsh"
-        # enable the theme in .zshrc
-        sed -i "s/^ZSH_THEME=.*/ZSH_THEME=\"powerlevel10k\/powerlevel10k\"/" "$HOME/.zshrc"
-        # enable autosuggestions + syntax highlighting plugins (installed via apt)
-        sed -i "s/^plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/" "$HOME/.zshrc"
-        # powerlevel10k instant prompt (loads cached prompt before zsh finishes)
-        printf '\n# Enable instant prompt (p10k)\ntypeset -g POWERLEVEL9K_INSTANT_PROMPT=verbose\nsource ~/.p10k.zsh\n' >> "$HOME/.zshrc"
-      '
-      # make zsh the default shell for ubuntu (takes effect on next tmux attach)
-      sudo chsh -s /usr/bin/zsh ubuntu
+      # --- git identity + repo checkout -------------------------------------
+      # The dev box exists to work on this repo; DSH starts in it.
+      sudo -u ubuntu git config --global user.name 'roguehunter7'
+      sudo -u ubuntu git config --global user.email 'krsreeram007@gmail.com'
+      if [ ! -d /home/ubuntu/Portfolio/.git ]; then
+        sudo -u ubuntu git clone --depth=1 https://github.com/roguehunter7/Portfolio.git /home/ubuntu/Portfolio || true
+      fi
 
-      # --- Services ---
+      # --- Docker Engine + compose plugin (official repo) -------------------
+      # Hermes runs as the official image, so the host gets no Python/Node/
+      # Chromium for it — only the runtime.
+      sudo install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+      sudo chmod a+r /etc/apt/keyrings/docker.gpg
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+      sudo apt-get update -y
+      sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      sudo systemctl enable --now docker
+
+      # --- Hermes (compose + config + .env written by write_files) ----------
+      sudo docker compose -f /opt/hermes/docker-compose.yml up -d
+
+      # --- DeepSeek Harness: service + authenticated edge proxy -------------
+      sudo bash /usr/local/sbin/dsh-setup.sh
+
+      # --- Services ---------------------------------------------------------
       sudo systemctl daemon-reload
-      sudo systemctl enable --now weekly-maintenance.timer   # upgrade+reboot, Mon 02:00
-      sudo systemctl enable --now ttyd                        # browser terminal
+      sudo systemctl enable --now weekly-maintenance.timer
+      sudo systemctl enable --now ttyd
 
-      # --- Apply sysctl tuning (write_files wrote /etc/sysctl.d/99-devbox.conf) ---
+      # --- Apply sysctl tuning ---------------------------------------------
       sudo sysctl --system
 
-      # --- Verify the tunnel registered (wait up to 120s) ---
+      # --- Verify the tunnel registered (wait up to 120s) -------------------
       for i in $(seq 1 24); do
         if sudo journalctl -u cloudflared --no-pager -n 200 2>/dev/null \
              | grep -q "Registered tunnel connection"; then
@@ -166,7 +205,7 @@ write_files:
         sleep 5
       done
 
-      # --- HARDEN LAST: deny incoming, keep outbound, sshd off ---
+      # --- HARDEN LAST: deny incoming, keep outbound, sshd off --------------
       sudo systemctl disable --now ssh || true
       sudo ufw default deny incoming
       sudo ufw default allow outgoing

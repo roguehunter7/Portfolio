@@ -1,0 +1,39 @@
+# Hermes model configuration — one provider, one budget tier everywhere.
+#
+# v4-flash for the main loop, delegation and every auxiliary task (titles,
+# compression, web extract, vision, triage...): one rate limit and one billing
+# bucket, ~10x cheaper than the Gemini paid tier that needed a top-up.
+model:
+  provider: deepseek
+  default: deepseek-v4-flash
+delegation:
+  provider: deepseek
+  model: deepseek-v4-flash
+auxiliary:
+  vision:
+    provider: deepseek
+    model: deepseek-v4-flash
+  web_extract:
+    provider: deepseek
+    model: deepseek-v4-flash
+  title_generation:
+    provider: deepseek
+    model: deepseek-v4-flash
+  tts_audio_tags:
+    provider: deepseek
+    model: deepseek-v4-flash
+  compression:
+    provider: deepseek
+    model: deepseek-v4-flash
+  approval:
+    provider: deepseek
+    model: deepseek-v4-flash
+  triage_specifier:
+    provider: deepseek
+    model: deepseek-v4-flash
+  kanban_decomposer:
+    provider: deepseek
+    model: deepseek-v4-flash
+  profile_describer:
+    provider: deepseek
+    model: deepseek-v4-flash

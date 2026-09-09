@@ -45,3 +45,28 @@ variable "ttyd_password" {
   type        = string
   sensitive   = true
 }
+
+# --- Hermes Agent (runs as a container on this box) -------------------------
+# These land in /opt/hermes/.env (0600, root) via cloud-init. Because user_data
+# is stored in the instance metadata, the same values are also readable from
+# the instance's own IMDS and appear in the tfstate bucket — both private to
+# this tenancy. Trade-off documented in infra/oci/README.md.
+
+variable "deepseek_api_key" {
+  description = "DeepSeek API key for the Hermes gateway. Passed from GitHub secret DEEPSEEK_API_KEY."
+  type        = string
+  sensitive   = true
+}
+
+variable "telegram_bot_token" {
+  description = "Telegram bot token for the Hermes gateway. Passed from GitHub secret TELEGRAM_BOT_TOKEN."
+  type        = string
+  sensitive   = true
+}
+
+variable "telegram_allowed_users" {
+  description = "Optional Telegram user-id allowlist (TELEGRAM_ALLOWED_USERS). Empty falls back to Hermes' DM pairing flow."
+  type        = string
+  sensitive   = true
+  default     = ""
+}

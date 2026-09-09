@@ -17,6 +17,17 @@ provider "oci" {
   region = var.region
 }
 
+# Hermes' environment file, built here (not in the template) so the secrets are
+# written to a 0600 file verbatim — no shell quoting, no interpolation inside
+# the rendered cloud-init. Optional entries are dropped when empty.
+locals {
+  hermes_env = join("\n", compact([
+    "DEEPSEEK_API_KEY=${var.deepseek_api_key}",
+    "TELEGRAM_BOT_TOKEN=${var.telegram_bot_token}",
+    var.telegram_allowed_users != "" ? "TELEGRAM_ALLOWED_USERS=${var.telegram_allowed_users}" : "",
+  ]))
+}
+
 # ---------------------------------------------------------------------------
 # Data sources
 # ---------------------------------------------------------------------------
@@ -118,11 +129,20 @@ resource "oci_core_instance" "portfolio_node" {
     display_name     = "portfolio-node-vnic"
   }
 
+  # File bodies that carry credentials or shell metacharacters are passed
+  # base64-encoded and written with cloud-init's `encoding: b64`, so the
+  # rendered provision.sh never contains a secret and YAML indentation cannot
+  # corrupt them.
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
       cloudflare_tunnel_token = var.cloudflare_tunnel_token
       ttyd_password           = var.ttyd_password
+      hermes_compose_b64      = base64encode(file("${path.module}/../hermes/docker-compose.yml"))
+      hermes_config_b64       = base64encode(file("${path.module}/../hermes/config.yaml"))
+      hermes_env_b64          = base64encode(local.hermes_env)
+      dsh_env_b64             = base64encode("DEEPSEEK_API_KEY=${var.deepseek_api_key}")
+      dsh_setup_b64           = base64encode(file("${path.module}/../../scripts/dsh-setup.sh"))
     }))
   }
 
