@@ -13,23 +13,9 @@ permissions:
 
 concurrency:
   group: oci-provision
-  cancel-in-progress: true
-
-env:
-  # Auth is configured once, in the "Configure OCI CLI from secrets" step below,
-  # which writes ~/.oci/config + the API key file. Both the oci CLI and the
-  # Terraform provider read that profile, so no duplicate OCI_* env vars here.
-  # (Terraform variables: tenancy OCID doubles as the root compartment OCID.)
-  #
-  # Secrets are passed as TF_VAR_* rather than -var flags: they stay out of the
-  # process list and the command line, and GitHub masks them in the log.
-  TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
-  TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
-  TF_VAR_cloudflare_tunnel_token: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
-  TF_VAR_ttyd_password: ${{ secrets.TTYD_PASSWORD }}
-  TF_VAR_deepseek_api_key: ${{ secrets.DEEPSEEK_API_KEY }}
-  TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-  TF_VAR_telegram_allowed_users: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
+  # Never cancel mid-run: interrupting a destroy/apply can leave a stale tfstate
+  # lock and a half-deleted tenancy. Queue instead.
+  cancel-in-progress: false
 
 jobs:
   # Cheap static guards. Both of these caught real bugs during development (a
@@ -52,7 +38,9 @@ jobs:
         run: terraform fmt -check -recursive infra/oci
 
       - name: Render and validate cloud-init
-        run: python3 scripts/check-cloud-init.py
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 scripts/check-cloud-init.py
 
   # Prove every package name resolves on the exact image the VM boots: the
   # packages are installed for real in an oraclelinux:10 container (throwaway),
@@ -85,6 +73,18 @@ jobs:
     needs: [checks, deps]
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # Secrets are scoped to this job only — the checks/deps jobs have no business
+    # carrying them. Passed as TF_VAR_* rather than -var flags: they stay out of
+    # the process list and the command line, and GitHub masks them in the log.
+    # (Terraform variables: the tenancy OCID doubles as the root compartment OCID.)
+    env:
+      TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+      TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
+      TF_VAR_cloudflare_tunnel_token: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      TF_VAR_ttyd_password: ${{ secrets.TTYD_PASSWORD }}
+      TF_VAR_deepseek_api_key: ${{ secrets.DEEPSEEK_API_KEY }}
+      TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TF_VAR_telegram_allowed_users: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
