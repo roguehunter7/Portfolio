@@ -1,7 +1,10 @@
 # Hermes model configuration.
 #
-# Main loop: DeepSeek-V4-Pro — stronger agentic reasoning, knowledge and
-# difficult-reasoning work, which is what actually drives the assistant.
+# Main loop: DeepSeek-V4-Pro — picked deliberately over V4-Flash. DeepSeek
+# releases V4.1 Flash around 2026-09-10 and, until V4.1 Pro ships, routes V4 Pro
+# requests to V4.1 Flash and bills them at V4.1 Flash rates. This id therefore
+# gets the stronger model now and upgrades itself when V4.1 Pro lands, with no
+# config change here. Do not "correct" it back to flash on cost grounds.
 # Delegation and every auxiliary task (titles, compression, web extract,
 # vision, triage...) stay on V4-Flash: high-volume, latency-sensitive work
 # where the budget tier is the right call, and it keeps one rate limit and one
