@@ -157,7 +157,8 @@ journalctl --user -u hermes-gateway -n 50 | grep -i telegram
 ## DeepSeek Harness
 
 - `dsh-web.service` runs `dsh web --port 3082 --no-open` as `opc` (`Restart=always`).
-- Node comes from dnf (appstream 22.23.2); npm installs `@deepseek-ai/dsh@alpha` into
+- Node comes from dnf (appstream 22.23.2); npm installs the newest published
+  `@deepseek-ai/dsh` (publish-ordered `versions` list, channel-agnostic) into
   `~/.npm-global` as `opc`, never as root — DSH's dependency tree compiles `node-pty`
   and `koffi`, and running install scripts as root is the `sudo npm install` trap.
   npm 10 (bundled with Node 22) has no `allow-scripts` gate, so the allowlist is seeded
@@ -182,8 +183,8 @@ purpose: a failed upgrade must not skip the reboot. Every workload is supervised
 the reboot costs ~30 seconds.
 
 **Weekly, Sunday at 02:05** (`/etc/cron.d/dsh-update` →
-`/usr/local/sbin/dsh-update.sh`): `npm install -g @deepseek-ai/dsh@alpha` + plugin
-refresh + `systemctl restart dsh-web`. One hour before the monthly window, so a reboot
+`/usr/local/sbin/dsh-update.sh`): install the newest published `@deepseek-ai/dsh` +
+plugin refresh + `systemctl restart dsh-web`. One hour before the monthly window, so a reboot
 can never land mid-update. No health check and no rollback by design: if a bad alpha
 lands, the box is still reachable through ttyd and `journalctl -u dsh-web` says why.
 

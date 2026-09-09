@@ -5,8 +5,9 @@
 # no nvm and no NodeSource; the service user is `opc` (the OCI default).
 #
 # Idempotent; safe to re-run. What it does:
-#   1. installs/updates @deepseek-ai/dsh from the `alpha` channel (DSH is in
-#      developer preview and ships alpha builds ahead of `latest`)
+#   1. installs/updates the newest PUBLISHED @deepseek-ai/dsh, whatever channel
+#      it landed on (npm's `versions` list is publish-ordered; DSH ships alphas
+#      ahead of `latest` today)
 #   2. adds the dsh-full-remote reverse proxy to the web profile
 #   3. seeds ~/.dsh/reverse-proxy.json so the proxy auto-starts on :3080 while
 #      the harness itself stays on loopback :3082
@@ -51,7 +52,9 @@ sudo -u "${DSH_USER}" env HOME="${DSH_USER_HOME}" \
     grep -q "^allow-scripts=" "$NPMRC" || echo \
       "allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs" >> "$NPMRC"
   fi
-  npm install -g @deepseek-ai/dsh@alpha
+  candidate="$(npm view @deepseek-ai/dsh versions --json | jq -r "last")"
+  echo "[dsh] installing @deepseek-ai/dsh@${candidate}"
+  npm install -g "@deepseek-ai/dsh@${candidate}"
   # `dsh plugin` is a thin pnpm forwarder and hard-fails without pnpm on PATH.
   npm install -g pnpm
   dsh plugin --profile web add dsh-full-remote
