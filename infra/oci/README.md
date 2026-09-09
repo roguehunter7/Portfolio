@@ -33,6 +33,9 @@ the outbound Cloudflare Tunnel.
   itself). Both are scoped to this tenancy; neither can manage OCI. Accepted trade-off.
 - `user_data` is only executed on **first boot**. Editing `cloud-init.yaml.tftpl` changes
   nothing on a running instance — use `destroy_first` to rebuild.
+- OCI caps user data + metadata at **32,000 bytes**, and the rendered `user_data` is
+  already ~29 KB (the embedded `dsh-setup.sh`, `monthly-maintenance.sh`, compose and
+  config). Embedding another file means moving something out of cloud-init first.
 
 ## Architecture
 
@@ -51,7 +54,8 @@ Telegram  <── long poll (outbound) ── hermes container ──> api.deeps
 - NSG `instance-nsg`: **no rules** (= deny-all ingress)
 - A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 ARM64, 50 GB boot, ephemeral public IP (egress only)
 - cloud-init: cloudflared + nvm/Node LTS + repo checkout, Docker Engine + compose,
-  the Hermes stack, `dsh-web` + its auth proxy, weekly maintenance, then hardening
+  the Hermes stack, `dsh-web` + its auth proxy, the monthly maintenance cron,
+  then hardening
 
 ## Why DSH sits behind a proxy
 
@@ -118,9 +122,10 @@ curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
 
 ## Hermes
 
-- Official image `nousresearch/hermes-agent` (arm64 manifest), pinned in
-  `infra/hermes/docker-compose.yml`. Everything Hermes needs — Python, Node,
-  Chromium — lives in the image, so the host gains nothing but the container runtime.
+- Official image `nousresearch/hermes-agent` (arm64 manifest), tracking
+  `latest` in `infra/hermes/docker-compose.yml`. Everything Hermes needs —
+  Python, Node, Chromium — lives in the image, so the host gains nothing but the
+  container runtime. The monthly maintenance job pulls new releases.
 - Model routing (`infra/hermes/config.yaml`): the main loop runs
   `deepseek-v4-pro`; delegation and every auxiliary task run
   `deepseek-v4-flash`.
@@ -128,7 +133,7 @@ curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
   Updating = `docker compose pull && docker compose up -d`; `hermes update` is not
   supported inside Docker by design.
 - Secrets are written to `/opt/hermes/.env` (root-owned `0600`) by cloud-init.
-- `restart: unless-stopped` + the s6-supervised gateway means the Monday 02:00
+- `restart: unless-stopped` + the s6-supervised gateway means the monthly
   maintenance reboot brings the assistant back on its own.
 
 ## DeepSeek Harness
@@ -155,6 +160,20 @@ GUI session):
 tmux kill-session -t main
 sudo bash ~/Portfolio/scripts/dsh-setup.sh
 ```
+
+## Monthly maintenance
+
+`/etc/cron.d/maintenance` runs on the **5th at 03:05**, the same cycle as the
+Vaultwarden host:
+
+1. `docker compose pull && up -d` — Hermes follows `:latest`
+2. `/usr/local/sbin/dsh-setup.sh` — DSH + the reverse-proxy plugin update
+3. `apt-get update && apt-get upgrade` — OS packages, cloudflared included
+4. reboot
+
+Every workload is supervised, so the reboot costs ~30 seconds. The job logs to
+`/var/log/monthly-maintenance.log` and deliberately has no `set -e`: a failing
+update still ends in a reboot rather than leaving the box half-updated.
 
 ## Destroy
 

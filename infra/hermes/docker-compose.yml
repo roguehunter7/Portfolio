@@ -9,13 +9,13 @@
 # gateway's OpenAI-compatible API + dashboard on 8642 is bound to loopback
 # only, so it is reachable from the box but never from the internet.
 #
-# The image is pinned on purpose. Bump it deliberately:
-#   docker compose -f /opt/hermes/docker-compose.yml pull
-#   docker compose -f /opt/hermes/docker-compose.yml up -d
-# `hermes update` is not supported inside Docker by design (update = new image).
+# The image tracks :latest, and the box's monthly maintenance job pulls it
+# (`docker compose pull && up -d`), so Hermes follows upstream releases without
+# a manual bump. `hermes update` is not supported inside Docker by design —
+# updating means a new image.
 services:
   hermes:
-    image: nousresearch/hermes-agent:v2026.9.7
+    image: nousresearch/hermes-agent:latest
     container_name: hermes
     restart: unless-stopped
     command: ["gateway", "run"]

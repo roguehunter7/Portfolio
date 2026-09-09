@@ -9,6 +9,10 @@
 #                                     which is the cloudflared target
 #   - Hermes Agent (Docker)         — Telegram polling + DeepSeek API, no port
 #
+# Maintenance: /etc/cron.d/maintenance runs on the 5th at 03:05 — pull the
+# Hermes image, update DSH, upgrade packages, then reboot. Same cycle as the
+# GCP Vaultwarden host (infra/main.tf), so both boxes move together.
+#
 # Terraform template: every $${...} below is rendered by templatefile(). File
 # bodies that contain credentials or shell metacharacters are passed in
 # base64-encoded, so provision.sh itself never holds a secret.
@@ -19,6 +23,7 @@ package_upgrade: true   # full apt upgrade once at first boot, before packages/s
 packages:
   - build-essential     # node-gyp for dsh-subprocess-local / node-pty
   - ca-certificates
+  - cron                # monthly maintenance job (/etc/cron.d/maintenance)
   - curl
   - gh                  # workflow dispatch + repo work from the box
   - git
@@ -41,33 +46,49 @@ write_files:
       net.core.default_qdisc=fq
       net.ipv4.tcp_congestion_control=bbr
 
-  # --- Weekly maintenance: upgrade + forced reboot, Monday 02:00 -----------
-  # Safe to force a reboot because every workload is supervised and comes back
-  # on its own: dsh-web.service (Restart=always) and the Hermes container
-  # (restart: unless-stopped). Clears memory drift and resets tmux/ttyd state.
-  - path: /etc/systemd/system/weekly-maintenance.service
+  # --- Monthly maintenance: update everything, then reboot ----------------
+  # Same cycle as the Vaultwarden host (infra/main.tf): 5th of the month, 03:05.
+  # cron rather than a systemd timer for parity with that box, and because the
+  # whole job is "update the three workloads, upgrade the OS, reboot".
+  # The reboot is safe because every workload is supervised: dsh-web.service
+  # (Restart=always) and the Hermes container (restart: unless-stopped) both
+  # come back on their own.
+  - path: /usr/local/sbin/monthly-maintenance.sh
+    permissions: "0755"
     content: |
-      [Unit]
-      Description=Weekly apt upgrade then reboot
-      After=network-online.target
+      #!/bin/bash
+      # Monthly maintenance: update containers + DSH + OS packages, then reboot.
+      # No `set -e`: a failing update must not leave the box un-rebooted and
+      # drifting. Everything is logged to /var/log/monthly-maintenance.log.
+      LOG=/var/log/monthly-maintenance.log
+      exec >>"$LOG" 2>&1
+      echo "=== $(date -Is) monthly maintenance start ==="
 
-      [Service]
-      Type=oneshot
-      ExecStart=/usr/bin/apt-get update
-      ExecStart=/usr/bin/env DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get upgrade -y
-      ExecStart=/usr/bin/systemctl reboot
+      # Hermes: the image tracks :latest, so pull picks up the newest release.
+      if [ -f /opt/hermes/docker-compose.yml ]; then
+        docker compose -f /opt/hermes/docker-compose.yml pull --quiet
+        docker compose -f /opt/hermes/docker-compose.yml up -d
+      fi
 
-  - path: /etc/systemd/system/weekly-maintenance.timer
+      # DeepSeek Harness + its reverse-proxy plugin (idempotent installer).
+      [ -x /usr/local/sbin/dsh-setup.sh ] && bash /usr/local/sbin/dsh-setup.sh
+
+      # OS packages, including cloudflared from its own apt repo.
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update -y
+      apt-get upgrade -y
+
+      echo "=== $(date -Is) maintenance complete, rebooting ==="
+      systemctl reboot
+
+  - path: /etc/cron.d/maintenance
+    permissions: "0644"
     content: |
-      [Unit]
-      Description=Run weekly maintenance (upgrade + reboot) every Monday at 02:00
-
-      [Timer]
-      OnCalendar=Mon *-*-* 02:00:00
-      Persistent=true
-
-      [Install]
-      WantedBy=timers.target
+      # Monthly maintenance: update containers + OS, then reboot.
+      # Mirrors the Vaultwarden host so both boxes ride the same cycle.
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      5 3 5 * * root /usr/local/sbin/monthly-maintenance.sh
 
   # --- ttyd systemd unit: browser terminal -> tmux "main" session -----------
   # 0600: the login credential is in ExecStart, so the unit file must not be
@@ -189,7 +210,7 @@ write_files:
 
       # --- Services ---------------------------------------------------------
       sudo systemctl daemon-reload
-      sudo systemctl enable --now weekly-maintenance.timer
+      sudo systemctl enable --now cron      # monthly maintenance
       sudo systemctl enable --now ttyd
 
       # --- Apply sysctl tuning ---------------------------------------------
