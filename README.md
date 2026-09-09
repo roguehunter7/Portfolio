@@ -34,7 +34,7 @@ site/                 Static site (Cloudflare Pages) — index.html, archive.htm
 infra/                Terraform for GCP (main.tf) + Oracle (oci/) + Vaultwarden compose + backup.sh
 infra/hermes/         Hermes Agent container stack (official image) + DeepSeek model config
 infra/oci/            Oracle A1.Flex dev box — Terraform, cloud-init, runbook
-scripts/              render-pdf.sh (ATS-safe resume PDF), dsh-setup.sh (Harness + auth proxy)
+scripts/              render-pdf.sh (ATS-safe resume PDF), dsh-setup.sh + dsh-update.sh (Harness)
 tools/                og-source.html — source for the 1200x630 social card (not deployed)
 resume.json           Master resume data (machine-readable, long-form)
 .github/workflows/    Deploy (Pages), OCI Provision, Vaultwarden Setup (all manual dispatch)

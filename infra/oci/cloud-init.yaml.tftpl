@@ -9,9 +9,10 @@
 #                                     which is the cloudflared target
 #   - Hermes Agent (Docker)         — Telegram polling + DeepSeek API, no port
 #
-# Maintenance: /etc/cron.d/maintenance runs on the 5th at 03:05 — pull the
-# Hermes image, update DSH, upgrade packages, then reboot. Same cycle as the
-# GCP Vaultwarden host (infra/main.tf), so both boxes move together.
+# Maintenance: /etc/cron.d/maintenance on the 5th at 03:05 (Hermes image + OS
+# upgrade + reboot — the same cycle as the GCP Vaultwarden host) and
+# /etc/cron.d/dsh-update on Sundays at 03:05 (DSH alpha refresh with rollback,
+# because the harness is in developer preview and moves faster than monthly).
 #
 # Terraform template: every $${...} below is rendered by templatefile(). File
 # bodies that contain credentials or shell metacharacters are passed in
@@ -46,49 +47,37 @@ write_files:
       net.core.default_qdisc=fq
       net.ipv4.tcp_congestion_control=bbr
 
-  # --- Monthly maintenance: update everything, then reboot ----------------
-  # Same cycle as the Vaultwarden host (infra/main.tf): 5th of the month, 03:05.
-  # cron rather than a systemd timer for parity with that box, and because the
-  # whole job is "update the three workloads, upgrade the OS, reboot".
+  # --- Maintenance: two cadences, both cron --------------------------------
+  # Monthly (5th 03:05, same as the Vaultwarden host): pull the Hermes image,
+  # upgrade the OS, reboot. One line, like that host.
+  # Weekly (Sunday 03:05): refresh DSH from the alpha channel with rollback,
+  # because DSH is in developer preview and moves faster than monthly.
   # The reboot is safe because every workload is supervised: dsh-web.service
   # (Restart=always) and the Hermes container (restart: unless-stopped) both
   # come back on their own.
-  - path: /usr/local/sbin/monthly-maintenance.sh
-    permissions: "0755"
-    content: |
-      #!/bin/bash
-      # Monthly maintenance: update containers + DSH + OS packages, then reboot.
-      # No `set -e`: a failing update must not leave the box un-rebooted and
-      # drifting. Everything is logged to /var/log/monthly-maintenance.log.
-      LOG=/var/log/monthly-maintenance.log
-      exec >>"$LOG" 2>&1
-      echo "=== $(date -Is) monthly maintenance start ==="
-
-      # Hermes: the image tracks :latest, so pull picks up the newest release.
-      if [ -f /opt/hermes/docker-compose.yml ]; then
-        docker compose -f /opt/hermes/docker-compose.yml pull --quiet
-        docker compose -f /opt/hermes/docker-compose.yml up -d
-      fi
-
-      # DeepSeek Harness + its reverse-proxy plugin (idempotent installer).
-      [ -x /usr/local/sbin/dsh-setup.sh ] && bash /usr/local/sbin/dsh-setup.sh
-
-      # OS packages, including cloudflared from its own apt repo.
-      export DEBIAN_FRONTEND=noninteractive
-      apt-get update -y
-      apt-get upgrade -y
-
-      echo "=== $(date -Is) maintenance complete, rebooting ==="
-      systemctl reboot
-
   - path: /etc/cron.d/maintenance
     permissions: "0644"
     content: |
-      # Monthly maintenance: update containers + OS, then reboot.
+      # Monthly: update the Hermes image + OS packages, then reboot.
       # Mirrors the Vaultwarden host so both boxes ride the same cycle.
+      # `;` separators: a failed pull must not skip the OS upgrade or the reboot.
       SHELL=/bin/bash
       PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      5 3 5 * * root /usr/local/sbin/monthly-maintenance.sh
+      5 3 5 * * root cd /opt/hermes && docker compose pull --quiet && docker compose up -d ; DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get upgrade -y ; systemctl reboot
+
+  - path: /usr/local/sbin/dsh-update.sh
+    permissions: "0755"
+    encoding: gz+b64
+    content: ${dsh_update_gzb64}
+
+  - path: /etc/cron.d/dsh-update
+    permissions: "0644"
+    content: |
+      # Weekly: refresh DeepSeek Harness (alpha channel) and roll back if the
+      # authenticated proxy does not come back up.
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      5 3 * * 0 root /usr/local/sbin/dsh-update.sh
 
   # --- ttyd systemd unit: browser terminal -> tmux "main" session -----------
   # 0600: the login credential is in ExecStart, so the unit file must not be
@@ -119,13 +108,13 @@ write_files:
   # skills and memories all live there, so the image stays replaceable.
   - path: /opt/hermes/docker-compose.yml
     permissions: "0644"
-    encoding: b64
-    content: ${hermes_compose_b64}
+    encoding: gz+b64
+    content: ${hermes_compose_gzb64}
 
   - path: /opt/hermes/config.yaml
     permissions: "0644"
-    encoding: b64
-    content: ${hermes_config_b64}
+    encoding: gz+b64
+    content: ${hermes_config_gzb64}
 
   # Secrets from GitHub Actions -> Terraform -> here. Root-owned 0600; the
   # instance metadata copy is the accepted trade-off (see infra/oci/README.md).
@@ -146,8 +135,8 @@ write_files:
 
   - path: /usr/local/sbin/dsh-setup.sh
     permissions: "0755"
-    encoding: b64
-    content: ${dsh_setup_b64}
+    encoding: gz+b64
+    content: ${dsh_setup_gzb64}
 
   - path: /usr/local/sbin/provision.sh
     permissions: "0755"

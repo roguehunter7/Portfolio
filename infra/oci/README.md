@@ -33,9 +33,11 @@ the outbound Cloudflare Tunnel.
   itself). Both are scoped to this tenancy; neither can manage OCI. Accepted trade-off.
 - `user_data` is only executed on **first boot**. Editing `cloud-init.yaml.tftpl` changes
   nothing on a running instance — use `destroy_first` to rebuild.
-- OCI caps user data + metadata at **32,000 bytes**, and the rendered `user_data` is
-  already ~29 KB (the embedded `dsh-setup.sh`, `monthly-maintenance.sh`, compose and
-  config). Embedding another file means moving something out of cloud-init first.
+- OCI caps user data + metadata at **32,000 bytes**. The multi-kilobyte embedded
+  files (both scripts, compose, config) are written with `encoding: gz+b64`
+  (`base64gzip` in Terraform) because text compresses ~2x — that keeps the
+  rendered `user_data` at ~24 KB. Adding another embedded file still means
+  checking that number first.
 
 ## Architecture
 
@@ -140,9 +142,17 @@ curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
 
 - `dsh-web.service` runs `dsh web --port 3082 --no-open` as `ubuntu`
   (`Restart=always`, so a crash or reboot no longer takes the URL down).
+- Installed as a global npm package tracking the **`alpha` channel**
+  (`npm install -g @deepseek-ai/dsh@alpha`) — DSH is in developer preview and
+  `latest` currently trails `alpha` by two minor lines. The repo's own
+  source-build path (`git clone && pnpm install && pnpm run build && pnpm dsh web`)
+  was considered and skipped: it adds a multi-GB toolchain and a build step that
+  can fail on an unattended box, for commits published only hours apart.
 - `scripts/dsh-setup.sh` is idempotent: it installs DSH, adds the plugin, seeds the
-  proxy state, and rewrites the unit. Re-run it after `nvm install --lts`, because
-  the unit's `PATH` carries the Node bin directory resolved at setup time.
+  proxy state, rewrites the unit, and **restarts** the service. Re-run it after
+  `nvm install --lts`, because the unit's `PATH` carries the Node bin directory
+  resolved at setup time.
+- `scripts/dsh-update.sh` is the weekly guarded refresh described above.
 - The harness's LLM key is provisioned in `/etc/dsh-web.env` (root-owned `0600`).
   The credentials provider layers the inherited environment **above**
   `~/.dsh/.credentials.yaml`, so a rebuilt box works without a manual key entry.
@@ -161,19 +171,27 @@ tmux kill-session -t main
 sudo bash ~/Portfolio/scripts/dsh-setup.sh
 ```
 
-## Monthly maintenance
+## Maintenance — two cadences
 
-`/etc/cron.d/maintenance` runs on the **5th at 03:05**, the same cycle as the
-Vaultwarden host:
+**Monthly, 5th at 03:05** (`/etc/cron.d/maintenance`, same cycle as the
+Vaultwarden host, one line like that host):
 
 1. `docker compose pull && up -d` — Hermes follows `:latest`
-2. `/usr/local/sbin/dsh-setup.sh` — DSH + the reverse-proxy plugin update
-3. `apt-get update && apt-get upgrade` — OS packages, cloudflared included
-4. reboot
+2. `apt-get update && apt-get upgrade` — OS packages, cloudflared included
+3. reboot
 
-Every workload is supervised, so the reboot costs ~30 seconds. The job logs to
-`/var/log/monthly-maintenance.log` and deliberately has no `set -e`: a failing
-update still ends in a reboot rather than leaving the box half-updated.
+`;` separators on purpose: a failed pull must not skip the OS upgrade or the
+reboot. Every workload is supervised, so the reboot costs ~30 seconds.
+
+**Weekly, Sunday at 03:05** (`/etc/cron.d/dsh-update` →
+`/usr/local/sbin/dsh-update.sh`): DSH moves faster than monthly and ships
+`alpha` builds ahead of `latest`, so this job runs `dsh-setup.sh`
+(`npm install -g @deepseek-ai/dsh@alpha` + plugin + unit), waits for
+`/_dsh_reverse_proxy/healthz`, and **rolls back to the previous version and
+restarts if the proxy does not come back**. The proxy is the only way in and it
+fails closed, so "updated but unreachable" must not survive the night; if even
+the rollback fails, ttyd is the escape hatch. Logs:
+`/var/log/dsh-update.log`.
 
 ## Destroy
 

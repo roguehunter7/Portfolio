@@ -129,20 +129,24 @@ resource "oci_core_instance" "portfolio_node" {
     display_name     = "portfolio-node-vnic"
   }
 
-  # File bodies that carry credentials or shell metacharacters are passed
-  # base64-encoded and written with cloud-init's `encoding: b64`, so the
-  # rendered provision.sh never contains a secret and YAML indentation cannot
-  # corrupt them.
+  # File bodies are passed encoded and written with cloud-init's `encoding`
+  # field, so YAML indentation can never corrupt them and the rendered
+  # provision.sh never contains a secret.
+  # OCI caps user data + metadata at 32,000 bytes, so the multi-kilobyte
+  # scripts and configs use `gz+b64` (base64gzip) — text compresses ~4x, which
+  # buys ~10 KB of headroom. The tiny .env files stay plain `b64`; gzip would
+  # cost more than it saves there.
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
       cloudflare_tunnel_token = var.cloudflare_tunnel_token
       ttyd_password           = var.ttyd_password
-      hermes_compose_b64      = base64encode(file("${path.module}/../hermes/docker-compose.yml"))
-      hermes_config_b64       = base64encode(file("${path.module}/../hermes/config.yaml"))
+      hermes_compose_gzb64    = base64gzip(file("${path.module}/../hermes/docker-compose.yml"))
+      hermes_config_gzb64     = base64gzip(file("${path.module}/../hermes/config.yaml"))
       hermes_env_b64          = base64encode(local.hermes_env)
       dsh_env_b64             = base64encode("DEEPSEEK_API_KEY=${var.deepseek_api_key}")
-      dsh_setup_b64           = base64encode(file("${path.module}/../../scripts/dsh-setup.sh"))
+      dsh_setup_gzb64         = base64gzip(file("${path.module}/../../scripts/dsh-setup.sh"))
+      dsh_update_gzb64        = base64gzip(file("${path.module}/../../scripts/dsh-update.sh"))
     }))
   }
 

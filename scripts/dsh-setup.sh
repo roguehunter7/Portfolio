@@ -2,7 +2,10 @@
 # dsh-setup.sh — install DeepSeek Harness and serve it safely at the edge.
 #
 # Idempotent; safe to re-run. What it does:
-#   1. installs/updates @deepseek-ai/dsh for the `ubuntu` user (nvm-managed Node)
+#   1. installs/updates @deepseek-ai/dsh from the `alpha` channel for the
+#      `ubuntu` user (nvm-managed Node). DSH is in developer preview and ships
+#      faster than `latest`, which currently trails by two minor lines; the
+#      weekly dsh-update.sh refreshes this and rolls back if it breaks.
 #   2. adds the dsh-full-remote reverse proxy to the web profile
 #   3. seeds ~/.dsh/reverse-proxy.json so the proxy auto-starts on :3080 while
 #      the harness itself stays on loopback :3082
@@ -56,7 +59,7 @@ touch "$NPMRC"
 grep -q '^prefix=' "$NPMRC" || echo "prefix=$HOME/.npm-global" >> "$NPMRC"
 grep -q '^allow-scripts=' "$NPMRC" || echo 'allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs' >> "$NPMRC"
 
-npm install -g @deepseek-ai/dsh
+npm install -g @deepseek-ai/dsh@alpha
 # `dsh plugin` is a thin pnpm forwarder and hard-fails without pnpm on PATH.
 npm install -g pnpm
 dsh plugin --profile web add dsh-full-remote
@@ -127,6 +130,8 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now dsh-web.service
+systemctl enable dsh-web.service
+# restart, not `enable --now`: an update must actually pick up the new code
+systemctl restart dsh-web.service
 log "dsh web on 127.0.0.1:${HARNESS_PORT}; authenticated proxy on 127.0.0.1:${PROXY_PORT}"
 log "access token: jq -r .accessToken ${STATE_FILE}"
