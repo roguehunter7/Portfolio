@@ -141,8 +141,8 @@ journalctl --user -u hermes-gateway -n 50 | grep -i telegram
   not depend on nvm's Node.
 - Gateway is a **user** service made boot-persistent by `loginctl enable-linger opc`.
 - Secrets and model config live in `~/.hermes/.env` (0600) and `~/.hermes/config.yaml`,
-  written from `/etc/hermes/*` by cloud-init. Model routing: main loop
-  `deepseek-v4-pro`, delegation and auxiliary tasks `deepseek-v4-flash`.
+  written from `/etc/hermes/*` by cloud-init. Model routing: every call —
+  main loop, delegation and auxiliary tasks — runs `deepseek-flash`.
 - **Telegram is verified at install time**: the script calls `getMe` (token valid),
   clears any webhook that would block long polling (`getWebhookInfo` / `deleteWebhook`),
   then checks the gateway is active and greps its log for Telegram errors.

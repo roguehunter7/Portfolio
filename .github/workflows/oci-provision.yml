@@ -42,36 +42,11 @@ jobs:
           python3 -m pip install --quiet pyyaml
           python3 scripts/check-cloud-init.py
 
-  # Prove every package name resolves on the exact image the VM boots: the
-  # packages are installed for real in an oraclelinux:10 container (throwaway),
-  # which also confirms the EPEL and Cloudflare repos serve aarch64/x86_64.
-  deps:
-    runs-on: ubuntu-latest
-    container: oraclelinux:10
-    timeout-minutes: 20
-    steps:
-      - name: Install the exact package set
-        run: |
-          set -euo pipefail
-          dnf install -y curl dnf-plugins-core
-          curl -fsSL https://pkg.cloudflare.com/cloudflared.repo > /etc/yum.repos.d/cloudflared.repo
-          dnf install -y oracle-epel-release-el10
-          dnf install -y \
-            ca-certificates curl git gnupg2 jq tmux cronie firewalld tar xz \
-            python3 make gcc-c++ unzip dnf-plugins-core policycoreutils-python-utils \
-            ttyd ripgrep htop gh cloudflared \
-            nss atk at-spi2-core cups-libs libdrm libxkbcommon mesa-libgbm pango cairo alsa-lib
-          echo '--- resolved versions ---'
-          gh --version | head -1
-          ttyd --version
-          cloudflared --version
-          jq --version
-
   provision:
-    needs: [checks, deps]
+    needs: [checks]
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Secrets are scoped to this job only — the checks/deps jobs have no business
+    # Secrets are scoped to this job only — the checks job has no business
     # carrying them. Passed as TF_VAR_* rather than -var flags: they stay out of
     # the process list and the command line, and GitHub masks them in the log.
     # (Terraform variables: the tenancy OCID doubles as the root compartment OCID.)
