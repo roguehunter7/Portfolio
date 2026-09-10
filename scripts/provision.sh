@@ -2,8 +2,8 @@
 # provision.sh — first-boot provisioning for the Oracle Linux 10 dev box.
 #
 # Order matters: cloudflared first (it is the only way in), then the browser
-# terminal (the admin path), then the workloads, then hardening LAST so a
-# failure never locks us out (backdoor: OCI serial console).
+# terminal, THEN the full OS upgrade and the workloads, then hardening LAST so
+# a failure never locks us out (backdoor: OCI serial console).
 # Idempotent — safe to re-run by hand from the browser terminal.
 set -euo pipefail
 
@@ -23,7 +23,7 @@ systemctl enable --now cloudflared
 
 # --- 2. Base packages ------------------------------------------------------
 # EPEL supplies ttyd, ripgrep, htop and gh (Oracle Linux has none of them).
-# Deliberately no nodejs: Node is nvm's job for opc (step 5) and the Hermes
+# Deliberately no nodejs: Node is nvm's job for opc (step 6) and the Hermes
 # gateway keeps its own managed tree, so a monthly Node bump cannot break it.
 dnf install -y oracle-epel-release-el10
 dnf install -y \
@@ -31,17 +31,23 @@ dnf install -y \
   python3 make gcc-c++ unzip dnf-plugins-core policycoreutils-python-utils \
   ttyd ripgrep htop gh
 
-# --- 3. Chromium system libraries (Hermes browser toolset) -----------------
+# --- 3. Browser terminal FIRST (it is the admin path) ----------------------
+# ttyd comes up before the OS upgrade and the workloads, so the tunnel is
+# usable within minutes and a failed upgrade or workload cannot lock us out.
+systemctl daemon-reload
+systemctl enable --now ttyd
+
+# --- 4. Full OS upgrade (after access is up) -------------------------------
+# cloud-init runs with package_upgrade:false, so this no longer blocks ttyd.
+# Non-fatal: a mirror hiccup must not skip the workloads or the hardening.
+dnf -y upgrade || log "WARNING: dnf upgrade failed"
+
+# --- 5. Chromium system libraries (Hermes browser toolset) -----------------
 # Playwright does not install these on RPM hosts — the Hermes installer prints
 # this exact list and expects an administrator to run it.
 dnf install -y nss atk at-spi2-core cups-libs libdrm libxkbcommon mesa-libgbm pango cairo alsa-lib
 
-# --- 4. Browser terminal FIRST (it is the debug path for the workloads) ----
-# If a workload fails below, this is still how we get in to read its log.
-systemctl daemon-reload
-systemctl enable --now ttyd
-
-# --- 5. nvm + Node LTS + npm, as opc ---------------------------------------
+# --- 6. nvm + Node LTS + npm, as opc ---------------------------------------
 # nvm is per-user and has no dnf package; the official installer is the only
 # supported path. It edits opc's shell profile, so the ttyd tmux shell gets
 # node/npm on PATH. Non-interactive callers (the monthly script) source nvm.sh
@@ -55,7 +61,7 @@ sudo -u opc env HOME=/home/opc bash -c '
   nvm alias default "lts/*"
 '
 
-# --- 6. DeepSeek Harness, as opc (no service: run it from the terminal) ----
+# --- 7. DeepSeek Harness, as opc (no service: run it from the terminal) ----
 # No reverse-proxy plugin: plain `dsh web --trusted-host` on loopback :3080,
 # which is the cloudflared target. npm 11+ gates install scripts behind
 # allow-scripts, so seed the allowlist only when npm is new enough.
@@ -73,7 +79,7 @@ sudo -u opc env HOME=/home/opc bash -c '
   npm install -g "@deepseek-ai/dsh@$candidate"
 '
 
-# --- 7. DSH key for the interactive shell ----------------------------------
+# --- 8. DSH key for the interactive shell ----------------------------------
 # No service means no EnvironmentFile: the key lives in opc's home and the
 # login shell exports it, so `dsh web` picks it up from the environment.
 install -d -m 0700 -o opc -g opc /home/opc/.dsh
@@ -83,10 +89,10 @@ if ! grep -q 'dsh/env' /home/opc/.bashrc 2>/dev/null; then
 fi
 chown opc:opc /home/opc/.bashrc
 
-# --- 8. Hermes (native, as opc) --------------------------------------------
+# --- 9. Hermes (native, as opc) --------------------------------------------
 bash /usr/local/sbin/hermes-setup.sh >/var/log/hermes-setup.log 2>&1 || log "WARNING: hermes-setup failed; see /var/log/hermes-setup.log"
 
-# --- 9. Services + host firewall -------------------------------------------
+# --- 10. Services + host firewall ------------------------------------------
 systemctl enable --now cron firewalld
 # Nothing inbound: the NSG already denies everything; this is the host-side belt.
 # ttyd, dsh web and the Hermes gateway all listen on loopback only.
@@ -94,11 +100,11 @@ firewall-cmd --permanent --remove-service=ssh >/dev/null 2>&1 || true
 firewall-cmd --permanent --remove-service=dhcpv6-client >/dev/null 2>&1 || true
 firewall-cmd --reload >/dev/null 2>&1 || true
 
-# --- 10. Network tuning ----------------------------------------------------
+# --- 11. Network tuning ----------------------------------------------------
 # BBR only: this box has no swap, so swappiness/vfs_cache tuning is a no-op.
 sysctl --system
 
-# --- 11. Verify the tunnel registered (wait up to 120s) --------------------
+# --- 12. Verify the tunnel registered (wait up to 120s) --------------------
 for _ in $(seq 1 24); do
   if journalctl -u cloudflared --no-pager -n 200 2>/dev/null | grep -q "Registered tunnel connection"; then
     echo "cloudflared registered with Cloudflare"
@@ -107,7 +113,7 @@ for _ in $(seq 1 24); do
   sleep 5
 done
 
-# --- 12. HARDEN LAST: sshd off (admin is the browser terminal) -------------
+# --- 13. HARDEN LAST: sshd off (admin is the browser terminal) -------------
 systemctl disable --now sshd || true
 
 touch /var/log/cloud_init_complete

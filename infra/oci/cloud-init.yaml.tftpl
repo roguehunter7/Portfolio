@@ -19,7 +19,7 @@
 # the rendered scripts never contain a secret.
 
 package_update: true
-package_upgrade: true   # dnf upgrade once at first boot, before runcmd
+package_upgrade: false  # provision.sh upgrades after ttyd is reachable
 
 write_files:
   # --- Network tuning -------------------------------------------------------

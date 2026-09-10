@@ -92,10 +92,15 @@ services are healthy.
 
 ## Deploy
 
-Run **Actions → OCI Provision → Run workflow**. The workflow runs two guards first
-(`checks`: shell syntax, `terraform fmt`, render + validate cloud-init; `deps`: install
-the exact package set in an `oraclelinux:10` container), then applies. `destroy_first`
-destroys the VM and re-applies, which is the only way to re-run cloud-init.
+Run **Actions → OCI Provision → Run workflow**. The workflow renders and validates
+the cloud-init template first (`checks`: shell syntax, `terraform fmt`, render +
+validate), then applies. `destroy_first` destroys the VM and re-applies, which is
+the only way to re-run cloud-init.
+
+First boot is ordered for fast access: cloudflared and ttyd come up first
+(~2–3 min), then the full `dnf upgrade`, nvm/Node, DSH and Hermes. So
+`ssh.sreeramkr.com` is usable long before `/var/log/cloud_init_complete`
+appears.
 
 ## Access
 
