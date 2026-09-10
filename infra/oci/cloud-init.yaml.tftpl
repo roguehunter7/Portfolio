@@ -45,7 +45,7 @@ write_files:
       Group=opc
       WorkingDirectory=/home/opc
       Environment=TERM=xterm-256color
-      ExecStart=/usr/bin/ttyd -W -p 7777 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
+      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
       Restart=always
       RestartSec=5
       StandardOutput=append:/var/log/ttyd.log

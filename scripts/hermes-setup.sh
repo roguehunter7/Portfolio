@@ -41,13 +41,31 @@ install -m 0644 -o "${HERMES_USER}" -g "${HERMES_USER}" "${CFG_SRC}" "${HERMES_D
 # --- 3. Gateway as a user service that survives reboots --------------------
 loginctl enable-linger "${HERMES_USER}"
 HERMES_UID="$(id -u "${HERMES_USER}")"
-install -d -m 0700 -o "${HERMES_USER}" -g "${HERMES_USER}" "/run/user/${HERMES_UID}"
-sleep 2
+
+# Bring the per-user systemd manager up NOW. enable-linger only covers future
+# boots; a cloud-init run has no login session, so /run/user/$UID and its
+# sockets do not exist yet and `hermes gateway install` aborts with
+# UserSystemdUnavailableError. Starting the user@ template as root is the
+# supported way to launch the manager immediately.
+# Do NOT create /run/user/$UID by hand: that races logind, leaves the manager
+# down, and can leave the directory with the wrong SELinux label.
+systemctl start "user@${HERMES_UID}.service" 2>/dev/null || true
+for _ in $(seq 1 30); do
+  if [ -S "/run/user/${HERMES_UID}/bus" ] || [ -S "/run/user/${HERMES_UID}/systemd/private" ]; then
+    break
+  fi
+  sleep 1
+done
 
 run_as_hermes() {
-  sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
-    XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" \
-    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${HERMES_UID}/bus" "$@"
+  if [ -S "/run/user/${HERMES_UID}/bus" ]; then
+    sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
+      XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${HERMES_UID}/bus" "$@"
+  else
+    sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
+      XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" "$@"
+  fi
 }
 
 run_as_hermes "${HERMES_BIN}" gateway install

@@ -11,7 +11,14 @@
 #   2. adds the dsh-full-remote reverse proxy to the web profile
 #   3. seeds ~/.dsh/reverse-proxy.json so the proxy auto-starts on :3080 while
 #      the harness itself stays on loopback :3082
-#   4. installs and restarts dsh-web.service (Restart=always, survives reboots)
+#   4. installs a SELinux-safe launcher and (re)starts dsh-web.service
+#
+# Why the launcher: a system unit whose ExecStart is under /home is a known
+# SELinux failure on OL/RHEL. The npm-installed `dsh` is labelled user_home_t,
+# so systemd cannot exec it (status=203/EXEC), and a relabel alone would run
+# the service in the sensitive init_t domain. A root-owned wrapper in
+# /usr/local/bin is labelled bin_t, so systemd execs it and runs the service in
+# the unconfined service domain, which may then run the home-installed dsh.
 #
 # Why the proxy: `dsh web --trusted-host dsh.sreeramkr.com` opens the harness
 # Host/Origin fence to a public hostname and leaves the per-process startup
@@ -30,6 +37,7 @@ STATE_FILE="${DSH_HOME_DIR}/reverse-proxy.json"
 HARNESS_PORT="${HARNESS_PORT:-3082}"   # dsh web itself — loopback only
 PROXY_PORT="${PROXY_PORT:-3080}"       # cloudflared target: auth + audit here
 UNIT=/etc/systemd/system/dsh-web.service
+LAUNCHER=/usr/local/bin/dsh-web
 DSH_BIN="${DSH_USER_HOME}/.npm-global/bin/dsh"
 
 log() { printf "[dsh] %s\n" "$*"; }
@@ -69,7 +77,7 @@ if [ -f "${STATE_FILE}" ]; then
   # proxy is on and listening where cloudflared expects it.
   jq '.enabled = true
       | .listenHost = (.listenHost // "127.0.0.1")
-      | .listenPort = (.listenPort // '"${PROXY_PORT}"')' "${STATE_FILE}" > "${STATE_FILE}.tmp"
+      | .listenPort = (.listenPort // '${PROXY_PORT}')' "${STATE_FILE}" > "${STATE_FILE}.tmp"
 else
   # Deliberately no token: the plugin generates a 192-bit one on first load.
   printf '{\n  "enabled": true,\n  "listenHost": "127.0.0.1",\n  "listenPort": %s\n}\n' "${PROXY_PORT}" > "${STATE_FILE}.tmp"
@@ -77,9 +85,16 @@ fi
 install -m 0600 -o "${DSH_USER}" -g "${DSH_USER}" "${STATE_FILE}.tmp" "${STATE_FILE}"
 rm -f "${STATE_FILE}.tmp"
 
-# --- 4. systemd unit --------------------------------------------------------
-# Node is a system package now, so PATH is stable — no resolved nvm dir, and no
-# re-run needed after a Node upgrade.
+# --- 4. SELinux-safe launcher + systemd unit -------------------------------
+# bin_t launcher in a system path: systemd can exec it and the service does not
+# inherit the init_t domain that a /home ExecStart would force.
+cat > "${LAUNCHER}" <<EOF
+#!/bin/bash
+exec ${DSH_BIN} "\$@"
+EOF
+chmod 0755 "${LAUNCHER}"
+restorecon -F "${LAUNCHER}" 2>/dev/null || true
+
 cat > "${UNIT}" <<EOF
 [Unit]
 Description=DeepSeek Harness web UI (loopback ${HARNESS_PORT}; dsh-full-remote proxy on ${PROXY_PORT})
@@ -95,7 +110,7 @@ Environment=PATH=/usr/bin:/bin:${DSH_USER_HOME}/.npm-global/bin
 # Optional: the harness LLM credential. The credentials provider ranks the
 # inherited environment above ~/.dsh/.credentials.yaml.
 EnvironmentFile=-/etc/dsh-web.env
-ExecStart=${DSH_BIN} web --port ${HARNESS_PORT} --no-open
+ExecStart=${LAUNCHER} web --port ${HARNESS_PORT} --no-open
 Restart=always
 RestartSec=5
 StandardOutput=append:/var/log/dsh-web.log

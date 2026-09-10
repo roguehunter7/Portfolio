@@ -66,7 +66,11 @@ Telegram  <── long poll (outbound) ── hermes-gateway ──> api.deepsee
 - VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
 - NSG `instance-nsg`: **no rules** (= deny-all ingress); firewalld allows nothing in
 - A1.Flex 2 OCPU / 12 GB, Oracle Linux 10 aarch64 (UEK R8), 50 GB boot, ephemeral public IP
-- SELinux stays **enforcing** (no container labels needed, since there is no container runtime)
+- SELinux stays **enforcing** (no container labels needed, since there is no container runtime).
+  `provision.sh` runs `restorecon` over the files cloud-init wrote, and DSH's
+  system unit execs a root-owned `bin_t` launcher in `/usr/local/bin` instead of
+  the `user_home_t` npm binary (a `/home` ExecStart fails with `status=203/EXEC`
+  and, once relabelled, runs in the sensitive `init_t` domain)
 
 ## Why DSH sits behind a proxy
 
@@ -94,8 +98,14 @@ CI reads credentials from GitHub **Secrets / Variables** (names are in
 
 Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 
-1. `ssh.sreeramkr.com` → **HTTP** `localhost:7681` (ttyd)
-2. `dsh.sreeramkr.com` → **HTTP** `localhost:3080` (the auth proxy)
+1. `ssh.sreeramkr.com` → **HTTP** `127.0.0.1:7681` (ttyd)
+2. `dsh.sreeramkr.com` → **HTTP** `127.0.0.1:3080` (the auth proxy)
+
+**Use the literal `127.0.0.1`, never `localhost`.** cloudflared resolves
+`localhost` to `::1` (IPv6) on most modern Linux distros; both origins bind
+IPv4 loopback only, so the tunnel gets `dial tcp [::1]:PORT: connection refused`
+and Cloudflare returns a generic **502** for *both* hostnames even when the
+services are healthy.
 
 ## Deploy
 
@@ -156,7 +166,10 @@ journalctl --user -u hermes-gateway -n 50 | grep -i telegram
 
 ## DeepSeek Harness
 
-- `dsh-web.service` runs `dsh web --port 3082 --no-open` as `opc` (`Restart=always`).
+- `dsh-web.service` runs `/usr/local/bin/dsh-web web --port 3082 --no-open` as `opc`
+  (`Restart=always`). The launcher is a root-owned `bin_t` wrapper around the
+  npm-installed `dsh`, so SELinux lets systemd exec it; pointing `ExecStart` at
+  the `user_home_t` binary directly fails with `status=203/EXEC`.
 - Node comes from dnf (appstream 22.23.2); npm installs the newest published
   `@deepseek-ai/dsh` (publish-ordered `versions` list, channel-agnostic) into
   `~/.npm-global` as `opc`, never as root — DSH's dependency tree compiles `node-pty`
