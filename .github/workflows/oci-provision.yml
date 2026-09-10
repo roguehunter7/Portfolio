@@ -57,13 +57,11 @@ jobs:
           curl -fsSL https://pkg.cloudflare.com/cloudflared.repo > /etc/yum.repos.d/cloudflared.repo
           dnf install -y oracle-epel-release-el10
           dnf install -y \
-            ca-certificates curl git gnupg2 jq tmux cronie firewalld \
-            python3 make gcc-c++ unzip xz nodejs dnf-plugins-core policycoreutils-python-utils \
+            ca-certificates curl git gnupg2 jq tmux cronie firewalld tar xz \
+            python3 make gcc-c++ unzip dnf-plugins-core policycoreutils-python-utils \
             ttyd ripgrep htop gh cloudflared \
             nss atk at-spi2-core cups-libs libdrm libxkbcommon mesa-libgbm pango cairo alsa-lib
           echo '--- resolved versions ---'
-          node --version
-          npm --version
           gh --version | head -1
           ttyd --version
           cloudflared --version

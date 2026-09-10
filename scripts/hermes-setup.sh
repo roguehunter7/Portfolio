@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
-# hermes-setup.sh — native Hermes Agent install for a dedicated service user.
+# hermes-setup.sh — native Hermes Agent install for user opc, the box's user.
 #
 # Oracle Linux 10 notes:
-#   * Hermes' installer branches on the distro ID from /etc/os-release and has
-#     no case for `ol`, so it never installs Chromium system libraries on RPM
-#     hosts. provision.sh installs that exact list, and we pin the Playwright
-#     platform to the Ubuntu 24.04 arm64 build (OL10 is glibc 2.39, same).
-#   * --skip-computer-use: the cua-driver drives a GUI desktop; this box is
-#     headless, so it is a 660-second download with nothing to control.
+#   * The installer has no case for the `ol` distro ID, so it never installs
+#     Chromium system libraries on RPM hosts. provision.sh installs that list,
+#     and we pin the Playwright platform to the Ubuntu 24.04 arm64 build
+#     (OL10 is glibc 2.39, the same).
+#   * --skip-computer-use: the cua-driver drives a GUI desktop; headless box.
+#   * No system Node is installed, so the installer provisions its own managed
+#     Node under ~/.hermes/node. That is deliberate: the gateway unit then does
+#     not depend on nvm's Node, so a monthly Node bump cannot break it.
 #   * Secrets and config arrive from cloud-init (/etc/hermes/*), never here.
 #
 # Idempotent; safe to re-run.
 set -euo pipefail
 
-HERMES_USER=hermes
-HERMES_HOME=/home/hermes
+HERMES_USER=opc
+HERMES_HOME=/home/opc
 HERMES_DIR="${HERMES_HOME}/.hermes"
 ENV_SRC=/etc/hermes/hermes.env
 CFG_SRC=/etc/hermes/config.yaml
@@ -22,18 +24,18 @@ HERMES_BIN="${HERMES_HOME}/.local/bin/hermes"
 
 log() { printf "[hermes] %s\n" "$*"; }
 
-id -u "${HERMES_USER}" >/dev/null 2>&1 || useradd -m -s /bin/bash "${HERMES_USER}"
-
 # --- 1. Install (idempotent) ------------------------------------------------
+# PATH is /usr/bin:/bin on purpose: with nvm off PATH the installer cannot pick
+# up opc's shell Node and provisions its own managed tree instead.
 if [ ! -x "${HERMES_DIR}/hermes-agent/venv/bin/python3" ]; then
   log "installing..."
-  sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
+  sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" PATH=/usr/bin:/bin \
     PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-arm64 \
     bash -c 'cd "$HOME" && curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup --skip-computer-use --non-interactive'
 fi
 
 # --- 2. Secrets + model config ---------------------------------------------
-# 0600 before the keys land on disk, as the docs recommend.
+# 0600 before the keys land on disk.
 install -d -m 0700 -o "${HERMES_USER}" -g "${HERMES_USER}" "${HERMES_DIR}"
 install -m 0600 -o "${HERMES_USER}" -g "${HERMES_USER}" "${ENV_SRC}" "${HERMES_DIR}/.env"
 install -m 0644 -o "${HERMES_USER}" -g "${HERMES_USER}" "${CFG_SRC}" "${HERMES_DIR}/config.yaml"
@@ -41,40 +43,24 @@ install -m 0644 -o "${HERMES_USER}" -g "${HERMES_USER}" "${CFG_SRC}" "${HERMES_D
 # --- 3. Gateway as a user service that survives reboots --------------------
 loginctl enable-linger "${HERMES_USER}"
 HERMES_UID="$(id -u "${HERMES_USER}")"
-
-# Bring the per-user systemd manager up NOW. enable-linger only covers future
-# boots; a cloud-init run has no login session, so /run/user/$UID and its
-# sockets do not exist yet and `hermes gateway install` aborts with
-# UserSystemdUnavailableError. Starting the user@ template as root is the
-# supported way to launch the manager immediately.
-# Do NOT create /run/user/$UID by hand: that races logind, leaves the manager
-# down, and can leave the directory with the wrong SELinux label.
+# Start the per-user systemd manager now. A cloud-init run has no login session,
+# so the manager (and its /run/user/$UID sockets) are not up yet and
+# `hermes gateway install` aborts with UserSystemdUnavailableError.
 systemctl start "user@${HERMES_UID}.service" 2>/dev/null || true
 for _ in $(seq 1 30); do
-  if [ -S "/run/user/${HERMES_UID}/bus" ] || [ -S "/run/user/${HERMES_UID}/systemd/private" ]; then
-    break
-  fi
+  [ -S "/run/user/${HERMES_UID}/bus" ] && break
   sleep 1
 done
 
-run_as_hermes() {
-  if [ -S "/run/user/${HERMES_UID}/bus" ]; then
-    sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
-      XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" \
-      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${HERMES_UID}/bus" "$@"
-  else
-    sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
-      XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" "$@"
-  fi
+run_as_user() {
+  sudo -u "${HERMES_USER}" env HOME="${HERMES_HOME}" \
+    XDG_RUNTIME_DIR="/run/user/${HERMES_UID}" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${HERMES_UID}/bus" "$@"
 }
 
-run_as_hermes "${HERMES_BIN}" gateway install
+run_as_user "${HERMES_BIN}" gateway install
 # restart (not start): a running service must pick up the rewritten .env
-run_as_hermes "${HERMES_BIN}" gateway restart || run_as_hermes "${HERMES_BIN}" gateway start
-
-# Stable path for root and cron. Use the venv launcher: the repo's `hermes`
-# script with system Python raises ModuleNotFoundError: dotenv.
-ln -sfn "${HERMES_DIR}/hermes-agent/venv/bin/hermes" /usr/local/bin/hermes
+run_as_user "${HERMES_BIN}" gateway restart || run_as_user "${HERMES_BIN}" gateway start
 
 # --- 4. Prove Telegram is connected ----------------------------------------
 # A bot cannot message a user first, so "working from start" means: token
@@ -99,12 +85,12 @@ else
   fi
 fi
 
-if run_as_hermes systemctl --user is-active --quiet hermes-gateway; then
+if run_as_user systemctl --user is-active --quiet hermes-gateway; then
   log "hermes-gateway is active"
 else
   log "WARNING: hermes-gateway is not active — journalctl --user -u hermes-gateway"
 fi
-run_as_hermes journalctl --user -u hermes-gateway -n 80 --no-pager 2>/dev/null \
+run_as_user journalctl --user -u hermes-gateway -n 80 --no-pager 2>/dev/null \
   | grep -iE "telegram|polling|conflict|error" | tail -10 || true
-run_as_hermes "${HERMES_BIN}" doctor 2>&1 | tail -20 || true
+run_as_user "${HERMES_BIN}" doctor 2>&1 | tail -20 || true
 log "setup complete"

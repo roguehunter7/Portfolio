@@ -4,20 +4,19 @@
 # Workloads, all zero-ingress:
 #   - cloudflared tunnel (outbound)  the only way in; NSG has zero rules
 #   - ttyd + tmux browser terminal   admin shell, loopback :7681, user opc
-#   - DeepSeek Harness (systemd)     dsh web on loopback :3082 behind the
-#                                    dsh-full-remote auth proxy on :3080,
-#                                    which is the cloudflared target
-#   - Hermes Agent (native)          systemd *user* service for user hermes
+#   - DeepSeek Harness (native)      installed as opc and run on demand from
+#                                    the terminal; dsh web serves loopback :3080
+#   - Hermes Agent (native)          systemd *user* service for user opc
 #
-# No container runtime: Hermes runs natively, so there is no Docker and no
-# podman. Maintenance: /etc/cron.d/maintenance on the 5th at 03:05 (dnf upgrade
-# + reboot — the same cycle as the GCP Vaultwarden host) and /etc/cron.d/dsh-update
-# on Sundays at 02:05 (DSH alpha refresh, because the harness is in developer
-# preview and moves faster than any distro repo).
+# Node is deliberately split: opc gets nvm (official script) for the interactive
+# harness, while the Hermes gateway provisions its own managed tree under
+# ~/.hermes/node so a monthly Node bump cannot break its unit. One monthly
+# maintenance script (5th 03:05) updates the OS, nvm/Node/npm, DSH and Hermes,
+# then reboots.
 #
-# Terraform template: every $${...} below is rendered by templatefile(). Bodies
-# that carry credentials or shell metacharacters are passed encoded, so the
-# rendered scripts never contain a secret.
+# Terraform template: every interpolation below is rendered by templatefile().
+# Bodies that carry credentials or shell metacharacters are passed encoded, so
+# the rendered scripts never contain a secret.
 
 package_update: true
 package_upgrade: true   # dnf upgrade once at first boot, before runcmd
@@ -32,7 +31,7 @@ write_files:
 
   # --- ttyd: browser terminal -> tmux "main" session ------------------------
   # 0600: the login credential is in ExecStart, so the unit file must not be
-  # world-readable. Emergency backdoor if ttyd/DSH break = OCI serial console.
+  # world-readable. Emergency backdoor if ttyd breaks = OCI serial console.
   - path: /etc/systemd/system/ttyd.service
     permissions: "0600"
     content: |
@@ -54,27 +53,16 @@ write_files:
       [Install]
       WantedBy=multi-user.target
 
-  # --- Monthly: OS + cloudflared + Node patch, then reboot ------------------
-  # `;` separators: a failed upgrade must not skip the reboot. The reboot is
-  # safe because every workload is supervised (dsh-web Restart=always, the
-  # Hermes gateway is a lingered user service, cloudflared/ttyd are enabled).
+  # --- Monthly: the single maintenance pass ---------------------------------
+  # One script for OS + nvm/Node/npm + DSH + Hermes, then reboot. No separate
+  # DSH cron: the harness is on-demand, so content updates ride this cadence.
   - path: /etc/cron.d/maintenance
     permissions: "0644"
     content: |
-      # Monthly maintenance: dnf upgrade, then reboot. Mirrors the Vaultwarden host.
+      # Monthly: update everything, then reboot. Mirrors the Vaultwarden host.
       SHELL=/bin/bash
       PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      5 3 5 * * root dnf -y upgrade ; systemctl reboot
-
-  # --- Weekly: DeepSeek Harness alpha refresh --------------------------------
-  # One hour before the monthly window so a reboot can never land mid-update.
-  - path: /etc/cron.d/dsh-update
-    permissions: "0644"
-    content: |
-      # Weekly: refresh DSH from the alpha channel and restart the service.
-      SHELL=/bin/bash
-      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      5 2 * * 0 root /usr/local/sbin/dsh-update.sh >> /var/log/dsh-update.log 2>&1
+      5 3 5 * * root /usr/local/sbin/maintenance.sh >> /var/log/maintenance.log 2>&1
 
   # --- Secrets (from GitHub Actions -> Terraform) ----------------------------
   # 0600 root; read by the setup scripts. The instance-metadata copy is the
@@ -89,7 +77,9 @@ write_files:
     encoding: b64
     content: ${hermes_env_b64}
 
-  - path: /etc/dsh-web.env
+  # Staged root-only, then installed into opc's home by provision.sh (the
+  # interactive shell exports it, because there is no service EnvironmentFile).
+  - path: /etc/dsh/env
     permissions: "0600"
     encoding: b64
     content: ${dsh_env_b64}
@@ -105,20 +95,15 @@ write_files:
     encoding: gz+b64
     content: ${provision_gzb64}
 
-  - path: /usr/local/sbin/dsh-setup.sh
-    permissions: "0755"
-    encoding: gz+b64
-    content: ${dsh_setup_gzb64}
-
   - path: /usr/local/sbin/hermes-setup.sh
     permissions: "0755"
     encoding: gz+b64
     content: ${hermes_setup_gzb64}
 
-  - path: /usr/local/sbin/dsh-update.sh
+  - path: /usr/local/sbin/maintenance.sh
     permissions: "0755"
     encoding: gz+b64
-    content: ${dsh_update_gzb64}
+    content: ${maintenance_gzb64}
 
 runcmd:
   - [bash, /usr/local/sbin/provision.sh]

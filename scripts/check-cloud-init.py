@@ -47,9 +47,8 @@ def build_vars() -> dict:
         "dsh_env_b64": b64("DEEPSEEK_API_KEY=" + "x" * 35 + "\n"),
         "hermes_config_gzb64": gz(ROOT / "infra/hermes/config.yaml"),
         "provision_gzb64": gz(ROOT / "scripts/provision.sh"),
-        "dsh_setup_gzb64": gz(ROOT / "scripts/dsh-setup.sh"),
         "hermes_setup_gzb64": gz(ROOT / "scripts/hermes-setup.sh"),
-        "dsh_update_gzb64": gz(ROOT / "scripts/dsh-update.sh"),
+        "maintenance_gzb64": gz(ROOT / "scripts/maintenance.sh"),
     }
 
 

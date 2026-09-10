@@ -26,8 +26,10 @@ locals {
     "TELEGRAM_BOT_TOKEN=${var.telegram_bot_token}",
     var.telegram_allowed_users != "" ? "TELEGRAM_ALLOWED_USERS=${var.telegram_allowed_users}" : "",
   ]))
-  # The harness reads its LLM key from the service environment (the credentials
-  # provider ranks the inherited env above ~/.dsh/.credentials.yaml).
+  # The harness reads its LLM key from the environment (the credentials provider
+  # ranks an inherited env var above ~/.dsh/.credentials.yaml). There is no
+  # service EnvironmentFile any more: provision.sh installs this into opc's home
+  # and the login shell exports it.
   dsh_env = "DEEPSEEK_API_KEY=${var.deepseek_api_key}"
 }
 
@@ -43,9 +45,9 @@ data "oci_identity_availability_domains" "ads" {
 # Latest Oracle Linux 10 image for the A1.Flex (aarch64) shape.
 # Oracle Linux is the RPM distro OCI is built around: the agent, the
 # ol10_oci_included repo, dnf module streams and Ksplice all come for free, and
-# its 2035 support window beats Ubuntu's 2029. Ubuntu 26.04 is not published on
-# OCI, and 24.04's nodejs (18.19) is below DSH's engine floor — OL10's appstream
-# ships Node 22.23.2, so no nvm and no NodeSource are needed.
+# its 2035 support window beats Ubuntu's 2029. Node is not a dnf package here:
+# the interactive user's Node comes from nvm, and the Hermes gateway manages its
+# own tree, so a monthly Node bump cannot break the gateway unit.
 data "oci_core_images" "oracle_linux_arm" {
   compartment_id           = var.tenancy_ocid
   operating_system         = "Oracle Linux"
@@ -104,8 +106,8 @@ resource "oci_core_network_security_group" "instance_nsg" {
 
 # ---------------------------------------------------------------------------
 # Compute — Always Free A1.Flex: 2 OCPU / 12 GB (June-2026 limits).
-# cloud-init brings up cloudflared, the ttyd browser terminal, the DeepSeek
-# Harness service and a native Hermes install; sshd is disabled at the end.
+# cloud-init brings up cloudflared, the ttyd browser terminal, an on-demand
+# DeepSeek Harness install and a native Hermes install; sshd is disabled last.
 # ---------------------------------------------------------------------------
 
 resource "oci_core_instance" "portfolio_node" {
@@ -152,9 +154,8 @@ resource "oci_core_instance" "portfolio_node" {
       dsh_env_b64         = base64encode(local.dsh_env)
       hermes_config_gzb64 = base64gzip(file("${path.module}/../hermes/config.yaml"))
       provision_gzb64     = base64gzip(file("${path.module}/../../scripts/provision.sh"))
-      dsh_setup_gzb64     = base64gzip(file("${path.module}/../../scripts/dsh-setup.sh"))
       hermes_setup_gzb64  = base64gzip(file("${path.module}/../../scripts/hermes-setup.sh"))
-      dsh_update_gzb64    = base64gzip(file("${path.module}/../../scripts/dsh-update.sh"))
+      maintenance_gzb64   = base64gzip(file("${path.module}/../../scripts/maintenance.sh"))
     }))
   }
 
