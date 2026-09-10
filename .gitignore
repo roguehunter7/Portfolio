@@ -29,7 +29,9 @@ site/resume.pdf
 
 # ---------- Local agent tooling (never deployed) ----------
 .claude/
-AGENTS.md
+# AGENTS.md is intentionally tracked: it carries the shared agent policy
+# (Ponytail, Caveman, verify-don't-recall, no-push-without-confirmation) so the
+# policy travels with the repo instead of living only in ~/.dsh on one machine.
 REASONIX.md
 reasonix.toml
 .playwright-mcp/
