@@ -19,8 +19,8 @@ the outbound Cloudflare Tunnel.
 | Workload | How it runs | Reachable at |
 |---|---|---|
 | Cloudflare Tunnel | `cloudflared.service`, outbound | the only ingress path |
-| Browser terminal | `ttyd` + tmux, loopback `:7681`, user `ubuntu` | `ssh.sreeramkr.com` |
-| DeepSeek Harness | installed by hand as `ubuntu` (nvm); **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
+| Browser terminal | `ttyd` + bash, loopback `:7681`, user `ubuntu` | `ssh.sreeramkr.com` |
+| DeepSeek Harness | installed at first boot as `ubuntu` (nvm): pnpm, the `dsh` launcher and the `tui` profile; **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
 | Hermes Agent | Docker container from the official image; loopback API only | Telegram (long poll outbound) |
 
 Docker runs **only Hermes**: the official image carries its own Python/Node/Chromium,
@@ -55,7 +55,7 @@ browser ── https://dsh.sreeramkr.com ─> Cloudflare edge ─> cloudflared (
                                                               └─> 127.0.0.1:3080  dsh web
                                                                   (run on demand from ttyd)
 
-browser ── https://ssh.sreeramkr.com ─> Cloudflare edge ─> cloudflared ─> 127.0.0.1:7681  ttyd -> tmux
+browser ── https://ssh.sreeramkr.com ─> Cloudflare edge ─> cloudflared ─> 127.0.0.1:7681  ttyd -> bash
 
 Telegram  <── long poll (outbound) ── Hermes container ──> api.deepseek.com
 ```
@@ -101,16 +101,43 @@ appears.
 ## Access
 
 - **Terminal:** https://ssh.sreeramkr.com → user `sreeram` + the `TTYD_PASSWORD`
-  secret → tmux session `main`.
-- **DSH (on demand):** in the terminal, `dsh web --trusted-host dsh.sreeramkr.com`,
-  then open https://dsh.sreeramkr.com and paste the token the harness prints. The
-  login shell already exports `DEEPSEEK_API_KEY` from `~/.dsh/env`. Run it inside
-  tmux so it survives closing the browser tab.
+  secret → a bash login shell. History scrolls with the mouse wheel (xterm.js in
+  the browser); Shift+wheel if a TUI has grabbed the mouse.
+- **dsh-tui (on demand):** `provision.sh` already installed it
+  (`dsh plugin --profile tui add @tomowang/dsh-tui`), so at the prompt just run
+  `dsh --profile tui` (or `--resume` to reopen a session). It outlives the
+  browser tab, but a ttyd restart or reboot ends the shell — `--resume` picks the
+  session back up.
+- **dsh web (on demand):** `dsh web --trusted-host dsh.sreeramkr.com`, then open
+  https://dsh.sreeramkr.com and paste the token the harness prints. The login
+  shell already exports `DEEPSEEK_API_KEY` from `~/.dsh/env`.
+- **From a phone:** the grid autoscales (FitAddon → RESIZE_TERMINAL → PTY), but the
+  soft keyboard has no Esc, Ctrl or arrows, so dsh-tui's modal input is unusable
+  there. Use the DSH web UI (responsive) on a phone.
 - **Hermes:** message the bot on Telegram. It cannot message you first — open the bot
   once and send `/start`.
 
 Emergency backdoor (tunnel down): OCI serial console
 (`Compute → instance → Resources → Console connection`).
+
+## Browser terminal — scrollback model
+
+`ttyd` owns the PTY and pumps bytes to xterm.js in the browser, which is where the
+terminal — and its history — actually lives. There is no multiplexer in the chain:
+bash is the child, and nothing intercepts the wheel. `tmux` was removed because
+its `mouse on` default binds WheelUp to copy-mode, so scrolls ran in a buffer the
+browser could not see; tmux did survive a ttyd restart, which plain bash does not.
+
+Two consequences worth knowing:
+
+- Shell history (prompts, command output) accumulates in xterm.js and scrolls with
+  the wheel; the cap is xterm's default 1000 lines, so old lines age out rather than
+  surviving until `clear`.
+- `dsh-tui` runs `fullscreen: true`, i.e. the alternate screen, which has no
+  scrollback of its own. Its transcript scrolls in-app (wheel, scrollbar gutter) and
+  is not written to browser history. To read turns back later, use the in-app scroll,
+  or `dsh --profile tui --resume` for the session itself.
+- If a full-screen TUI ever grabs the mouse, Shift+wheel still reaches xterm.js.
 
 ## Verifying (CI cannot reach the box)
 
@@ -120,7 +147,7 @@ terminal:
 ```bash
 ls /var/log/cloud_init_complete                 # cloud-init ran to the end
 systemctl status cloudflared ttyd --no-pager     # the two system services
-command -v node && node -v                       # nvm toolchain (dsh is installed by hand)
+command -v node && node -v                       # nvm toolchain
 ss -ltnp | grep -E '7681|3080'                    # ttyd; :3080 only while dsh runs
 docker compose -f /opt/hermes/docker-compose.yml ps   # Hermes container
 docker logs hermes --tail 40 | grep -i telegram       # gateway + Telegram
@@ -148,16 +175,26 @@ curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
 
 ## DeepSeek Harness
 
-- **Not installed by `provision.sh`** (deliberately). Install it as `ubuntu` into
-  nvm's global tree, then run it from the terminal when you need it
-  (`dsh web --trusted-host dsh.sreeramkr.com`, loopback `:3080`), inside tmux so
-  it outlives the browser tab.
+- **Installed by `provision.sh`** as `ubuntu` into nvm's global tree: `pnpm`,
+  then `npm install -g @deepseek-ai/dsh@next`, then two bundles:
+  `dsh plugin --profile tui add @tomowang/dsh-tui` (terminal front door) and
+  `dsh plugin --profile web add @tt-a1i/archify-dsh` (Skill-only bundle adding the
+  Archify architecture-diagram skill to the web profile). Each command creates its
+  profile on first use (`~/.dsh/profiles/tui`, `…/web`) and resolves the newest
+  published version; nothing here is version-pinned. `pnpm` is required, not
+  optional: `dsh plugin` is a pnpm forwarder and exits 127 without it. Run on
+  demand (`dsh --profile tui`, loopback terminal; `dsh web --trusted-host
+  dsh.sreeramkr.com`, loopback `:3080`, browser UI). ttyd keeps the process alive
+  when the browser tab closes; a reboot ends it.
 - No reverse-proxy plugin: the tunnel points straight at `:3080`, so the harness
   startup token is the credential and is pasted into the URL after a restart.
 - `npm install -g` runs as `ubuntu`, never as root — DSH's dependency tree compiles
   `node-pty` and `koffi`, and running install scripts as root is the
-  `sudo npm install` trap. On npm 11+, seed the install-script allowlist in
-  `~/.npmrc` first: `allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs`.
+  `sudo npm install` trap. On npm 11+ the install-script allowlist is seeded in
+  `~/.npmrc` before the installs:
+  `allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs,@earendil-works/pi-tui`.
+  If an install fails with a blocked-script error, add the package npm names to
+  that list and re-run `provision.sh`.
 - The LLM key is staged at `/etc/dsh/env` (0600 root) and installed to
   `~/.dsh/env` (0600 `ubuntu`); the login shell exports it.
 
@@ -173,8 +210,12 @@ curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
 
 Then it reboots, and every supervised service plus the Hermes container comes
 back. Each step is logged and skipped on failure, so a bad step never blocks a
-later one or the reboot. DSH is intentionally **not** installed or updated by
-these scripts; install and update it by hand.
+later one or the reboot.
+
+DSH and its bundles are installed at **first boot only**, so the monthly pass does
+not touch them: `dsh` and `@tomowang/dsh-tui` stay at whatever version
+`destroy_first` pinned. Update on demand as `ubuntu` (`npm install -g
+@deepseek-ai/dsh`, then `dsh plugin --profile tui add @tomowang/dsh-tui`).
 
 ## Destroy
 

@@ -27,10 +27,10 @@ fi
 systemctl enable --now cloudflared
 
 # --- 2. Base packages ------------------------------------------------------
-# No nodejs: Node is nvm's job for ubuntu (step 5). Hermes runs in Docker and
-# carries its own toolchain, so nothing here serves it.
+# No nodejs: Node is nvm's job for ubuntu (step 5), as are pnpm and DSH via npm.
+# Hermes runs in Docker and carries its own toolchain, so nothing here serves it.
 apt-get install -y \
-  ca-certificates curl git gnupg jq tmux cron ufw tar xz-utils \
+  ca-certificates curl git gnupg jq cron ufw tar xz-utils \
   build-essential python3 python3-venv unzip \
   ttyd ripgrep htop gh
 
@@ -47,7 +47,7 @@ DEBIAN_FRONTEND=noninteractive apt-get upgrade -y || log "WARNING: apt upgrade f
 
 # --- 5. nvm + Node LTS + npm, as ubuntu ------------------------------------
 # nvm is per-user and has no apt package; the official installer is the only
-# supported path. It edits ubuntu's shell profile, so the ttyd tmux shell gets
+# supported path. It edits ubuntu's shell profile, so the ttyd login shell gets
 # node/npm on PATH. Non-interactive callers (the monthly script) source nvm.sh
 # themselves.
 sudo -u ubuntu env HOME=/home/ubuntu bash -c '
@@ -57,9 +57,34 @@ sudo -u ubuntu env HOME=/home/ubuntu bash -c '
   . "$NVM_DIR/nvm.sh"
   nvm install --lts
   nvm alias default "lts/*"
+  # pnpm is not an apt package and DSH installs profiles with it, so it comes
+  # from npm's global tree. All three installs run as ubuntu: root-run install
+  # scripts are the sudo-npm trap.
+  # @next is the maintained release channel; npm's "latest" dist-tag here is an
+  # older rc than next, so install the channel explicitly.
+  npm install -g pnpm
+  npm install -g @deepseek-ai/dsh@next
 '
 
-# --- 6. DSH key for the interactive shell ----------------------------------
+# --- 6. DSH plugin bundles --------------------------------------------------
+# Both profiles are created on first use: `dsh plugin` initializes a profile
+# whose package.json is missing, then reconciles its bundle layer list.
+#   tui — @tomowang/dsh-tui: the terminal front door (out-of-tree mode bundle).
+#   web — @tt-a1i/archify-dsh: Skill-only bundle adding the Archify skill.
+# The npm allowlist has to be in place first: npm 11+ refuses to run dependency
+# build scripts otherwise, and DSH's tree needs the subprocess spawn helper
+# (`dsh-subprocess-local` postinstall) plus node-pty's native build. Archify has
+# no dependencies and no install hooks, so it needs no allowlist entry.
+sudo -u ubuntu env HOME=/home/ubuntu bash -c '
+  set -euo pipefail
+  export NVM_DIR="$HOME/.nvm"
+  . "$NVM_DIR/nvm.sh"
+  printf "%s\n" "allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs,@earendil-works/pi-tui" >> "$HOME/.npmrc"
+  dsh plugin --profile tui add @tomowang/dsh-tui
+  dsh plugin --profile web add @tt-a1i/archify-dsh
+'
+
+# --- 7. DSH key for the interactive shell ----------------------------------
 # No service means no EnvironmentFile: the key lives in ubuntu's home and the
 # login shell exports it, so `dsh web` picks it up from the environment.
 install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/.dsh
@@ -69,7 +94,7 @@ if ! grep -q 'dsh/env' /home/ubuntu/.bashrc 2>/dev/null; then
 fi
 chown ubuntu:ubuntu /home/ubuntu/.bashrc
 
-# --- 7. Docker Engine + Compose plugin (official Ubuntu repo) --------------
+# --- 8. Docker Engine + Compose plugin (official Ubuntu repo) --------------
 # Hermes is the only container: the image replaces a host-wide Python/Node/
 # Chromium toolchain and keeps the agent out of ubuntu's home.
 install -m 0755 -d /etc/apt/keyrings
@@ -84,7 +109,7 @@ apt-get update -y
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 systemctl enable --now docker
 
-# --- 8. Hermes (official image) --------------------------------------------
+# --- 9. Hermes (official image) --------------------------------------------
 # cloud-init writes the compose file to /opt/hermes; stage the secrets/config
 # beside it and let the image carry everything else. /opt/hermes is mounted at
 # /opt/data, so sessions, skills and memories survive an image upgrade.
@@ -94,7 +119,7 @@ install -m 0644 /etc/hermes/config.yaml /opt/hermes/config.yaml
 # Best-effort: a broken Hermes must not skip ufw, the tunnel check or hardening.
 docker compose -f /opt/hermes/docker-compose.yml up -d || log "WARNING: Hermes compose up failed; see docker logs"
 
-# --- 9. Services + host firewall -------------------------------------------
+# --- 10. Services + host firewall ------------------------------------------
 systemctl enable --now cron
 # Nothing inbound: the NSG already denies everything; this is the host-side belt.
 # ttyd, dsh web and the Hermes gateway all listen on loopback only.
@@ -103,11 +128,11 @@ ufw default allow outgoing
 ufw allow in on lo
 ufw --force enable
 
-# --- 10. Network tuning ----------------------------------------------------
+# --- 11. Network tuning ----------------------------------------------------
 # BBR only: this box has no swap, so swappiness/vfs_cache tuning is a no-op.
 sysctl --system
 
-# --- 11. Verify the tunnel registered (wait up to 120s) --------------------
+# --- 12. Verify the tunnel registered (wait up to 120s) --------------------
 for _ in $(seq 1 24); do
   if journalctl -u cloudflared --no-pager -n 200 2>/dev/null | grep -q "Registered tunnel connection"; then
     echo "cloudflared registered with Cloudflare"
@@ -116,7 +141,7 @@ for _ in $(seq 1 24); do
   sleep 5
 done
 
-# --- 12. HARDEN LAST: sshd off (admin is the browser terminal) -------------
+# --- 13. HARDEN LAST: sshd off (admin is the browser terminal) -------------
 systemctl disable --now ssh || true
 
 touch /var/log/cloud_init_complete

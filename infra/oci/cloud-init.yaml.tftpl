@@ -3,9 +3,10 @@
 #
 # Workloads, all zero-ingress:
 #   - cloudflared tunnel (outbound)  the only way in; NSG has zero rules
-#   - ttyd + tmux browser terminal   admin shell, loopback :7681, user ubuntu
-#   - DeepSeek Harness              installed by hand as ubuntu, run on demand
-#                                    from the terminal; dsh web serves loopback :3080
+#   - ttyd browser terminal          admin shell, loopback :7681, user ubuntu
+#   - DeepSeek Harness              installed by provision.sh as ubuntu (nvm),
+#                                    run on demand from the terminal; dsh web
+#                                    serves loopback :3080
 #   - Hermes Agent (Docker)          official image, loopback API only
 #
 # Node for the interactive harness comes from nvm (official script); Hermes runs
@@ -28,14 +29,19 @@ write_files:
       net.core.default_qdisc=fq
       net.ipv4.tcp_congestion_control=bbr
 
-  # --- ttyd: browser terminal -> tmux "main" session ------------------------
+  # --- ttyd: browser terminal -> login shell --------------------------------
+  # No multiplexer: ttyd owns the PTY and pumps bytes to xterm.js in the
+  # browser, so a plain bash session is enough and the wheel reaches xterm.js
+  # (browser scrollback). bash --login gives the shell nvm's node/dsh on PATH
+  # and DEEPSEEK_API_KEY from ~/.dsh/env. Nothing survives a reboot; sessions
+  # are server-side, so dsh-tui resumes with --resume.
   # 0600: the login credential is in ExecStart, so the unit file must not be
   # world-readable. Emergency backdoor if ttyd breaks = OCI serial console.
   - path: /etc/systemd/system/ttyd.service
     permissions: "0600"
     content: |
       [Unit]
-      Description=ttyd web terminal (tmux main session)
+      Description=ttyd web terminal (login shell)
       After=network-online.target
 
       [Service]
@@ -43,7 +49,9 @@ write_files:
       Group=ubuntu
       WorkingDirectory=/home/ubuntu
       Environment=TERM=xterm-256color
-      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
+      # -W: writable. --login: source /home/ubuntu/.bashrc, so the shell has
+      # nvm's node/dsh and the DSH key without pinning a version path here.
+      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/bash --login
       Restart=always
       RestartSec=5
       StandardOutput=append:/var/log/ttyd.log
