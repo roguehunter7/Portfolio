@@ -1,35 +1,31 @@
-# infra/oci — Oracle Linux 10 dev box
+# infra/oci — Ubuntu 24.04 dev box
 
 Zero-ingress Oracle A1.Flex provisioned by GitHub Actions + Terraform. The VM has
-**no public ports**: the NSG has zero ingress rules, `firewalld` allows nothing in,
+**no public ports**: the NSG has zero ingress rules, `ufw` allows nothing in,
 and `sshd` is disabled at the end of provisioning. Everything reachable arrives over
 the outbound Cloudflare Tunnel.
 
-## Why Oracle Linux 10
+## Why Ubuntu 24.04
 
-* It is a first-class OCI platform image for Arm (`Oracle-Linux-10.2-aarch64`), with a
-  support window to 2035 — Ubuntu 24.04 ends in 2029, and **Ubuntu 26.04 is not
-  published on OCI at all**.
-* Node is **not** a dnf package here. The interactive user (`opc`) gets Node via
-  **nvm** (the official installer; Oracle Linux ships no `nvm` package), and the
-  Hermes gateway provisions its **own managed tree** (`~/.hermes/node`). Two trees,
-  each updated by its own tool, so a monthly Node bump can never break the gateway
-  unit that depends on it.
-* The Oracle Cloud Agent ships as an rpm and Run Command is officially supported
-  (on Ubuntu it is an unofficial snap).
+* It is a first-class OCI platform image for Arm (`Canonical Ubuntu 24.04`), with the
+  default `ubuntu` user and native `apt`/`ufw` tooling that the provisioning
+  scripts are written against.
+* Node is **not** an apt package here. The interactive user (`ubuntu`) gets Node via
+  **nvm** (the official installer); Hermes runs in the official image and carries
+  its own Node/Python/Chromium, so a monthly Node bump can never touch the gateway.
 
 ## Workloads
 
 | Workload | How it runs | Reachable at |
 |---|---|---|
 | Cloudflare Tunnel | `cloudflared.service`, outbound | the only ingress path |
-| Browser terminal | `ttyd` + tmux, loopback `:7681`, user `opc` | `ssh.sreeramkr.com` |
-| DeepSeek Harness | installed as `opc`, **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
-| Hermes Agent | native install, systemd **user** service `hermes-gateway` for user `opc` | Telegram (long poll outbound) |
+| Browser terminal | `ttyd` + tmux, loopback `:7681`, user `ubuntu` | `ssh.sreeramkr.com` |
+| DeepSeek Harness | installed by hand as `ubuntu` (nvm); **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
+| Hermes Agent | Docker container from the official image; loopback API only | Telegram (long poll outbound) |
 
-There is **no container runtime** — no Docker, no podman. Hermes runs natively, which
-also removes the SELinux volume-label and podman-conflict friction that containers
-would bring on this distro.
+Docker runs **only Hermes**: the official image carries its own Python/Node/Chromium,
+so the host gets no Hermes toolchain and the agent never reads the host's credentials
+(`~/.dsh`, `~/.config/gh`, the repo).
 
 ## Always Free compliance
 
@@ -39,7 +35,7 @@ would bring on this distro.
 | Block volume | boot volume 50 GB | 200 GB total (boot + block) | within |
 | Object Storage | tfstate bucket (KB-size) | 20 GB | within |
 | Networking | VCN, IGW, route table, subnet, NSG, 1 ephemeral public IP | all $0 | within |
-| Image | Oracle Linux 10 (aarch64) | Always Free-eligible platform image | within |
+| Image | Canonical Ubuntu 24.04 (aarch64) | Always Free-eligible platform image | within |
 
 **Caveats**
 - Oracle may **reclaim idle A1 instances** (CPU 95th pct <20%, network <20%, and — A1 only — memory <20% over 7 days). Keep the box busy.
@@ -48,7 +44,7 @@ would bring on this distro.
   itself). Both are scoped to this tenancy. Accepted trade-off.
 - `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
   nothing on a running instance — use `destroy_first` to rebuild.
-- OCI caps user data + metadata at **32,000 bytes**. The rendered payload is ~17 KB
+- OCI caps user data + metadata at **32,000 bytes**. The rendered payload is ~14 KB
   (scripts and configs are embedded `gz+b64`); `scripts/check-cloud-init.py` fails CI
   if that ever grows past the cap.
 
@@ -61,13 +57,13 @@ browser ── https://dsh.sreeramkr.com ─> Cloudflare edge ─> cloudflared (
 
 browser ── https://ssh.sreeramkr.com ─> Cloudflare edge ─> cloudflared ─> 127.0.0.1:7681  ttyd -> tmux
 
-Telegram  <── long poll (outbound) ── hermes-gateway ──> api.deepseek.com
+Telegram  <── long poll (outbound) ── Hermes container ──> api.deepseek.com
 ```
 
 - VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
-- NSG `instance-nsg`: **no rules** (= deny-all ingress); firewalld allows nothing in
-- A1.Flex 2 OCPU / 12 GB, Oracle Linux 10 aarch64 (UEK R8), 50 GB boot, ephemeral public IP
-- SELinux stays **enforcing** (no container labels needed, since there is no container runtime)
+- NSG `instance-nsg`: **no rules** (= deny-all ingress); ufw allows nothing in
+- A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 aarch64, 50 GB boot, ephemeral public IP
+- ufw: default deny incoming, allow outgoing; all published ports bound to loopback
 
 ## One-time setup
 
@@ -84,11 +80,11 @@ Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 1. `ssh.sreeramkr.com` → **HTTP** `127.0.0.1:7681` (ttyd)
 2. `dsh.sreeramkr.com` → **HTTP** `127.0.0.1:3080` (dsh web)
 
-**Use the literal `127.0.0.1`, never `localhost`.** cloudflared resolves
-`localhost` to `::1` (IPv6) on most modern Linux distros; both origins bind
-IPv4 loopback only, so the tunnel gets `dial tcp [::1]:PORT: connection refused`
-and Cloudflare returns a generic **502** for *both* hostnames even when the
-services are healthy.
+Either `127.0.0.1` or `localhost` works. cloudflared is a Go program, and Go
+resolves `localhost` to both `::1` and `127.0.0.1` and falls back to whichever
+answers, so a service bound to IPv4 loopback is reached either way. What matters
+is that the origin port matches the service's listening port and the service
+binds loopback only.
 
 ## Deploy
 
@@ -98,7 +94,7 @@ validate), then applies. `destroy_first` destroys the VM and re-applies, which i
 the only way to re-run cloud-init.
 
 First boot is ordered for fast access: cloudflared and ttyd come up first
-(~2–3 min), then the full `dnf upgrade`, nvm/Node, DSH and Hermes. So
+(~2–3 min), then the full `apt upgrade`, nvm/Node and Hermes. So
 `ssh.sreeramkr.com` is usable long before `/var/log/cloud_init_complete`
 appears.
 
@@ -111,7 +107,7 @@ appears.
   login shell already exports `DEEPSEEK_API_KEY` from `~/.dsh/env`. Run it inside
   tmux so it survives closing the browser tab.
 - **Hermes:** message the bot on Telegram. It cannot message you first — open the bot
-  once and send `/start`. The setup log prints the bot username.
+  once and send `/start`.
 
 Emergency backdoor (tunnel down): OCI serial console
 (`Compute → instance → Resources → Console connection`).
@@ -124,63 +120,61 @@ terminal:
 ```bash
 ls /var/log/cloud_init_complete                 # cloud-init ran to the end
 systemctl status cloudflared ttyd --no-pager     # the two system services
-command -v node && node -v && dsh --version      # nvm toolchain + harness
+command -v node && node -v                       # nvm toolchain (dsh is installed by hand)
 ss -ltnp | grep -E '7681|3080'                    # ttyd; :3080 only while dsh runs
-systemctl --user status hermes-gateway           # always-on Hermes gateway
-journalctl --user -u hermes-gateway -n 50 | grep -i telegram
+docker compose -f /opt/hermes/docker-compose.yml ps   # Hermes container
+docker logs hermes --tail 40 | grep -i telegram       # gateway + Telegram
+curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
 ```
 
-## Hermes (native)
+## Hermes (Docker)
 
-- Installed by the official installer as `opc`:
-  `--skip-setup --skip-computer-use --non-interactive`. No container, no Docker.
-- **Browser toolset works**, unlike a naive RPM install: `provision.sh` installs the
-  Chromium system libraries (Playwright does not do that on RPM hosts), and the
-  installer runs with `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-arm64` because
-  Playwright does not recognise Oracle Linux (`ID=ol`); OL10 is glibc 2.39, the same
-  as that build.
-- `--skip-computer-use` skips the `cua-driver` (GUI desktop control). This box is
-  headless, so it would be a 660-second download with nothing to control.
-- The installer runs with `PATH=/usr/bin:/bin` on purpose: with nvm off PATH it
-  provisions its own managed Node under `~/.hermes/node`, so the gateway unit does
-  not depend on nvm's Node.
-- Gateway is a **user** service made boot-persistent by `loginctl enable-linger opc`.
-- Secrets and model config live in `~/.hermes/.env` (0600) and `~/.hermes/config.yaml`,
-  written from `/etc/hermes/*` by cloud-init. Model routing: every call —
-  main loop, delegation and auxiliary tasks — runs `deepseek-flash`.
-- **Telegram is verified at install time**: the script calls `getMe` (token valid),
-  clears any webhook that would block long polling (`getWebhookInfo` / `deleteWebhook`),
-  then checks the gateway is active and greps its log for Telegram errors.
+- Official image `nousresearch/hermes-agent:latest`, `gateway run`,
+  `restart: unless-stopped` (`infra/hermes/docker-compose.yml`). Everything Hermes
+  needs — Python, Node, Chromium — lives in the image, so the host gains only the
+  Docker runtime. The monthly maintenance job pulls new releases.
+- `/opt/hermes` is mounted at `/opt/data` (config, sessions, skills, memories).
+  Updating means `docker compose pull && up -d`; `hermes update` is not supported
+  inside Docker by design.
+- Secrets and model config: cloud-init stages `/etc/hermes/hermes.env` (0600) and
+  `/etc/hermes/config.yaml`; `provision.sh` installs them as `/opt/hermes/.env`
+  (0600) and `/opt/hermes/config.yaml`. Model routing: every call — main loop,
+  delegation and auxiliary tasks — runs `deepseek-flash`.
+- No port is published to the network: Telegram is long-polled outbound, and the
+  gateway's API/dashboard on `:8642` is bound to loopback only. The agent is not
+  reachable from the internet even if the rest of the box is.
+- The gateway is s6-supervised inside the container, so a crash is restarted
+  without losing the container; a reboot brings it back via `restart: unless-stopped`.
 
 ## DeepSeek Harness
 
-- Installed as `opc` into nvm's global tree; **no systemd service**. Run it from the
-  terminal when you need it (`dsh web --trusted-host dsh.sreeramkr.com`, loopback
-  `:3080`), inside tmux so it outlives the browser tab.
+- **Not installed by `provision.sh`** (deliberately). Install it as `ubuntu` into
+  nvm's global tree, then run it from the terminal when you need it
+  (`dsh web --trusted-host dsh.sreeramkr.com`, loopback `:3080`), inside tmux so
+  it outlives the browser tab.
 - No reverse-proxy plugin: the tunnel points straight at `:3080`, so the harness
   startup token is the credential and is pasted into the URL after a restart.
-- `npm install -g` runs as `opc`, never as root — DSH's dependency tree compiles
+- `npm install -g` runs as `ubuntu`, never as root — DSH's dependency tree compiles
   `node-pty` and `koffi`, and running install scripts as root is the
-  `sudo npm install` trap. npm 11+ gates install scripts behind `allow-scripts`;
-  `provision.sh` seeds the allowlist only when npm is new enough to honour it.
+  `sudo npm install` trap. On npm 11+, seed the install-script allowlist in
+  `~/.npmrc` first: `allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs`.
 - The LLM key is staged at `/etc/dsh/env` (0600 root) and installed to
-  `~/.dsh/env` (0600 `opc`); the login shell exports it.
+  `~/.dsh/env` (0600 `ubuntu`); the login shell exports it.
 
 ## Maintenance — one cadence
 
 **Monthly, 5th at 03:05** (`/etc/cron.d/maintenance` →
 `/usr/local/sbin/maintenance.sh`): one pass that runs, in order,
 
-1. `dnf -y upgrade` — kernel, cloudflared, ttyd, ripgrep, htop, gh.
-2. As `opc`: re-run the nvm installer (newest nvm tag), `nvm install --lts`,
-   `nvm install-latest-npm`, repoint `~/.nvm/current`, then install the newest
-   published `@deepseek-ai/dsh`.
-3. As `opc`: `hermes update` — repo, Python deps and its managed Node tree.
+1. `apt-get update && apt-get upgrade` — kernel, cloudflared, ttyd, ripgrep, htop, gh.
+2. As `ubuntu`: re-run the nvm installer (newest nvm tag), `nvm install --lts`,
+   `nvm install-latest-npm`, repoint `~/.nvm/current`.
+3. Pull and recreate the Hermes container — `docker compose -f /opt/hermes/docker-compose.yml pull --quiet` then `up -d`; it follows `:latest`.
 
-Then it reboots, and every supervised/lingered unit comes back. Each step is
-logged and skipped on failure, so a bad step never blocks a later one or the
-reboot. There is no separate DSH cron: the harness is on-demand, so content
-updates ride this cadence.
+Then it reboots, and every supervised service plus the Hermes container comes
+back. Each step is logged and skipped on failure, so a bad step never blocks a
+later one or the reboot. DSH is intentionally **not** installed or updated by
+these scripts; install and update it by hand.
 
 ## Destroy
 

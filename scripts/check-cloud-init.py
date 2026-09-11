@@ -46,8 +46,8 @@ def build_vars() -> dict:
         ),
         "dsh_env_b64": b64("DEEPSEEK_API_KEY=" + "x" * 35 + "\n"),
         "hermes_config_gzb64": gz(ROOT / "infra/hermes/config.yaml"),
+        "hermes_compose_gzb64": gz(ROOT / "infra/hermes/docker-compose.yml"),
         "provision_gzb64": gz(ROOT / "scripts/provision.sh"),
-        "hermes_setup_gzb64": gz(ROOT / "scripts/hermes-setup.sh"),
         "maintenance_gzb64": gz(ROOT / "scripts/maintenance.sh"),
     }
 
@@ -92,6 +92,11 @@ def main() -> int:
                 )
                 if result.returncode != 0:
                     failures.append(f"{path}: bash -n failed: {result.stderr.strip()}")
+            elif path.endswith("docker-compose.yml"):
+                try:
+                    yaml.safe_load(decoded)
+                except yaml.YAMLError as exc:
+                    failures.append(f"{path}: invalid compose YAML: {exc}")
 
     user_data = len(base64.b64encode(rendered.encode()))
     print(f"cloud-init: {len(files)} write_files, user_data {user_data}/{MAX_USER_DATA} bytes")

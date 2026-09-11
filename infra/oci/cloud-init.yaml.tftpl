@@ -1,18 +1,17 @@
 #cloud-config
-# Oracle Linux 10 (aarch64, UEK R8) — Always Free A1.Flex 2 OCPU / 12 GB dev box.
+# Ubuntu 24.04 (aarch64) — Always Free A1.Flex 2 OCPU / 12 GB dev box.
 #
 # Workloads, all zero-ingress:
 #   - cloudflared tunnel (outbound)  the only way in; NSG has zero rules
-#   - ttyd + tmux browser terminal   admin shell, loopback :7681, user opc
-#   - DeepSeek Harness (native)      installed as opc and run on demand from
-#                                    the terminal; dsh web serves loopback :3080
-#   - Hermes Agent (native)          systemd *user* service for user opc
+#   - ttyd + tmux browser terminal   admin shell, loopback :7681, user ubuntu
+#   - DeepSeek Harness              installed by hand as ubuntu, run on demand
+#                                    from the terminal; dsh web serves loopback :3080
+#   - Hermes Agent (Docker)          official image, loopback API only
 #
-# Node is deliberately split: opc gets nvm (official script) for the interactive
-# harness, while the Hermes gateway provisions its own managed tree under
-# ~/.hermes/node so a monthly Node bump cannot break its unit. One monthly
-# maintenance script (5th 03:05) updates the OS, nvm/Node/npm, DSH and Hermes,
-# then reboots.
+# Node for the interactive harness comes from nvm (official script); Hermes runs
+# in the official image and carries its own Node/Python/Chromium, so a monthly
+# Node bump cannot touch the gateway. One monthly maintenance script (5th
+# 03:05) updates the OS, nvm/Node/npm and the Hermes image, then reboots.
 #
 # Terraform template: every interpolation below is rendered by templatefile().
 # Bodies that carry credentials or shell metacharacters are passed encoded, so
@@ -40,9 +39,9 @@ write_files:
       After=network-online.target
 
       [Service]
-      User=opc
-      Group=opc
-      WorkingDirectory=/home/opc
+      User=ubuntu
+      Group=ubuntu
+      WorkingDirectory=/home/ubuntu
       Environment=TERM=xterm-256color
       ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/tmux new -A -s main
       Restart=always
@@ -54,8 +53,8 @@ write_files:
       WantedBy=multi-user.target
 
   # --- Monthly: the single maintenance pass ---------------------------------
-  # One script for OS + nvm/Node/npm + DSH + Hermes, then reboot. No separate
-  # DSH cron: the harness is on-demand, so content updates ride this cadence.
+  # One script for OS + nvm/Node/npm + the Hermes image, then reboot. DSH is
+  # deliberately not installed or updated here; manage it by hand.
   - path: /etc/cron.d/maintenance
     permissions: "0644"
     content: |
@@ -77,7 +76,7 @@ write_files:
     encoding: b64
     content: ${hermes_env_b64}
 
-  # Staged root-only, then installed into opc's home by provision.sh (the
+  # Staged root-only, then installed into ubuntu's home by provision.sh (the
   # interactive shell exports it, because there is no service EnvironmentFile).
   - path: /etc/dsh/env
     permissions: "0600"
@@ -95,10 +94,10 @@ write_files:
     encoding: gz+b64
     content: ${provision_gzb64}
 
-  - path: /usr/local/sbin/hermes-setup.sh
-    permissions: "0755"
+  - path: /opt/hermes/docker-compose.yml
+    permissions: "0644"
     encoding: gz+b64
-    content: ${hermes_setup_gzb64}
+    content: ${hermes_compose_gzb64}
 
   - path: /usr/local/sbin/maintenance.sh
     permissions: "0755"

@@ -28,7 +28,7 @@ locals {
   ]))
   # The harness reads its LLM key from the environment (the credentials provider
   # ranks an inherited env var above ~/.dsh/.credentials.yaml). There is no
-  # service EnvironmentFile any more: provision.sh installs this into opc's home
+  # service EnvironmentFile any more: provision.sh installs this into ubuntu's home
   # and the login shell exports it.
   dsh_env = "DEEPSEEK_API_KEY=${var.deepseek_api_key}"
 }
@@ -42,16 +42,15 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
 }
 
-# Latest Oracle Linux 10 image for the A1.Flex (aarch64) shape.
-# Oracle Linux is the RPM distro OCI is built around: the agent, the
-# ol10_oci_included repo, dnf module streams and Ksplice all come for free, and
-# its 2035 support window beats Ubuntu's 2029. Node is not a dnf package here:
-# the interactive user's Node comes from nvm, and the Hermes gateway manages its
-# own tree, so a monthly Node bump cannot break the gateway unit.
-data "oci_core_images" "oracle_linux_arm" {
+# Latest Canonical Ubuntu 24.04 image for the A1.Flex (aarch64) shape.
+# Ubuntu is a first-class OCI platform image with an `ubuntu` default user and
+# the apt/ufw tooling the provisioning scripts expect. Node is not an OS package
+# here: the interactive user's Node comes from nvm, and Hermes runs in the
+# official image with its own Node, so a monthly Node bump cannot touch it.
+data "oci_core_images" "ubuntu_arm" {
   compartment_id           = var.tenancy_ocid
-  operating_system         = "Oracle Linux"
-  operating_system_version = "10"
+  operating_system         = "Canonical Ubuntu"
+  operating_system_version = "24.04"
   shape                    = "VM.Standard.A1.Flex"
   sort_by                  = "TIMECREATED"
   sort_order               = "DESC"
@@ -106,8 +105,9 @@ resource "oci_core_network_security_group" "instance_nsg" {
 
 # ---------------------------------------------------------------------------
 # Compute — Always Free A1.Flex: 2 OCPU / 12 GB (June-2026 limits).
-# cloud-init brings up cloudflared, the ttyd browser terminal, an on-demand
-# DeepSeek Harness install and a native Hermes install; sshd is disabled last.
+# cloud-init brings up cloudflared, the ttyd browser terminal, the nvm toolchain
+# for the on-demand DeepSeek Harness and a containerised Hermes install; sshd is
+# disabled last.
 # ---------------------------------------------------------------------------
 
 resource "oci_core_instance" "portfolio_node" {
@@ -128,7 +128,7 @@ resource "oci_core_instance" "portfolio_node" {
 
   source_details {
     source_type             = "image"
-    source_id               = data.oci_core_images.oracle_linux_arm.images[0].id
+    source_id               = data.oci_core_images.ubuntu_arm.images[0].id
     boot_volume_size_in_gbs = 50 # min size; counts toward the 200 GB Always Free block storage
   }
 
@@ -148,14 +148,14 @@ resource "oci_core_instance" "portfolio_node" {
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      ttyd_password       = var.ttyd_password
-      tunnel_token_b64    = base64encode(var.cloudflare_tunnel_token)
-      hermes_env_b64      = base64encode(local.hermes_env)
-      dsh_env_b64         = base64encode(local.dsh_env)
-      hermes_config_gzb64 = base64gzip(file("${path.module}/../hermes/config.yaml"))
-      provision_gzb64     = base64gzip(file("${path.module}/../../scripts/provision.sh"))
-      hermes_setup_gzb64  = base64gzip(file("${path.module}/../../scripts/hermes-setup.sh"))
-      maintenance_gzb64   = base64gzip(file("${path.module}/../../scripts/maintenance.sh"))
+      ttyd_password        = var.ttyd_password
+      tunnel_token_b64     = base64encode(var.cloudflare_tunnel_token)
+      hermes_env_b64       = base64encode(local.hermes_env)
+      dsh_env_b64          = base64encode(local.dsh_env)
+      hermes_config_gzb64  = base64gzip(file("${path.module}/../hermes/config.yaml"))
+      hermes_compose_gzb64 = base64gzip(file("${path.module}/../hermes/docker-compose.yml"))
+      provision_gzb64      = base64gzip(file("${path.module}/../../scripts/provision.sh"))
+      maintenance_gzb64    = base64gzip(file("${path.module}/../../scripts/maintenance.sh"))
     }))
   }
 
