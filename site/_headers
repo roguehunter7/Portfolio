@@ -1,15 +1,20 @@
+# Minimal, failure-proof header set for a fully static site with no user input,
+# no third-party origins and no dynamic code. Deliberately no CSP: with nothing
+# to inject into, script-src 'self' would not have stopped the only plausible
+# attack (a compromised repo or deploy token can publish a same-origin script),
+# and the policy's exceptions were a real source of breakage.
 /*
-  Minimal, failure-proof header set for a fully static site with no user input,
-  no third-party origins and no dynamic code. Deliberately no CSP: with nothing
-  to inject into, script-src 'self' would not have stopped the only plausible
-  attack (a compromised repo or deploy token can publish a same-origin script),
-  and the policy's exceptions were a real source of breakage.
-
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# Diagram pages are embedded same-origin by /archive. Detach the global DENY and
+# re-set it to SAMEORIGIN, otherwise the browser blocks every diagram iframe.
+/diagrams/*
+  ! X-Frame-Options
+  X-Frame-Options: SAMEORIGIN
 
 # Rendered fresh by CI; keep visitors from holding a stale copy.
 /resume.pdf
