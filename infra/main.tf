@@ -127,7 +127,7 @@ resource "google_compute_instance" "vm_instance" {
 
     # 5. Maintenance cron:
     #    - Daily 03:00: run backup.sh — SQLite -> GCS via the metadata SA token,
-    #      prune to the newest 5. Guarded on backup.sh existing so a pre-deploy
+    #      prune to the newest 10. Guarded on backup.sh existing so a pre-deploy
     #      morning cron is a clean no-op.
     #    - 5th of month 03:05: refresh container images, upgrade host OS, reboot.
     #    Written via printf (not a heredoc) so the crontab lines start at column 0.

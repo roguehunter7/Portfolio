@@ -37,18 +37,24 @@ jobs:
         working-directory: infra
         run: terraform init -input=false
 
-      - name: Pre-rebuild backup (rebuild path)
-        if: ${{ inputs.rebuild_vm }}
-        # Refresh the snapshot from the live VM first so the post-rebuild restore
-        # is current. Best-effort: a dead VM must not block recovery from the
-        # last nightly backup.
+      - name: Pre-deploy backup
+        # Refresh the snapshot from the live VM before apply, so a forced VM
+        # replacement (e.g. a startup-script change) cannot lose the latest data.
+        # Best-effort: a dead VM must not block recovery from the last nightly.
         continue-on-error: true
         run: |
-          gcloud compute scp infra/vaultwarden/backup.sh portfolio-zero-trust-node:/tmp/backup.sh \
-            --zone="us-central1-a" --quiet --tunnel-through-iap
-          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
-              rm -f /tmp/backup.sh && sudo bash /opt/vaultwarden/backup.sh"
+          for i in 1 2 3; do
+            gcloud compute scp infra/vaultwarden/backup.sh portfolio-zero-trust-node:/tmp/backup.sh \
+              --zone="us-central1-a" --quiet --tunnel-through-iap --ssh-key-expire-after=1h && break
+            echo "backup scp attempt $i failed"; sleep 15
+          done
+          for i in 1 2 3; do
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+              --ssh-key-expire-after=1h \
+              --command="sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
+                rm -f /tmp/backup.sh && sudo bash /opt/vaultwarden/backup.sh" && break
+            echo "backup ssh attempt $i failed"; sleep 15
+          done
 
       - name: Destroy VM (rebuild path)
         if: ${{ inputs.rebuild_vm }}
@@ -64,14 +70,20 @@ jobs:
       - name: Wait for VM boot + startup script
         run: |
           for i in $(seq 1 60); do
-            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap --command="true" >/dev/null 2>&1 && break
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap --ssh-key-expire-after=1h --command="true" >/dev/null 2>&1 && break
             [ "$i" = 60 ] && { echo "VM SSH never came up" >&2; exit 1; }
             sleep 15
           done
-          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="timeout 900 bash -c 'until [ -f /var/log/startup_script_complete ]; do sleep 10; done' || \
-            { echo 'startup script did not complete (see /var/log/startup.log)'; exit 1; }; \
-            docker --version; docker compose version; gcloud --version | head -1"
+          ok=0
+          for i in 1 2 3; do
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+              --ssh-key-expire-after=1h \
+              --command="timeout 900 bash -c 'until [ -f /var/log/startup_script_complete ]; do sleep 10; done' || \
+              { echo 'startup script did not complete (see /var/log/startup.log)'; exit 1; }; \
+              docker --version; docker compose version; gcloud --version | head -1" && { ok=1; break; }
+            echo "startup wait attempt $i failed"; sleep 15
+          done
+          [ "$ok" = 1 ] || { echo "startup script check failed" >&2; exit 1; }
 
       - name: Push compose + secrets, start stack
         env:
@@ -88,28 +100,45 @@ jobs:
           EOF
           chmod 600 /tmp/vw.env
 
-          gcloud compute scp \
-            infra/vaultwarden/docker-compose.yml infra/vaultwarden/backup.sh infra/vaultwarden/restore.sh /tmp/vw.env \
-            portfolio-zero-trust-node:/tmp/ \
-            --zone="us-central1-a" --quiet --tunnel-through-iap
+          scp_ok=0
+          for i in 1 2 3 4 5; do
+            gcloud compute scp \
+              infra/vaultwarden/docker-compose.yml infra/vaultwarden/backup.sh infra/vaultwarden/restore.sh /tmp/vw.env \
+              portfolio-zero-trust-node:/tmp/ \
+              --zone="us-central1-a" --quiet --tunnel-through-iap --ssh-key-expire-after=1h && { scp_ok=1; break; }
+            echo "scp attempt $i failed"; sleep 15
+          done
+          [ "$scp_ok" = 1 ] || { echo "could not copy files to the VM" >&2; exit 1; }
 
-          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="sudo install -d -m 0755 -o root -g root /opt/vaultwarden && \
-              sudo install -m 0644 -o root -g root /tmp/docker-compose.yml /opt/vaultwarden/docker-compose.yml && \
-              sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
-              sudo install -m 0755 -o root -g root /tmp/restore.sh /opt/vaultwarden/restore.sh && \
-              sudo install -m 0600 -o root -g root /tmp/vw.env /opt/vaultwarden/.env && \
-              rm -f /tmp/vw.env /tmp/docker-compose.yml /tmp/backup.sh /tmp/restore.sh && \
-              sudo /opt/vaultwarden/restore.sh '${{ inputs.rebuild_vm }}' && \
-              cd /opt/vaultwarden && sudo docker compose up -d --force-recreate"
+          ssh_ok=0
+          for i in 1 2 3 4 5; do
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+              --ssh-key-expire-after=1h \
+              --command="sudo install -d -m 0755 -o root -g root /opt/vaultwarden && \
+                sudo install -m 0644 -o root -g root /tmp/docker-compose.yml /opt/vaultwarden/docker-compose.yml && \
+                sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
+                sudo install -m 0755 -o root -g root /tmp/restore.sh /opt/vaultwarden/restore.sh && \
+                sudo install -m 0600 -o root -g root /tmp/vw.env /opt/vaultwarden/.env && \
+                rm -f /tmp/vw.env /tmp/docker-compose.yml /tmp/backup.sh /tmp/restore.sh && \
+                sudo /opt/vaultwarden/restore.sh '${{ inputs.rebuild_vm }}' && \
+                cd /opt/vaultwarden && sudo docker compose up -d --force-recreate" && { ssh_ok=1; break; }
+            echo "ssh attempt $i failed"; sleep 15
+          done
+          [ "$ssh_ok" = 1 ] || { echo "deploy over SSH failed" >&2; exit 1; }
 
       - name: Verify stack
         run: |
-          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
-            --command="cd /opt/vaultwarden && \
-              echo '--- compose ---' && sudo docker compose ps && \
-              echo '--- alive ---' && curl -fsS http://localhost:8000/alive && echo && \
-              echo '--- env keys (values hidden) ---' && sudo grep -cE '^(TUNNEL_TOKEN|ADMIN_TOKEN)=' /opt/vaultwarden/.env && \
-              echo '--- backup ---' && sudo test -f /opt/vaultwarden/backup.sh && echo 'backup.sh present' && \
-              sudo test -f /opt/vaultwarden/restore.sh && echo 'restore.sh present' && \
-              echo '--- tunnel ---' && sudo docker logs cloudflared --tail 30 2>&1 | grep -iE 'registered|error' | tail -5"
+          ok=0
+          for i in 1 2 3; do
+            gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+              --ssh-key-expire-after=1h \
+              --command="cd /opt/vaultwarden && \
+                echo '--- compose ---' && sudo docker compose ps && \
+                echo '--- alive ---' && curl -fsS http://localhost:8000/alive && echo && \
+                echo '--- env keys (values hidden) ---' && sudo grep -cE '^(TUNNEL_TOKEN|ADMIN_TOKEN)=' /opt/vaultwarden/.env && \
+                echo '--- backup ---' && sudo test -f /opt/vaultwarden/backup.sh && echo 'backup.sh present' && \
+                sudo test -f /opt/vaultwarden/restore.sh && echo 'restore.sh present' && \
+                echo '--- tunnel ---' && (sudo docker logs cloudflared --tail 30 2>&1 | grep -iE 'registered|error' | tail -5 || true)" && { ok=1; break; }
+            echo "verify attempt $i failed"; sleep 15
+          done
+          [ "$ok" = 1 ] || { echo "verify failed" >&2; exit 1; }
