@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Archive — Sreeram K R</title>
-<meta name="description" content="Phase-by-phase archive of a zero-ingress infrastructure case study: from a bare VM to Cloudflare Pages and a self-hosted password vault.">
+<meta name="description" content="Phase-by-phase archive of a cloud infrastructure case study with no open ports: from a bare VM to Cloudflare Pages and a self-hosted password vault.">
 <meta property="og:title" content="Infrastructure Archive — Sreeram K R">
-<meta property="og:description" content="Six phases, each with its own architecture diagram and the reason behind it.">
+<meta property="og:description" content="Seven phases, each with its own architecture diagram and the reason behind it.">
 <meta property="og:image" content="https://sreeramkr.com/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -24,11 +24,6 @@ document.documentElement.dataset.theme =
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-<svg class="d-sprite" aria-hidden="true" focusable="false"><defs>
-  <marker id="d-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-    <path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/>
-  </marker>
-</defs></svg>
 <div class="container container--wide">
   <nav class="site-nav">
     <span class="brand"><span class="brand-mark">sk_</span><span class="brand-name">Sreeram K R</span></span>
@@ -47,7 +42,7 @@ document.documentElement.dataset.theme =
       — so the reasoning is as visible as the code. Everything here is grounded in the repository's commit history.
     </p>
     <p class="archive-meta measure">
-      The repo previously told this as phases 1-9 across its own README and site. It's consolidated here into six
+      The repo previously told this as phases 1-9 across its own README and site. It's consolidated here into seven
       phases grouped by the real architectural arc; the commit history still shows the full, finer-grained sequence.
     </p>
   </header>
@@ -56,10 +51,11 @@ document.documentElement.dataset.theme =
     <aside class="phase-rail" aria-label="Phase navigation">
       <a href="#phase-1"><span class="pr-num">01</span>Bootstrap &amp; GitOps</a>
       <a href="#phase-2"><span class="pr-num">02</span>Observability &amp; IaC</a>
-      <a href="#phase-3"><span class="pr-num">03</span>Zero-ingress Compose</a>
+      <a href="#phase-3"><span class="pr-num">03</span>No-Open-Ports Compose</a>
       <a href="#phase-4"><span class="pr-num">04</span>Edge migration</a>
       <a href="#phase-5"><span class="pr-num">05</span>Repurposing compute</a>
       <a href="#phase-6"><span class="pr-num">06</span>Vaultwarden host</a>
+      <a href="#phase-7"><span class="pr-num">07</span>Oracle dev box + Hermes</a>
     </aside>
 
     <div class="archive-content">
@@ -90,43 +86,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <svg class="diagram" viewBox="22 19 856 239" role="img" aria-labelledby="p1t p1d" xmlns="http://www.w3.org/2000/svg">
-  <title id="p1t">Phase 1 — Bootstrap and GitOps polling</title>
-  <desc id="p1d">A developer pushes a commit to the GitHub repository. The cloud VM polls the repository for a SHA delta and redeploys. Inside the VM, Nginx serves the static site to visitors. Terraform declares the VM.</desc>
-
-  <rect class="d-n" x="30" y="30" width="180" height="44"/>
-  <text class="d-t" x="120" y="58">Developer</text>
-
-  <rect class="d-n" x="250" y="30" width="180" height="44"/>
-  <text class="d-m" x="340" y="58">GitHub Repo</text>
-
-  <path class="d-e" d="M210 52 H242" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="226" y="42" text-anchor="middle">push commit</text>
-
-  <rect class="d-z" x="230" y="130" width="640" height="120"/>
-  <text class="d-zl" x="246" y="162">Cloud VM</text>
-
-  <path class="d-e" d="M340 74 V180" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="348" y="122">poll for SHA delta</text>
-
-  <rect class="d-n" x="250" y="180" width="180" height="44"/>
-  <text class="d-m" x="340" y="208">Nginx</text>
-
-  <rect class="d-n" x="470" y="180" width="180" height="44"/>
-  <text class="d-t" x="560" y="208">Static site</text>
-
-  <rect class="d-n" x="690" y="180" width="180" height="44"/>
-  <text class="d-t" x="780" y="208">Visitors</text>
-
-  <path class="d-e" d="M430 202 H462" marker-end="url(#d-arrow)"/>
-  <path class="d-e" d="M650 202 H682" marker-end="url(#d-arrow)"/>
-
-  <rect class="d-n dim" x="30" y="180" width="180" height="44"/>
-  <text class="d-t" x="120" y="208">Terraform</text>
-
-  <path class="d-e" d="M210 202 H224" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="222" y="192" text-anchor="end">declares</text>
-</svg>
+          <iframe class="diagram-frame" src="/diagrams/phase1-bootstrap.html" title="Phase 1 architecture diagram — Bootstrap and GitOps polling" loading="lazy"></iframe>
           <figcaption>Developer to GitHub to the box: the VM polls for a SHA delta and redeploys; Terraform declares it.</figcaption>
         </figure>
       </article>
@@ -160,70 +120,14 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <svg class="diagram" viewBox="22 19 863 379" role="img" aria-labelledby="p2t p2d" xmlns="http://www.w3.org/2000/svg">
-  <title id="p2t">Phase 2 — Observability and IaC serverless</title>
-  <desc id="p2d">A developer pushes to GitHub Actions, which builds and pushes an image to Artifact Registry and authenticates through Workload Identity to deploy Cloud Run. Cloud Run writes to Firestore and serves an API to the Nginx frontend on the VM. A stub_status metrics daemon sends telemetry to the site.</desc>
-
-  <rect class="d-n" x="30" y="30" width="180" height="44"/>
-  <text class="d-t" x="120" y="58">Developer</text>
-
-  <rect class="d-n acc" x="250" y="30" width="180" height="44"/>
-  <text class="d-m" x="340" y="58">GitHub Actions</text>
-
-  <rect class="d-n" x="470" y="30" width="180" height="44"/>
-  <text class="d-t" x="560" y="58">Artifact Registry</text>
-
-  <rect class="d-n" x="690" y="30" width="180" height="44"/>
-  <text class="d-t" x="780" y="58">Firestore</text>
-
-  <path class="d-e" d="M210 52 H242" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="226" y="42" text-anchor="middle">git push</text>
-
-  <path class="d-e" d="M430 52 H462" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="446" y="42" text-anchor="middle">build + push</text>
-
-  <rect class="d-n" x="30" y="140" width="180" height="44"/>
-  <text class="d-t" x="120" y="168">Metrics daemon</text>
-
-  <rect class="d-n" x="470" y="140" width="180" height="44"/>
-  <text class="d-t" x="560" y="168">Workload Identity</text>
-
-  <rect class="d-n acc" x="690" y="140" width="180" height="44"/>
-  <text class="d-m" x="780" y="168">Cloud Run</text>
-
-  <path class="d-e" d="M340 74 V118 H560 V132" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="352" y="112">OIDC / WIF</text>
-
-  <path class="d-e" d="M650 162 H682" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="666" y="152" text-anchor="middle">deploy</text>
-
-  <path class="d-e" d="M780 140 V82" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="788" y="112">SDK writes</text>
-
-  <rect class="d-z" x="30" y="240" width="500" height="150"/>
-  <text class="d-zl" x="46" y="271">Cloud VM</text>
-
-  <rect class="d-n" x="60" y="290" width="180" height="44"/>
-  <text class="d-m" x="150" y="318">Nginx</text>
-
-  <rect class="d-n" x="290" y="290" width="180" height="44"/>
-  <text class="d-t" x="380" y="318">Site + resume</text>
-
-  <path class="d-e" d="M690 184 V206 H150 V282" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="700" y="200">API</text>
-
-  <path class="d-e" d="M120 184 V226 H380 V282" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="200" y="220">telemetry</text>
-
-  <path class="d-e" d="M240 312 H282" marker-end="url(#d-arrow)"/>
-</svg>
+          <iframe class="diagram-frame" src="/diagrams/phase2-serverless.html" title="Phase 2 architecture diagram — Observability and IaC serverless" loading="lazy"></iframe>
           <figcaption>CI builds and deploys Cloud Run keylessly through WIF; the API writes to Firestore and the VM metrics daemon feeds the site.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 3 -->
       <article class="archive-entry js-reveal" id="phase-3" data-phase="03">
-        <h3>Phase 3 — Zero-ingress Docker Compose</h3>
+        <h3>Phase 3 — No-Open-Ports Docker Compose</h3>
         <p class="archive-tagline">The cost of serverless pushed everything back behind a no-public-ports host.</p>
         <p class="archive-meta">July 2026</p>
         <div class="archive-block">
@@ -232,7 +136,7 @@ document.documentElement.dataset.theme =
             Cloud Run + Artifact Registry + Firestore read/write fees accumulated for a low-traffic portfolio,
             breaking the "$0/month" goal. The lesson was honest: serverless removed VM maintenance but added a cost
             vector the workload didn't justify. We returned to a single free-tier VM — but this time with a
-            fundamentally more secure posture: <strong>zero exposed ports</strong>.
+            fundamentally more secure posture: <strong>no open ports</strong>.
           </p>
         </div>
         <div class="archive-block">
@@ -240,64 +144,19 @@ document.documentElement.dataset.theme =
           <p>
             We removed the tracker API and rebuilt the stack as a <strong>Docker Compose</strong> project: Nginx and
             <code>cloudflared</code> containers on an isolated Compose network. All ingress arrives via a
-            <strong>Cloudflare Tunnel</strong> (outbound connection), so the host exposes no public port. We pinned the
+            <strong>Cloudflare Tunnel</strong> (outbound connection), so the host exposes no open ports. We pinned the
             tunnel image, hardened the VM bootstrap and Nginx, added a VM-readiness check to the deploy, and released
             the project under MIT.
           </p>
           <ul>
-            <li><strong>Ingress:</strong> Cloudflare Tunnel only — zero public ports, no host firewall exposure.</li>
+            <li><strong>Ingress:</strong> Cloudflare Tunnel only — no open ports, no host firewall exposure.</li>
             <li><strong>Runtime:</strong> Docker Compose v2, pinned tunnel image, hardened Nginx + VM bootstrapping.</li>
             <li><strong>Pipeline:</strong> VM-readiness check before deploy; images built in CI and pulled anonymously.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <svg class="diagram" viewBox="32 18 816 594" role="img" aria-labelledby="p3t p3d" xmlns="http://www.w3.org/2000/svg">
-  <title id="p3t">Phase 3 — Zero-ingress Docker Compose</title>
-  <desc id="p3d">A visitor reaches Cloudflare Edge over HTTPS; the edge forwards through a cloudflared tunnel into a VM with no public ports. Inside the VM, a Docker Compose network links the tunnel to Nginx and the static site. GitHub Actions builds the image, which the VM pulls anonymously.</desc>
-
-  <rect class="d-n" x="90" y="30" width="150" height="44"/>
-  <text class="d-t" x="165" y="58">Visitor</text>
-
-  <rect class="d-n acc" x="330" y="30" width="150" height="44"/>
-  <text class="d-t" x="405" y="58">Cloudflare Edge</text>
-
-  <path class="d-e acc" d="M240 52 H322" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="281" y="42" text-anchor="middle">HTTPS</text>
-
-  <rect class="d-z" x="40" y="130" width="800" height="350"/>
-  <text class="d-zl" x="56" y="162">VM — zero public ports</text>
-
-  <rect class="d-z2" x="70" y="180" width="740" height="270"/>
-  <text class="d-zl2" x="794" y="211" text-anchor="end">Docker Compose network (private)</text>
-
-  <path class="d-e acc" d="M405 74 V172 H165 V242" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="415" y="146">tunnel (outbound)</text>
-
-  <rect class="d-n acc" x="90" y="250" width="150" height="44"/>
-  <text class="d-m" x="165" y="278">cloudflared</text>
-
-  <rect class="d-n" x="330" y="250" width="150" height="44"/>
-  <text class="d-m" x="405" y="278">Nginx</text>
-
-  <rect class="d-n" x="570" y="250" width="150" height="44"/>
-  <text class="d-t" x="645" y="278">Site + resume</text>
-
-  <path class="d-e" d="M240 272 H322" marker-end="url(#d-arrow)"/>
-  <path class="d-e" d="M480 272 H562" marker-end="url(#d-arrow)"/>
-
-  <rect class="d-n" x="90" y="560" width="150" height="44"/>
-  <text class="d-m" x="165" y="588">GitHub Actions</text>
-
-  <rect class="d-n" x="330" y="560" width="150" height="44"/>
-  <text class="d-t" x="405" y="588">Image pull</text>
-
-  <path class="d-e" d="M240 582 H322" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="281" y="572" text-anchor="middle">build</text>
-
-  <path class="d-e" d="M405 560 V500 H645 V302" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="415" y="514">anonymous pull</text>
-</svg>
-          <figcaption>Visitor to Cloudflare Edge to a tunnel into a host with no public ports; the image is pulled anonymously.</figcaption>
+          <iframe class="diagram-frame" src="/diagrams/phase3-compose.html" title="Phase 3 architecture diagram — No-open-ports Docker Compose" loading="lazy"></iframe>
+          <figcaption>Visitor to Cloudflare Edge to a tunnel into a host with no open ports; the image is pulled anonymously.</figcaption>
         </figure>
       </article>
 
@@ -333,55 +192,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <svg class="diagram" viewBox="22 19 856 273" role="img" aria-labelledby="p4t p4d" xmlns="http://www.w3.org/2000/svg">
-  <title id="p4t">Phase 4 — Edge migration to Cloudflare Pages</title>
-  <desc id="p4d">A developer pushes to GitHub Actions, which renders the resume PDF and deploys the static site to Cloudflare Pages with wrangler. Visitors reach Cloudflare Edge over HTTPS, which serves index.html, resume.html and the PDF from Pages.</desc>
-
-  <rect class="d-n" x="30" y="30" width="180" height="44"/>
-  <text class="d-t" x="120" y="58">Developer</text>
-
-  <rect class="d-n acc" x="250" y="30" width="180" height="44"/>
-  <text class="d-m" x="340" y="58">GitHub Actions</text>
-
-  <rect class="d-n" x="470" y="30" width="180" height="44"/>
-  <text class="d-t" x="560" y="58">Resume PDF</text>
-
-  <rect class="d-n" x="30" y="140" width="180" height="44"/>
-  <text class="d-t" x="120" y="168">Visitor</text>
-
-  <rect class="d-n acc" x="250" y="140" width="180" height="44"/>
-  <text class="d-t" x="340" y="168">Cloudflare Edge</text>
-
-  <rect class="d-n acc" x="470" y="140" width="180" height="44"/>
-  <text class="d-t" x="560" y="168">Cloudflare Pages</text>
-
-  <rect class="d-n" x="690" y="140" width="180" height="44"/>
-  <text class="d-m" x="780" y="168">index.html</text>
-
-  <rect class="d-n" x="690" y="240" width="180" height="44"/>
-  <text class="d-m" x="780" y="268">resume.html</text>
-
-  <path class="d-e" d="M210 52 H242" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="226" y="42" text-anchor="middle">git push</text>
-
-  <path class="d-e" d="M430 52 H462" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="446" y="42" text-anchor="middle">render</text>
-
-  <path class="d-e" d="M340 74 V110 H560 V132" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="352" y="104">wrangler deploy</text>
-
-  <path class="d-e acc" d="M210 162 H242" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="226" y="152" text-anchor="middle">HTTPS</text>
-
-  <path class="d-e" d="M430 162 H462" marker-end="url(#d-arrow)"/>
-
-  <path class="d-e" d="M560 140 V82" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="568" y="112">serves</text>
-
-  <path class="d-e" d="M650 162 H682" marker-end="url(#d-arrow)"/>
-
-  <path class="d-e" d="M560 184 V240 H682" marker-end="url(#d-arrow)"/>
-</svg>
+          <iframe class="diagram-frame" src="/diagrams/phase4-edge.html" title="Phase 4 architecture diagram — Edge migration to Cloudflare Pages" loading="lazy"></iframe>
           <figcaption>CI renders the resume PDF and publishes to Pages; visitors reach the edge directly.</figcaption>
         </figure>
       </article>
@@ -389,14 +200,14 @@ document.documentElement.dataset.theme =
       <!-- Phase 5 -->
       <article class="archive-entry js-reveal" id="phase-5" data-phase="05">
         <h3>Phase 5 — Repurposing the compute</h3>
-        <p class="archive-tagline">Freed VMs become an AI host and a zero-ingress dev box.</p>
+        <p class="archive-tagline">Freed VMs become an AI host and a dev box with no open ports.</p>
         <p class="archive-meta">August 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
             Once the site was on Pages, the free-tier VMs were idle capacity. Rather than shut them down, we
             re-purposed them: first a self-hosted AI assistant, then a browser-accessible development box — both
-            keeping the zero-ingress posture so no port is ever reachable from the internet.
+            keeping the no-open-ports posture so no port is ever reachable from the internet.
           </p>
         </div>
         <div class="archive-block">
@@ -405,92 +216,26 @@ document.documentElement.dataset.theme =
             We provisioned a <strong>Hermes</strong> AI-assistant host (outbound-only: Telegram polling + an LLM API,
             admin via IAP SSH), with a <code>resume.json</code> master data file and DeepSeek backend. Then we built an
             <strong>Oracle Cloud Always-Free A1.Flex</strong> dev box provisioned by Terraform + GitHub Actions: a
-            ttyd + tmux browser terminal, Node LTS via nvm, a hardened firewall, and cost guardrails (tenancy-wide
+            ttyd browser terminal, Node LTS via nvm, a hardened firewall, and cost guardrails (tenancy-wide
             budget + quota that denies everything except the Always-Free allocation).
           </p>
           <ul>
             <li><strong>Hermes host:</strong> outbound-only AI assistant, DeepSeek backend, Telegram pairing, IAP SSH admin.</li>
-            <li><strong>Oracle dev box:</strong> A1.Flex (2 OCPU / 12 GB), cloudflared SSH, browser terminal, weekly maintenance.</li>
+            <li><strong>Oracle dev box:</strong> A1.Flex (2 OCPU / 12 GB), cloudflared tunnel, browser terminal, monthly maintenance.</li>
             <li><strong>Guardrails:</strong> tenancy budget + compute/storage quotas limiting to the Always-Free tier ($0).</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <svg class="diagram" viewBox="22 22 856 452" role="img" aria-labelledby="p5t p5d" xmlns="http://www.w3.org/2000/svg">
-  <title id="p5t">Phase 5 — Repurposing the compute</title>
-  <desc id="p5d">A GCP e2-micro runs a Hermes AI assistant that polls Telegram outbound and calls the DeepSeek API, administered over IAP SSH. An Oracle A1.Flex dev box runs a browser terminal into ttyd and tmux with Node LTS, reached through a Cloudflare Tunnel, provisioned by Terraform with cost guardrails, and administered via serial console.</desc>
-
-  <rect class="d-z" x="30" y="30" width="400" height="240"/>
-  <text class="d-zl" x="46" y="62">GCP e2-micro</text>
-
-  <rect class="d-n" x="55" y="70" width="150" height="44"/>
-  <text class="d-t" x="130" y="98">Hermes</text>
-
-  <rect class="d-n" x="255" y="70" width="150" height="44"/>
-  <text class="d-t" x="330" y="98">Telegram</text>
-
-  <rect class="d-n" x="55" y="180" width="150" height="44"/>
-  <text class="d-t" x="130" y="208">Admin</text>
-
-  <rect class="d-n" x="255" y="180" width="150" height="44"/>
-  <text class="d-t" x="330" y="208">DeepSeek API</text>
-
-  <path class="d-e" d="M205 92 H247" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="226" y="84" text-anchor="middle">poll</text>
-
-  <path class="d-e" d="M205 92 H230 V202 H247" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="238" y="150">API</text>
-
-  <path class="d-e" d="M130 180 V122" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="138" y="154">IAP SSH</text>
-
-  <rect class="d-z" x="470" y="30" width="400" height="330"/>
-  <text class="d-zl" x="486" y="62">Oracle A1.Flex</text>
-
-  <rect class="d-n" x="487" y="70" width="175" height="44"/>
-  <text class="d-t" x="575" y="98">Browser terminal</text>
-
-  <rect class="d-n" x="487" y="170" width="175" height="44"/>
-  <text class="d-m" x="575" y="198">ttyd + tmux</text>
-
-  <rect class="d-n" x="487" y="270" width="175" height="44"/>
-  <text class="d-t" x="575" y="298">Node LTS</text>
-
-  <path class="d-e" d="M575 114 V162" marker-end="url(#d-arrow)"/>
-  <path class="d-e" d="M575 214 V262" marker-end="url(#d-arrow)"/>
-
-  <rect class="d-n acc" x="700" y="70" width="175" height="44"/>
-  <text class="d-t" x="787.5" y="98">Cloudflare Tunnel</text>
-
-  <rect class="d-n" x="700" y="170" width="175" height="44"/>
-  <text class="d-t" x="787.5" y="198">Developer</text>
-
-  <rect class="d-n" x="700" y="270" width="175" height="44"/>
-  <text class="d-m" x="787.5" y="298">Terraform + CI</text>
-
-  <path class="d-e acc" d="M700 92 H662" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="681" y="82" text-anchor="middle">HTTPS</text>
-
-  <path class="d-e" d="M787.5 170 V122" marker-end="url(#d-arrow)"/>
-
-  <path class="d-e" d="M700 292 H665 V92 H658" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="668" y="140">provision,</text>
-  <text class="d-l" x="668" y="154">cost-guarded</text>
-
-  <rect class="d-n" x="700" y="400" width="175" height="44"/>
-  <text class="d-t" x="787.5" y="428">Admin (serial)</text>
-
-  <path class="d-e" d="M787.5 400 V366 H680 V118 H658" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="686" y="360">serial console</text>
-</svg>
-          <figcaption>The freed compute: a Hermes AI host on GCP and a zero-ingress Oracle dev box, both cost-guarded.</figcaption>
+          <iframe class="diagram-frame" src="/diagrams/phase5-repurposing.html" title="Phase 5 architecture diagram — Repurposing the compute" loading="lazy"></iframe>
+          <figcaption>The freed compute: a Hermes AI host on GCP and an Oracle dev box with no open ports, both cost-guarded.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 6 -->
       <article class="archive-entry js-reveal" id="phase-6" data-phase="06">
-        <h3>Phase 6 — Vaultwarden host (current)</h3>
-        <p class="archive-tagline">The GCP VM becomes a zero-ingress self-hosted password vault.</p>
-        <p class="archive-meta">August 2026 — current</p>
+        <h3>Phase 6 — Vaultwarden host</h3>
+        <p class="archive-tagline">The GCP VM becomes a self-hosted password vault with no open ports.</p>
+        <p class="archive-meta">August 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
@@ -507,73 +252,63 @@ document.documentElement.dataset.theme =
             Secrets live in a root-owned <code>0600 .env</code> written by CI, and the Argon2 admin token is
             interpolated correctly (<code>$</code> doubled). It runs on a <strong>least-privilege service account</strong>
             scoped to one private GCS bucket, with a nightly SQLite backup that prunes to the newest five. Admin is
-            over IAP SSH; no public ports.
+            over IAP SSH; no open ports.
           </p>
           <ul>
-            <li><strong>Zero ingress:</strong> deny-all firewall + IAP-only SSH; loopback-only <code>:8000</code>.</li>
+            <li><strong>No open ports:</strong> deny-all firewall + IAP-only SSH; loopback-only <code>:8000</code>.</li>
             <li><strong>Secrets:</strong> <code>0600 .env</code> via <code>env_file</code>, correct <code>$</code> escaping.</li>
             <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 5.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <svg class="diagram" viewBox="32 13 846 527" role="img" aria-labelledby="p6t p6d" xmlns="http://www.w3.org/2000/svg">
-  <title id="p6t">Phase 6 — Vaultwarden host, zero-ingress password vault</title>
-  <desc id="p6d">A vault user reaches Cloudflare Edge over HTTPS at vault.sreeramkr.com. The edge forwards through a cloudflared tunnel into a GCP e2-micro with a deny-all firewall. Inside the host, Vaultwarden listens only on loopback port 8000, stores state in a SQLite database, and a nightly backup script uploads it to a private GCS bucket using the instance metadata service-account token. Admin access is IAP-only SSH; CI writes a 0600 .env file over IAP.</desc>
-
-  <rect class="d-n" x="40" y="24" width="160" height="44"/>
-  <text class="d-t" x="120" y="52">Vault user</text>
-
-  <rect class="d-n acc" x="380" y="24" width="160" height="44"/>
-  <text class="d-t" x="460" y="52">Cloudflare Edge</text>
-
-  <path class="d-e acc" d="M200 46 H372" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="286" y="36" text-anchor="middle">HTTPS vault.sreeramkr.com</text>
-
-  <rect class="d-z" x="250" y="118" width="620" height="316"/>
-  <text class="d-zl" x="854" y="148" text-anchor="end">GCP e2-micro — zero ingress</text>
-
-  <path class="d-e acc" d="M460 68 V120 H380 V152" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="470" y="110">tunnel</text>
-
-  <rect class="d-n" x="300" y="158" width="160" height="44"/>
-  <text class="d-m" x="380" y="186">cloudflared</text>
-
-  <rect class="d-n acc" x="530" y="158" width="230" height="44"/>
-  <text class="d-m" x="645" y="180">Vaultwarden</text>
-  <text class="d-s" x="645" y="196">loopback :8000 only</text>
-
-  <path class="d-e" d="M460 180 H522" marker-end="url(#d-arrow)"/>
-
-  <rect class="d-n" x="555" y="248" width="180" height="44"/>
-  <text class="d-m" x="645" y="276">vw-data (SQLite)</text>
-  <path class="d-e" d="M645 202 V240" marker-end="url(#d-arrow)"/>
-
-  <rect class="d-n" x="555" y="336" width="180" height="44"/>
-  <text class="d-m" x="645" y="364">backup.sh</text>
-  <path class="d-e" d="M645 292 V328" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="655" y="316">nightly 03:00</text>
-
-  <rect class="d-n" x="555" y="486" width="180" height="46"/>
-  <text class="d-t" x="645" y="506">Private GCS bucket</text>
-  <text class="d-s" x="645" y="522">storage.objectUser</text>
-  <path class="d-e" d="M645 380 V478" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="655" y="432">metadata SA token</text>
-
-  <rect class="d-n" x="40" y="200" width="160" height="44"/>
-  <text class="d-t" x="120" y="228">Admin</text>
-  <path class="d-e" d="M200 222 H522" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="210" y="214">IAP-only SSH</text>
-
-  <rect class="d-n" x="40" y="300" width="160" height="44"/>
-  <text class="d-t" x="120" y="328">GitHub Actions</text>
-  <path class="d-e" d="M200 322 H300 V262 H522" marker-end="url(#d-arrow)"/>
-  <text class="d-l" x="310" y="314">writes .env 0600</text>
-
-  <text class="d-note" x="40" y="400">&#10003; 0 public ports</text>
-  <text class="d-note" x="40" y="422">&#10003; secrets root-owned 0600</text>
-  <text class="d-note" x="40" y="444">&#10003; backup pruned to newest 5</text>
-</svg>
+          <iframe class="diagram-frame" src="/diagrams/phase6-vaultwarden.html" title="Phase 6 architecture diagram — Vaultwarden host" loading="lazy"></iframe>
           <figcaption>The GCP box becomes a loopback-only Vaultwarden behind the tunnel, with nightly backups to a private bucket.</figcaption>
+        </figure>
+      </article>
+
+      <!-- Phase 7 -->
+      <article class="archive-entry js-reveal" id="phase-7" data-phase="07">
+        <h3>Phase 7 — Oracle dev box + Hermes (current)</h3>
+        <p class="archive-tagline">The freed Oracle compute becomes a no-open-ports Ubuntu dev box running Hermes in Docker.</p>
+        <p class="archive-meta">September 2026 — current</p>
+        <div class="archive-block">
+          <h4>Why</h4>
+          <p>
+            The site had moved to the edge and the free-tier compute was idle. Rather than leave it dark, the
+            Oracle A1.Flex became a general-purpose dev box: a browser terminal over the existing Cloudflare
+            Tunnel, with Hermes moved off GCP into a container on the same host. The GCP <code>e2-micro</code>
+            stays the Vaultwarden host (Phase 6), so this phase covers the whole current fleet.
+          </p>
+        </div>
+        <div class="archive-block">
+          <h4>How</h4>
+          <p>
+            The box runs <strong>Ubuntu 24.04 (aarch64)</strong> on the Always Free A1.Flex shape, provisioned by
+            Terraform + cloud-init from this repository. <code>ttyd</code> serves a plain bash login shell on
+            loopback <code>:7681</code>; the tunnel points <code>ssh.sreeramkr.com</code> at it and Cloudflare
+            Access gates that route — ttyd itself carries no credential. Node and DSH come from nvm: pnpm,
+            <code>@deepseek-ai/dsh@next</code>, the <code>dsh-tui</code> profile, and the Archify web bundle.
+            Hermes runs from the official <code>nousresearch/hermes-agent</code> image with
+            <code>/opt/hermes</code> mounted at <code>/opt/data</code>; Telegram is long-polled outbound and its
+            gateway API stays on loopback <code>:8642</code>. There is no security group: <code>ufw</code> denies
+            inbound and the OpenSSH server is removed, so no service binds a public interface. Vaultwarden keeps
+            running on the GCP box (Phase 6), loopback <code>:8000</code> behind its own tunnel. One monthly
+            maintenance pass updates apt, nvm/DSH, and the Hermes image, then reboots.
+          </p>
+          <ul>
+            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Cloudflare Access in front of the terminal route.</li>
+            <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, OpenSSH removed.</li>
+            <li><strong>Workloads:</strong> ttyd + bash, DSH (tui + web), and Hermes in Docker on loopback.</li>
+            <li><strong>Fleet:</strong> the GCP e2-micro stays the Vaultwarden host from Phase 6.</li>
+          </ul>
+        </div>
+        <figure class="diagram-container">
+          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html" title="Phase 7 architecture diagram — Oracle dev box with Hermes in Docker" loading="lazy"></iframe>
+          <figcaption>The Oracle dev box: Cloudflare Tunnel to loopback services only, ufw denying inbound, and Hermes in its own container.</figcaption>
+        </figure>
+        <figure class="diagram-container">
+          <iframe class="diagram-frame" src="/diagrams/phase7-fleet.html" title="Phase 7 architecture diagram — Zero-ingress fleet with Vaultwarden" loading="lazy"></iframe>
+          <figcaption>The current fleet: the Oracle dev box and the GCP Vaultwarden host, each reached only through its own outbound tunnel.</figcaption>
         </figure>
       </article>
 

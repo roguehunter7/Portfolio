@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sreeram K R | Infrastructure Engineer</title>
-<meta name="description" content="Sreeram K R — Infrastructure Engineer. Zero-ingress infrastructure case study on free-tier cloud (GCP, Oracle), documented phase by phase.">
+<meta name="description" content="Sreeram K R — Infrastructure Engineer. Free-tier cloud infrastructure case study with no open ports (GCP, Oracle), documented phase by phase.">
 <meta property="og:title" content="Sreeram K R | Infrastructure Engineer">
-<meta property="og:description" content="Zero-ingress cloud infrastructure case study — Terraform, GCP, Oracle Cloud, Docker, Cloudflare. Full archive at /archive.">
+<meta property="og:description" content="Cloud infrastructure case study with no open ports — Terraform, GCP, Oracle Cloud, Docker, Cloudflare. Full archive at /archive.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sreeramkr.com">
 <meta property="og:image" content="https://sreeramkr.com/assets/og.png">
@@ -59,7 +59,7 @@ document.documentElement.dataset.theme =
         <h1 class="js-reveal">Sreeram <span class="grad-text">K R</span></h1>
         <div class="subtitle js-reveal">Infrastructure Engineer</div>
         <p class="tagline js-reveal">
-          Automating secure, zero-ingress infrastructure on free-tier cloud. This project is a live
+          Automating secure infrastructure with no open ports on free-tier cloud. This project is a live
           case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
           capacity became a self-hosted password vault — all documented phase by phase.
         </p>
@@ -85,7 +85,7 @@ document.documentElement.dataset.theme =
            aria-hidden="false">
         <div class="terminal-bar">
           <span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span>
-          <span class="t-title">sreeramkr — zsh</span>
+          <span class="t-title">sreeramkr — bash</span>
         </div>
         <div class="terminal-body">
           <div class="t-line"><span class="t-prompt">$</span> <span class="t-cmd" data-type="terraform apply --auto-approve"></span><span class="t-caret" aria-hidden="true"></span></div>
@@ -100,13 +100,13 @@ document.documentElement.dataset.theme =
     <div class="stats">
       <div class="stat"><span class="stat-num">$0</span><span class="stat-label">per month</span></div>
       <div class="stat"><span class="stat-num">100%</span><span class="stat-label">uptime</span></div>
-      <div class="stat"><span class="stat-num">6</span><span class="stat-label">phases documented</span></div>
-      <div class="stat"><span class="stat-num">0</span><span class="stat-label">exposed ports</span></div>
+      <div class="stat"><span class="stat-num">7</span><span class="stat-label">phases documented</span></div>
+      <div class="stat"><span class="stat-num">0</span><span class="stat-label">open ports</span></div>
     </div>
   </header>
 
   <h2 class="section-title">The Story</h2>
-  <p class="section-sub">Six phases, from a hand-built VM to a zero-ingress password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
+  <p class="section-sub">Seven phases, from a hand-built VM to a no-open-ports Oracle dev box and a self-hosted password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
 
   <ol class="timeline">
     <li class="js-reveal">
@@ -120,9 +120,9 @@ document.documentElement.dataset.theme =
       <div class="tl-gist">Live metrics daemon, LaTeX resume in CI, then a full Terraform + Cloud Run / Firestore serverless rebuild.</div>
     </li>
     <li class="js-reveal">
-      <span class="tl-num">03</span><span class="tl-title">Zero-ingress Docker Compose</span>
+      <span class="tl-num">03</span><span class="tl-title">No-Open-Ports Docker Compose</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no public ports, everything through a Cloudflare Tunnel.</div>
+      <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no open ports, everything through a Cloudflare Tunnel.</div>
     </li>
     <li class="js-reveal">
       <span class="tl-num">04</span><span class="tl-title">Edge migration to Cloudflare Pages</span>
@@ -132,12 +132,17 @@ document.documentElement.dataset.theme =
     <li class="js-reveal">
       <span class="tl-num">05</span><span class="tl-title">Repurposing the compute</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">The freed VMs became a Hermes AI host, then a zero-ingress Oracle dev box with a browser terminal.</div>
+      <div class="tl-gist">The freed VMs became a Hermes AI host, then an Oracle dev box with no open ports and a browser terminal.</div>
     </li>
     <li class="js-reveal status-live">
       <span class="tl-num">06</span><span class="tl-title">Vaultwarden host</span>
       <span class="tl-status live">Live</span>
       <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>
+    </li>
+    <li class="js-reveal status-live">
+      <span class="tl-num">07</span><span class="tl-title">Oracle dev box + Hermes</span>
+      <span class="tl-status live">Live</span>
+      <div class="tl-gist">Ubuntu 24.04 dev box with ttyd, DSH and Hermes in Docker — no security group, ufw deny-inbound, OpenSSH removed.</div>
     </li>
   </ol>
 

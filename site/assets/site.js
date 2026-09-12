@@ -1,5 +1,5 @@
 // Shared site behavior: theme toggle + email obfuscation + hero terminal + phase rail.
-// Diagrams are inline SVG themed by CSS variables — no client-side renderer.
+// Each phase embeds a self-contained Archify diagram in an iframe; no client-side renderer.
 (function () {
   'use strict';
 
