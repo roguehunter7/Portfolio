@@ -1,8 +1,8 @@
 # Sreeram K R — Portfolio
 
-A live cloud infrastructure case study with no open ports: a static portfolio site served from Cloudflare
-Pages, with the freed-up free-tier compute re-purposed into a hardened self-hosted password vault.
-Everything runs at **$0/month**, with no open ports.
+A live cloud infrastructure case study with no open ports: a static portfolio site on Cloudflare Pages,
+plus free-tier compute re-purposed into an Oracle dev box (browser terminal, DeepSeek Harness, Hermes in
+Docker) and a self-hosted password vault. Everything runs at **$0/month**, with no open ports.
 
 ## Quick links
 
@@ -49,9 +49,6 @@ The site is static and deployed to Cloudflare Pages:
 bash scripts/render-pdf.sh site/resume.html site/resume.pdf   # render + ATS-assert the PDF
 npx wrangler pages deploy site --project-name=portfolio
 ```
-
-The resume PDF pipeline and the infrastructure code (`infra/`, workflows) are unchanged by the site
-rebuild.
 
 ## License
 

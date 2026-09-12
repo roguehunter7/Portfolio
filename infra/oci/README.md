@@ -20,7 +20,7 @@ reachable arrives over the outbound Cloudflare Tunnel.
 |---|---|---|
 | Cloudflare Tunnel | `cloudflared.service`, outbound | the only ingress path |
 | Browser terminal | `ttyd` + bash, loopback `:7681`, user `ubuntu` | `ssh.sreeramkr.com` |
-| DeepSeek Harness | installed at first boot as `ubuntu` (nvm): pnpm, the `dsh` launcher and the `tui` profile; **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
+| DeepSeek Harness | installed at first boot as `ubuntu` (nvm): pnpm, the `dsh` launcher, the `tui` profile and the `web` profile (Archify bundle); **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
 | Hermes Agent | Docker container from the official image; loopback API only | Telegram (long poll outbound) |
 
 Docker runs **only Hermes**: the official image carries its own Python/Node/Chromium,
@@ -44,7 +44,7 @@ so the host gets no Hermes toolchain and the agent never reads the host's creden
   itself). Both are scoped to this tenancy. Accepted trade-off.
 - `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
   nothing on a running instance — use `destroy_first` to rebuild.
-- OCI caps user data + metadata at **32,000 bytes**. The rendered payload is ~14 KB
+- OCI caps user data + metadata at **32,000 bytes**. The rendered payload is ~16 KB
   (scripts and configs are embedded `gz+b64`); `scripts/check-cloud-init.py` fails CI
   if that ever grows past the cap.
 
@@ -77,7 +77,7 @@ CI reads credentials from GitHub **Secrets / Variables** (names are in
 
 Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 
-1. `ssh.sreeramkr.com` → **HTTP** `127.0.0.1:7681` (ttyd)
+1. `ssh.sreeramkr.com` → **HTTP** `127.0.0.1:7681` (ttyd) — **put Cloudflare Access in front of this one; ttyd has no credential**
 2. `dsh.sreeramkr.com` → **HTTP** `127.0.0.1:3080` (dsh web)
 
 Either `127.0.0.1` or `localhost` works. cloudflared is a Go program, and Go
