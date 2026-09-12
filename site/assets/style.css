@@ -448,7 +448,13 @@ h1, h2, h3, h4 {
    keeps a comfortable measure (a wide card must not mean 100-character lines).
    Archive page only. */
 @media (min-width: 1000px) {
-  .container--wide { max-width: min(1600px, 94vw); }
+  /* Fully fluid: the archive fills the browser width with proportional gutters.
+     Prose keeps its 640px measure; the diagrams use whatever is left. */
+  .container--wide {
+    max-width: none;
+    padding-left: clamp(24px, 3vw, 64px);
+    padding-right: clamp(24px, 3vw, 64px);
+  }
 }
 .archive-entry > h3,
 .archive-entry > p,
@@ -564,12 +570,12 @@ h1, h2, h3, h4 {
 .diagram-frame {
   display: block;
   width: 100%;
-  height: 780px;
+  height: clamp(520px, 58vw, 820px);
   border: 0;
   border-radius: 8px;
   background: var(--diagram-bg);
 }
-@media (max-width: 720px) { .diagram-frame { height: 560px; } }
+
 
 /* Footer */
 .footer-status {
