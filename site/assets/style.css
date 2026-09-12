@@ -448,7 +448,7 @@ h1, h2, h3, h4 {
    keeps a comfortable measure (a wide card must not mean 100-character lines).
    Archive page only. */
 @media (min-width: 1000px) {
-  .container--wide { max-width: 1040px; }
+  .container--wide { max-width: min(1600px, 94vw); }
 }
 .archive-entry > h3,
 .archive-entry > p,
