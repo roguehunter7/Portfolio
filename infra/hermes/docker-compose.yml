@@ -1,4 +1,4 @@
-# Hermes Agent — zero-ingress AI assistant (Telegram polling + DeepSeek API).
+# Hermes Agent — AI assistant with no open ports (Telegram polling + DeepSeek API).
 #
 # Runs on the Oracle A1.Flex dev box next to DeepSeek Harness. The official
 # image carries its own Python/Node/Chromium, so Hermes adds nothing to the

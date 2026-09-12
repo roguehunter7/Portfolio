@@ -1,8 +1,8 @@
 #cloud-config
 # Ubuntu 24.04 (aarch64) — Always Free A1.Flex 2 OCPU / 12 GB dev box.
 #
-# Workloads, all zero-ingress:
-#   - cloudflared tunnel (outbound)  the only way in; NSG has zero rules
+# Workloads, all loopback-only:
+#   - cloudflared tunnel (outbound)  the only way in; no public listeners
 #   - ttyd browser terminal          admin shell, loopback :7681, user ubuntu
 #   - DeepSeek Harness              installed by provision.sh as ubuntu (nvm),
 #                                    run on demand from the terminal; dsh web
@@ -35,10 +35,11 @@ write_files:
   # (browser scrollback). bash --login gives the shell nvm's node/dsh on PATH
   # and DEEPSEEK_API_KEY from ~/.dsh/env. Nothing survives a reboot; sessions
   # are server-side, so dsh-tui resumes with --resume.
-  # 0600: the login credential is in ExecStart, so the unit file must not be
-  # world-readable. Emergency backdoor if ttyd breaks = OCI serial console.
+  # ttyd has no credential of its own: Cloudflare Access fronts
+  # ssh.sreeramkr.com, and the tunnel is the only ingress. Emergency backdoor if
+  # ttyd breaks = OCI serial console.
   - path: /etc/systemd/system/ttyd.service
-    permissions: "0600"
+    permissions: "0644"
     content: |
       [Unit]
       Description=ttyd web terminal (login shell)
@@ -51,7 +52,7 @@ write_files:
       Environment=TERM=xterm-256color
       # -W: writable. --login: source /home/ubuntu/.bashrc, so the shell has
       # nvm's node/dsh and the DSH key without pinning a version path here.
-      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 -c sreeram:${ttyd_password} /usr/bin/bash --login
+      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 /usr/bin/bash --login
       Restart=always
       RestartSec=5
       StandardOutput=append:/var/log/ttyd.log

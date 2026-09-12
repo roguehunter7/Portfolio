@@ -4,7 +4,7 @@ output "instance_id" {
 }
 
 output "instance_public_ip" {
-  description = "Ephemeral public IP (outbound only — NSG has zero ingress rules)"
+  description = "Ephemeral public IP (outbound only — ufw denies inbound)"
   value       = oci_core_instance.portfolio_node.public_ip
 }
 

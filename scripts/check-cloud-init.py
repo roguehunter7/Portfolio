@@ -37,7 +37,6 @@ def b64(text: str) -> str:
 def build_vars() -> dict:
     """Mirror the templatefile() arguments in infra/oci/main.tf."""
     return {
-        "ttyd_password": "p@ss:word$with/specials",
         "tunnel_token_b64": b64("x" * 184),
         "hermes_env_b64": b64(
             "DEEPSEEK_API_KEY=" + "x" * 35 + "\n"

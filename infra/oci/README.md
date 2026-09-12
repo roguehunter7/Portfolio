@@ -1,9 +1,9 @@
 # infra/oci — Ubuntu 24.04 dev box
 
-Zero-ingress Oracle A1.Flex provisioned by GitHub Actions + Terraform. The VM has
-**no public ports**: the NSG has zero ingress rules, `ufw` allows nothing in,
-and `sshd` is disabled at the end of provisioning. Everything reachable arrives over
-the outbound Cloudflare Tunnel.
+No-open-ports Oracle A1.Flex provisioned by GitHub Actions + Terraform. The VM has
+**no open ports**: `ufw` allows nothing in, the OpenSSH server is removed at the
+end of provisioning, and no service binds a public interface. Everything
+reachable arrives over the outbound Cloudflare Tunnel.
 
 ## Why Ubuntu 24.04
 
@@ -34,7 +34,7 @@ so the host gets no Hermes toolchain and the agent never reads the host's creden
 | Compute | `VM.Standard.A1.Flex`, 2 OCPU / 12 GB | 1,500 OCPU-hrs + 9,000 GB-hrs/mo (= 2 OCPU / 12 GB continuous) | within |
 | Block volume | boot volume 50 GB | 200 GB total (boot + block) | within |
 | Object Storage | tfstate bucket (KB-size) | 20 GB | within |
-| Networking | VCN, IGW, route table, subnet, NSG, 1 ephemeral public IP | all $0 | within |
+| Networking | VCN, IGW, route table, subnet, 1 ephemeral public IP | all $0 | within |
 | Image | Canonical Ubuntu 24.04 (aarch64) | Always Free-eligible platform image | within |
 
 **Caveats**
@@ -61,7 +61,7 @@ Telegram  <── long poll (outbound) ── Hermes container ──> api.deeps
 ```
 
 - VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
-- NSG `instance-nsg`: **no rules** (= deny-all ingress); ufw allows nothing in
+- No security group; `ufw` allows nothing in and no service binds a public interface
 - A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 aarch64, 50 GB boot, ephemeral public IP
 - ufw: default deny incoming, allow outgoing; all published ports bound to loopback
 
@@ -71,7 +71,7 @@ CI reads credentials from GitHub **Secrets / Variables** (names are in
 `.github/workflows/oci-provision.yml`):
 
 `OCI_API_KEY`, `OCI_USER_OCID`, `OCI_FINGERPRINT`, `OCI_TENANCY_OCID`,
-`CLOUDFLARE_TUNNEL_TOKEN`, `TTYD_PASSWORD`, `DEEPSEEK_API_KEY`,
+`CLOUDFLARE_TUNNEL_TOKEN`, `DEEPSEEK_API_KEY`,
 `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` (optional); variables:
 `OCI_SSH_PUBLIC_KEY`, `OCI_TFSTATE_BUCKET`.
 
@@ -100,9 +100,10 @@ appears.
 
 ## Access
 
-- **Terminal:** https://ssh.sreeramkr.com → user `sreeram` + the `TTYD_PASSWORD`
-  secret → a bash login shell. History scrolls with the mouse wheel (xterm.js in
-  the browser); Shift+wheel if a TUI has grabbed the mouse.
+- **Terminal:** https://ssh.sreeramkr.com → a bash login shell. Access is gated by
+  **Cloudflare Access** in front of the tunnel route; ttyd itself has no
+  credential. History scrolls with the mouse wheel (xterm.js in the browser);
+  Shift+wheel if a TUI has grabbed the mouse.
 - **dsh-tui (on demand):** `provision.sh` already installed it
   (`dsh plugin --profile tui add @tomowang/dsh-tui`), so at the prompt just run
   `dsh --profile tui` (or `--resume` to reopen a session). It outlives the
@@ -141,7 +142,7 @@ Two consequences worth knowing:
 
 ## Verifying (CI cannot reach the box)
 
-Zero ingress means the workflow can only apply. Verification happens in the browser
+No open ports means the workflow can only apply. Verification happens in the browser
 terminal:
 
 ```bash

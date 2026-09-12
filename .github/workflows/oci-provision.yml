@@ -54,7 +54,6 @@ jobs:
       TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
       TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
       TF_VAR_cloudflare_tunnel_token: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
-      TF_VAR_ttyd_password: ${{ secrets.TTYD_PASSWORD }}
       TF_VAR_deepseek_api_key: ${{ secrets.DEEPSEEK_API_KEY }}
       TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TF_VAR_telegram_allowed_users: ${{ secrets.TELEGRAM_ALLOWED_USERS }}

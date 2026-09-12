@@ -16,7 +16,7 @@ variable "region" {
 # --- VM access --------------------------------------------------------------
 
 variable "ssh_public_key" {
-  description = "Public SSH key injected into the VM (ubuntu user). sshd is disabled, so this is a fallback/console path only. Passed from GitHub var OCI_SSH_PUBLIC_KEY."
+  description = "Public SSH key injected into the VM (ubuntu user). No SSH server runs; kept only as a fallback if one is reinstalled. Passed from GitHub var OCI_SSH_PUBLIC_KEY."
   type        = string
 }
 
@@ -32,12 +32,6 @@ variable "budget_alert_email" {
   description = "Email receiving budget alert notifications when ANY spend is detected."
   type        = string
   default     = "krsreeram007@gmail.com"
-}
-
-variable "ttyd_password" {
-  description = "Password for the ttyd browser terminal login (user: sreeram). Passed from GitHub secret TTYD_PASSWORD."
-  type        = string
-  sensitive   = true
 }
 
 # --- Hermes Agent + DeepSeek Harness (run natively on this box) -------------

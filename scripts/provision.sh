@@ -121,7 +121,7 @@ docker compose -f /opt/hermes/docker-compose.yml up -d || log "WARNING: Hermes c
 
 # --- 10. Services + host firewall ------------------------------------------
 systemctl enable --now cron
-# Nothing inbound: the NSG already denies everything; this is the host-side belt.
+# Nothing inbound: ufw denies by default and nothing binds a public interface.
 # ttyd, dsh web and the Hermes gateway all listen on loopback only.
 ufw default deny incoming
 ufw default allow outgoing
@@ -141,7 +141,7 @@ for _ in $(seq 1 24); do
   sleep 5
 done
 
-# --- 13. HARDEN LAST: sshd off (admin is the browser terminal) -------------
-systemctl disable --now ssh || true
+# --- 13. HARDEN LAST: remove the SSH server (admin is the browser terminal) --
+DEBIAN_FRONTEND=noninteractive apt-get purge -y openssh-server
 
 touch /var/log/cloud_init_complete

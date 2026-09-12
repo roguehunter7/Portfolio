@@ -57,9 +57,9 @@ data "oci_core_images" "ubuntu_arm" {
 }
 
 # ---------------------------------------------------------------------------
-# Network — zero ingress. The instance has a public IP for EGRESS only;
-# the NSG has no rules at all (deny-all), so no port is reachable from the
-# internet. SSH arrives via the cloudflared tunnel (outbound connection).
+# Network — the instance has a public IP for EGRESS only. There is no security
+# group; ingress is denied by the host's ufw, and no service binds a public
+# interface. Admin arrives over the cloudflared tunnel (outbound connection).
 # ---------------------------------------------------------------------------
 
 resource "oci_core_vcn" "zero_trust_vcn" {
@@ -96,18 +96,11 @@ resource "oci_core_subnet" "public" {
   route_table_id = oci_core_route_table.public_rt.id
 }
 
-# Zero rules = deny all ingress. (No SSH rule: SSH goes through cloudflared.)
-resource "oci_core_network_security_group" "instance_nsg" {
-  compartment_id = var.tenancy_ocid
-  vcn_id         = oci_core_vcn.zero_trust_vcn.id
-  display_name   = "instance-nsg"
-}
-
 # ---------------------------------------------------------------------------
 # Compute — Always Free A1.Flex: 2 OCPU / 12 GB (June-2026 limits).
 # cloud-init brings up cloudflared, the ttyd browser terminal, the nvm toolchain
-# for the on-demand DeepSeek Harness and a containerised Hermes install; sshd is
-# disabled last.
+# for the on-demand DeepSeek Harness and a containerised Hermes install; the SSH
+# server is removed last.
 # ---------------------------------------------------------------------------
 
 resource "oci_core_instance" "portfolio_node" {
@@ -134,8 +127,7 @@ resource "oci_core_instance" "portfolio_node" {
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.public.id
-    assign_public_ip = true # outbound-only; NSG has zero ingress rules
-    nsg_ids          = [oci_core_network_security_group.instance_nsg.id]
+    assign_public_ip = true # outbound-only; ufw denies inbound
     display_name     = "portfolio-node-vnic"
   }
 
@@ -148,7 +140,6 @@ resource "oci_core_instance" "portfolio_node" {
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      ttyd_password        = var.ttyd_password
       tunnel_token_b64     = base64encode(var.cloudflare_tunnel_token)
       hermes_env_b64       = base64encode(local.hermes_env)
       dsh_env_b64          = base64encode(local.dsh_env)
