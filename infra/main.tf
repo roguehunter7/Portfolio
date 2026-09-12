@@ -52,8 +52,8 @@ resource "google_compute_firewall" "allow_iap_ssh" {
 }
 
 # 4. Least-privilege backup service account for the nightly Vaultwarden SQLite
-#    backup (backup.sh fetches its metadata token for THIS SA — not the default
-#    project editor, and not the CI/WIF SA). Scoped to a dedicated bucket only.
+#    backup (gcloud on the VM authenticates as THIS SA — not the default project
+#    editor, and not the CI/WIF SA). Scoped to a dedicated bucket only.
 resource "google_service_account" "vaultwarden_backup" {
   account_id   = "vaultwarden-backup"
   display_name = "Vaultwarden backup SA"
@@ -106,7 +106,7 @@ resource "google_compute_instance" "vm_instance" {
     #    Vaultwarden and cloudflared run as containers; the host only needs a
     #    stable container runtime. Compose gives us `docker compose` for the cron.
     apt-get update -y
-    apt-get install -y ca-certificates curl gnupg git apt-transport-https python3   # python3 = backup.sh dep (no gcloud)
+    apt-get install -y ca-certificates curl gnupg git apt-transport-https python3   # python3 = restore.sh validation dep
     # Official Docker repository (gives docker-ce + docker-compose-plugin reliably).
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
@@ -121,8 +121,8 @@ resource "google_compute_instance" "vm_instance" {
 
     # 3. Compose project dir + backup script home for the vaultwarden/cloudflared
     #    stack. The compose file, .env, and backup.sh are written later by the
-    #    vaultwarden-setup workflow over IAP-SSH. Backup uses the metadata
-    #    service-account token directly (no google-cloud-cli needed).
+    #    vaultwarden-setup workflow over IAP-SSH. Backup/restore run as the
+    #    instance's backup service account via the preinstalled gcloud.
     mkdir -p /opt/vaultwarden
 
     # 5. Maintenance cron:

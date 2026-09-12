@@ -8,8 +8,9 @@ services:
     volumes:
       - ./vw-data:/data
     # Secrets (ADMIN_TOKEN) come from .env, written by the vaultwarden-setup
-    # workflow over IAP-SSH from GitHub Secrets. env_file passes values verbatim,
-    # so the `$` in the Argon2 hash is preserved intact (no interpolation).
+    # workflow over IAP-SSH from GitHub Secrets. Compose interpolates env_file
+    # values, so the workflow writes each Argon2 `$` doubled as `$$`; Compose
+    # collapses it back to a single `$` for the container.
     env_file:
       - .env
     environment:

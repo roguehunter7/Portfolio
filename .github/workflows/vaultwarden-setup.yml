@@ -37,10 +37,25 @@ jobs:
         working-directory: infra
         run: terraform init -input=false
 
+      - name: Pre-rebuild backup (rebuild path)
+        if: ${{ inputs.rebuild_vm }}
+        # Refresh the snapshot from the live VM first so the post-rebuild restore
+        # is current. Best-effort: a dead VM must not block recovery from the
+        # last nightly backup.
+        continue-on-error: true
+        run: |
+          gcloud compute scp infra/vaultwarden/backup.sh portfolio-zero-trust-node:/tmp/backup.sh \
+            --zone="us-central1-a" --quiet --tunnel-through-iap
+          gcloud compute ssh portfolio-zero-trust-node --zone="us-central1-a" --quiet --tunnel-through-iap \
+            --command="sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
+              rm -f /tmp/backup.sh && sudo bash /opt/vaultwarden/backup.sh"
+
       - name: Destroy VM (rebuild path)
-        if: ${{ inputs.rebuild_vm == 'true' }}
+        if: ${{ inputs.rebuild_vm }}
         working-directory: infra
-        run: terraform destroy -auto-approve
+        # Target only the VM. A full destroy would delete the backup bucket (or
+        # fail on it while it is non-empty), which is exactly what we restore from.
+        run: terraform destroy -auto-approve -target=google_compute_instance.vm_instance
 
       - name: Terraform Apply
         working-directory: infra
@@ -74,7 +89,7 @@ jobs:
           chmod 600 /tmp/vw.env
 
           gcloud compute scp \
-            infra/vaultwarden/docker-compose.yml infra/vaultwarden/backup.sh /tmp/vw.env \
+            infra/vaultwarden/docker-compose.yml infra/vaultwarden/backup.sh infra/vaultwarden/restore.sh /tmp/vw.env \
             portfolio-zero-trust-node:/tmp/ \
             --zone="us-central1-a" --quiet --tunnel-through-iap
 
@@ -82,8 +97,10 @@ jobs:
             --command="sudo install -d -m 0755 -o root -g root /opt/vaultwarden && \
               sudo install -m 0644 -o root -g root /tmp/docker-compose.yml /opt/vaultwarden/docker-compose.yml && \
               sudo install -m 0644 -o root -g root /tmp/backup.sh /opt/vaultwarden/backup.sh && \
+              sudo install -m 0755 -o root -g root /tmp/restore.sh /opt/vaultwarden/restore.sh && \
               sudo install -m 0600 -o root -g root /tmp/vw.env /opt/vaultwarden/.env && \
-              rm -f /tmp/vw.env /tmp/docker-compose.yml /tmp/backup.sh && \
+              rm -f /tmp/vw.env /tmp/docker-compose.yml /tmp/backup.sh /tmp/restore.sh && \
+              sudo /opt/vaultwarden/restore.sh '${{ inputs.rebuild_vm }}' && \
               cd /opt/vaultwarden && sudo docker compose up -d --force-recreate"
 
       - name: Verify stack
@@ -94,4 +111,5 @@ jobs:
               echo '--- alive ---' && curl -fsS http://localhost:8000/alive && echo && \
               echo '--- env keys (values hidden) ---' && sudo grep -cE '^(TUNNEL_TOKEN|ADMIN_TOKEN)=' /opt/vaultwarden/.env && \
               echo '--- backup ---' && sudo test -f /opt/vaultwarden/backup.sh && echo 'backup.sh present' && \
+              sudo test -f /opt/vaultwarden/restore.sh && echo 'restore.sh present' && \
               echo '--- tunnel ---' && sudo docker logs cloudflared --tail 30 2>&1 | grep -iE 'registered|error' | tail -5"
