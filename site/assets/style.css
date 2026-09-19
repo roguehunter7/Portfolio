@@ -565,12 +565,15 @@ h1, h2, h3, h4 {
 }
 
 /* ---------- Archify diagram embeds ----------
-   Each phase ships a self-contained interactive viewer under /diagrams; the
-   iframe fills the frame at a fixed height so the viewer's first screen fits. */
+   Each phase ships a self-contained viewer under /diagrams, embedded with
+   ?embed=1 so the title bar, toolbar, zoom bar and summary cards stay out of
+   the page. Every frame carries its diagram's own aspect ratio inline, so the
+   figure scales with the column and nothing scrolls inside it. */
 .diagram-frame {
   display: block;
   width: 100%;
-  height: clamp(520px, 58vw, 820px);
+  height: auto;
+  aspect-ratio: 16 / 9;   /* fallback; each diagram overrides it */
   border: 0;
   border-radius: 8px;
   background: var(--diagram-bg);

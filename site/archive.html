@@ -86,7 +86,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase1-bootstrap.html" title="Phase 1 architecture diagram — Bootstrap and GitOps polling" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase1-bootstrap.html?embed=1" style="aspect-ratio: 1110 / 598" title="Phase 1 architecture diagram — Bootstrap and GitOps polling" loading="lazy"></iframe>
           <figcaption>Developer to GitHub to the box: the VM polls for a SHA delta and redeploys; Terraform declares it.</figcaption>
         </figure>
       </article>
@@ -120,7 +120,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase2-serverless.html" title="Phase 2 architecture diagram — Observability and IaC serverless" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase2-serverless.html?embed=1" style="aspect-ratio: 1120 / 568" title="Phase 2 architecture diagram — Observability and IaC serverless" loading="lazy"></iframe>
           <figcaption>CI builds and deploys Cloud Run keylessly through WIF; the API writes to Firestore and the VM metrics daemon feeds the site.</figcaption>
         </figure>
       </article>
@@ -155,7 +155,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase3-compose.html" title="Phase 3 architecture diagram — No-open-ports Docker Compose" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase3-compose.html?embed=1" style="aspect-ratio: 944 / 568" title="Phase 3 architecture diagram — No-open-ports Docker Compose" loading="lazy"></iframe>
           <figcaption>Visitor to Cloudflare Edge to a tunnel into a host with no open ports; the image is pulled anonymously.</figcaption>
         </figure>
       </article>
@@ -192,7 +192,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase4-edge.html" title="Phase 4 architecture diagram — Edge migration to Cloudflare Pages" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase4-edge.html?embed=1" style="aspect-ratio: 1120 / 598" title="Phase 4 architecture diagram — Edge migration to Cloudflare Pages" loading="lazy"></iframe>
           <figcaption>CI renders the resume PDF and publishes to Pages; visitors reach the edge directly.</figcaption>
         </figure>
       </article>
@@ -226,7 +226,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase5-repurposing.html" title="Phase 5 architecture diagram — Repurposing the compute" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase5-repurposing.html?embed=1" style="aspect-ratio: 1160 / 508" title="Phase 5 architecture diagram — Repurposing the compute" loading="lazy"></iframe>
           <figcaption>The freed compute: a Hermes AI host on GCP and an Oracle dev box with no open ports, both cost-guarded.</figcaption>
         </figure>
       </article>
@@ -261,7 +261,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase6-vaultwarden.html" title="Phase 6 architecture diagram — Vaultwarden host" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase6-vaultwarden.html?embed=1" style="aspect-ratio: 1160 / 628" title="Phase 6 architecture diagram — Vaultwarden host" loading="lazy"></iframe>
           <figcaption>The GCP box becomes a loopback-only Vaultwarden behind the tunnel, with nightly backups to a private bucket.</figcaption>
         </figure>
       </article>
@@ -308,11 +308,11 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html" title="Phase 7 architecture diagram — Oracle Hermes host, native under systemd" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html?embed=1" style="aspect-ratio: 1140 / 598" title="Phase 7 architecture diagram — Oracle Hermes host, native under systemd" loading="lazy"></iframe>
           <figcaption>The Oracle box: Cloudflare Tunnel to loopback services only, ufw denying inbound, and Hermes running natively under systemd.</figcaption>
         </figure>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase7-fleet.html" title="Phase 7 architecture diagram — Zero-ingress fleet with Vaultwarden" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase7-fleet.html?embed=1" style="aspect-ratio: 960 / 568" title="Phase 7 architecture diagram — Zero-ingress fleet with Vaultwarden" loading="lazy"></iframe>
           <figcaption>The current fleet: the Oracle dev box and the GCP Vaultwarden host, each reached only through its own outbound tunnel.</figcaption>
         </figure>
       </article>
