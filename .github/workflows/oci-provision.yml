@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
@@ -67,7 +67,7 @@ jobs:
       TF_VAR_hermes_dashboard_secret: ${{ secrets.HERMES_DASHBOARD_SECRET }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check inputs
         if: ${{ inputs.keep_snapshots && !inputs.reset }}
