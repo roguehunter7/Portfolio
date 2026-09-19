@@ -10,8 +10,36 @@
     return 'IntersectionObserver' in window;
   }
 
+  // Each diagram is a separate document that themes itself from its own
+  // localStorage or the OS preference, so the site's choice is pushed into
+  // every frame. Same-origin, so this is a direct DOM write rather than a
+  // reload — no flicker, no refetch of a 600 KB viewer.
+  function syncDiagramTheme(theme) {
+    document.querySelectorAll('iframe.diagram-frame').forEach(function (frame) {
+      try {
+        var doc = frame.contentDocument;
+        if (!doc || !doc.documentElement) return;
+        doc.documentElement.setAttribute('data-theme', theme);
+        frame.contentWindow.localStorage.setItem('archify-theme', theme);
+      } catch (err) {
+        /* not loaded yet, or cross-origin: the load handler retries */
+      }
+    });
+  }
+
+  function setupDiagramTheme() {
+    document.querySelectorAll('iframe.diagram-frame').forEach(function (frame) {
+      frame.addEventListener('load', function () {
+        syncDiagramTheme(document.documentElement.dataset.theme);
+      });
+    });
+    // Frames that finished loading before this ran have no event left to fire.
+    syncDiagramTheme(document.documentElement.dataset.theme);
+  }
+
   function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
+    syncDiagramTheme(theme);
   }
 
   function toggleTheme() {
@@ -137,6 +165,7 @@
     var saved = localStorage.getItem('theme');
     var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme(saved || (systemDark ? 'dark' : 'light'));
+    setupDiagramTheme();
     revealEmail();
     setupCopyEmail();
     setupTerminal();
