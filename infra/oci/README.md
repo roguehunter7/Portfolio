@@ -226,5 +226,9 @@ cron, so after a monthly pass run `hermes config check` over SSH — and
 cd infra/oci && terraform destroy      # or run the workflow with destroy_first
 ```
 
-The instance is disposable; the snapshot bucket is not. A full `terraform destroy`
-deletes it, which is why the rebuild path targets the instance only.
+The instance is disposable; the snapshot bucket is not. The rebuild path targets
+the instance only, and the bucket carries `prevent_destroy = true`, so a full
+`terraform destroy` fails during planning instead of removing your snapshots.
+To destroy it deliberately, comment out that guard (or delete the bucket in the
+console) — and remove the objects first, because OCI refuses to delete a
+non-empty bucket.

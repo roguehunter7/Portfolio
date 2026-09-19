@@ -115,6 +115,14 @@ resource "oci_objectstorage_bucket" "hermes_backups" {
   name           = "hermes-backups"
   access_type    = "NoPublicAccess"
   storage_tier   = "Standard"
+
+  lifecycle {
+    # The rebuild path targets the instance only, but a manual terraform
+    # destroy (or deleting this block) would otherwise take the snapshots with
+    # it. Terraform now refuses to plan that at all, so removing the guard is a
+    # deliberate act.
+    prevent_destroy = true
+  }
 }
 
 # The box authenticates as itself (instance principal), so no API key ever lives
