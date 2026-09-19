@@ -6,10 +6,10 @@ assistant and a self-hosted password vault on two free-tier boxes, no open ports
 
 ## Quick links
 
-- **Live site**: https://sreeramkr.com
-- **The full story** (every phase, with architecture diagrams): https://sreeramkr.com/archive
-- **Resume (HTML)**: https://sreeramkr.com/resume.html
-- **Resume (PDF)**: https://sreeramkr.com/resume.pdf
+- Live site: https://sreeramkr.com
+- The full story, every phase with architecture diagrams: https://sreeramkr.com/archive
+- Resume (HTML): https://sreeramkr.com/resume.html
+- Resume (PDF): https://sreeramkr.com/resume.pdf
 
 ## What this repo is
 
@@ -23,7 +23,7 @@ workload, with the dashboard at `hermes.sreeramkr.com` and SSH at `ssh.sreeramkr
 Cloudflare Tunnel and gated by Access. State is snapshotted to a private OCI Object Storage bucket every six
 hours, and a rebuild restores the newest snapshot on first boot.
 
-**The single source of truth for the story is the site's [`/archive`](https://sreeramkr.com/archive).**
+The single source of truth for the story is the site's [`/archive`](https://sreeramkr.com/archive).
 Each phase there has its own architecture diagram plus the *why* and *how* behind it, all grounded in the
 commit history in this repository.
 

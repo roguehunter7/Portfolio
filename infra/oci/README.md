@@ -1,8 +1,8 @@
-# infra/oci — Ubuntu 24.04 Hermes host
+# infra/oci: Ubuntu 24.04 Hermes host
 
 No-open-ports Oracle A1.Flex provisioned by GitHub Actions + Terraform. The box
-runs **Hermes natively** as its own user, and is administered over **SSH carried
-by the Cloudflare Tunnel**: `ssh.sreeramkr.com` → `ssh://localhost:22`, and the
+runs Hermes natively as its own user, and is administered over SSH carried by
+the Cloudflare Tunnel: `ssh.sreeramkr.com` → `ssh://localhost:22`, and the
 Hermes dashboard on `hermes.sreeramkr.com` → `http://localhost:9119`. Cloudflare
 Access gates both routes and `ufw` denies inbound. sshd is loopback-only; the
 dashboard listens on every interface and is reachable only from the box itself,
@@ -13,7 +13,7 @@ because `ufw` drops inbound connections before they arrive (reason below).
 * It is a first-class OCI platform image for Arm (`Canonical Ubuntu 24.04`), with the
   default `ubuntu` user and native `apt`/`ufw` tooling the provisioning scripts
   are written against.
-* Hermes is **not** a distro package. Its installer brings uv-managed Python,
+* Hermes is not a distro package. Its installer brings uv-managed Python,
   Node and ripgrep into `/home/hermes`, so a monthly `apt upgrade` cannot break
   the agent and there is no distro Python/Node version to track. The only OS
   packages the installer needs are `git`, `curl` and `xz-utils`.
@@ -30,25 +30,25 @@ because `ufw` drops inbound connections before they arrive (reason below).
 Nothing else runs on the host. There is no Docker, no multiplexer and no browser
 terminal: SSH is the admin path and Hermes is the workload.
 
-**Dashboard bind — deliberate.** `hermes-dashboard.service` runs with
+The dashboard bind is deliberate. `hermes-dashboard.service` runs with
 `--host 0.0.0.0` because Hermes only engages its username/password gate on a
 non-loopback bind. The listener is therefore on every interface, and `ufw` is
 what keeps it unreachable; the trade is a second auth layer in exchange for
 depending on the firewall for the bind. Binding `127.0.0.1` would remove that
 dependency but leave Cloudflare Access as the single gate.
 
-## Blast radius — read this before changing anything
+## Blast radius: read this before changing anything
 
-The `hermes` user has **full sudo by design** (`/etc/sudoers.d/hermes`). Hermes is
+The `hermes` user has full sudo by design (`/etc/sudoers.d/hermes`). Hermes is
 the control surface on this box, so the agent is root-equivalent on purpose. The
 consequences, stated plainly:
 
-* The box holds the **Cloudflare tunnel token**. Anyone holding it can run a
+* The box holds the Cloudflare tunnel token. Anyone holding it can run a
   second connector for this tunnel and receive a share of its traffic. Rotating
   the token is the only recovery.
-* The box holds **DeepSeek and Telegram credentials** and the **OCI instance
-  identity** (instance principal, scoped by policy to the snapshot bucket only).
-* **No GitHub credential lives here.** CI keeps its deploy private key in GitHub
+* The box holds DeepSeek and Telegram credentials and the OCI instance
+  identity (instance principal, scoped by policy to the snapshot bucket only).
+* No GitHub credential lives here. CI keeps its deploy private key in GitHub
   secrets, so a compromised box cannot push to the repository.
 * The rebuild path restores from the snapshot bucket, so a tampered snapshot
   would persist across rebuilds. `hermes-restore.sh` therefore refuses archives
@@ -70,17 +70,17 @@ token and the DeepSeek key, then rebuild with `reset`.
 
 **Caveats**
 
-* Oracle may **reclaim idle A1 instances** (CPU 95th pct <20%, network <20%, and —
-  A1 only — memory <20% over 7 days). Keep the box busy.
+* Oracle may reclaim idle A1 instances (CPU 95th pct <20%, network <20%, and,
+  for A1 only, memory <20% over 7 days). Keep the box busy.
 * The tunnel token and the app secrets are injected via cloud-init, so they land
   in the OCI tfstate (private bucket) and in instance metadata (readable from the
   box itself). Both are scoped to this tenancy. Accepted trade-off.
 * Running the agent as root-equivalent, with the dashboard exposed behind Access,
   means one prompt injection is host root. That is the deliberate trade for a box
   with nothing but Hermes on it.
-* `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
-  nothing on a running instance — use `reset` to rebuild.
-* OCI caps user data + metadata at **32,000 bytes**; the rendered payload is
+* `user_data` runs on first boot only. Editing `cloud-init.yaml.tftpl` changes
+  nothing on a running instance; use `reset` to rebuild.
+* OCI caps user data + metadata at 32,000 bytes; the rendered payload is
   ~17.6 KB and `scripts/check-cloud-init.py` fails CI past the cap.
 
 ## Architecture
@@ -104,7 +104,7 @@ cron (6-hourly) ── hermes-backup.sh ──> OCI Object Storage bucket hermes
 
 ## One-time setup
 
-CI reads credentials from GitHub **Secrets / Variables**:
+CI reads credentials from GitHub Secrets / Variables:
 
 | Name | Kind | Used for |
 |---|---|---|
@@ -117,8 +117,8 @@ CI reads credentials from GitHub **Secrets / Variables**:
 
 Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 
-1. `ssh.sreeramkr.com` → **SSH** `localhost:22` — Access app allowing your email.
-2. `hermes.sreeramkr.com` → **HTTP** `localhost:9119` — Access app allowing your email.
+1. `ssh.sreeramkr.com` → SSH `localhost:22`, Access app allowing your email.
+2. `hermes.sreeramkr.com` → HTTP `localhost:9119`, Access app allowing your email.
    Hermes' own username/password provider is the second layer.
 
 CI never logs into the box, so no service token is needed. Generate the key pair
@@ -131,7 +131,7 @@ cat ~/.ssh/oci_key.pub                                   # public half -> OCI_SS
 
 ## Deploy
 
-Run **Actions → OCI Provision → Run workflow**. The workflow validates the
+Run Actions → OCI Provision → Run workflow. The workflow validates the
 cloud-init template first (`checks`: shell syntax, `terraform fmt`, render +
 validate), then applies. Two checkboxes:
 
@@ -140,15 +140,15 @@ validate), then applies. Two checkboxes:
 | `reset` | destroys the instance (`-target=oci_core_instance.portfolio_node`) and rebuilds it from scratch |
 | `keep_snapshots` | only meaningful with `reset`: skips the snapshot wipe, so the rebuilt box restores the newest snapshot on boot |
 
-* **Neither ticked** — a plain `terraform apply`: Terraform builds or updates the box, nothing is destroyed.
-* **`reset`** — every snapshot is deleted, the instance is destroyed, and the new box starts with no state at all. Unrecoverable.
-* **`reset` + `keep_snapshots`** — the instance is destroyed but the snapshots survive, so the rebuilt box restores the newest one, up to six hours old.
+* **Neither ticked:** a plain `terraform apply`. Terraform builds or updates the box, nothing is destroyed.
+* **`reset`:** every snapshot is deleted, the instance is destroyed, and the new box starts with no state at all. Unrecoverable.
+* **`reset` + `keep_snapshots`:** the instance is destroyed but the snapshots survive, so the rebuilt box restores the newest one, up to six hours old.
 
 CI never logs into the box. A targeted `terraform apply` creates the snapshot
 bucket, dynamic group and policy before the instance is built, and the host
 restores its own state at first boot.
 
-First boot measured on this box: **9 min 12 s** from instance start to
+First boot measured on this box: 9 min 12 s from instance start to
 `/var/log/cloud_init_complete`. CI has no way to see that marker, so judge
 readiness from the box, not from a green job.
 
@@ -164,8 +164,8 @@ ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.
   checkout), upload with the instance principal, prune to the newest 10, start.
 * `provision.sh` runs `hermes-restore.sh` before starting the units, so a rebuilt
   box restores the newest snapshot by itself and an empty bucket simply starts
-  clean. The marker at `/home/hermes/.hermes/.restored` records which path ran —
-  `restored <object>` or `started empty` — and keeps a re-run from clobbering
+  clean. The marker at `/home/hermes/.hermes/.restored` records which path ran,
+  `restored <object>` or `started empty`, and keeps a re-run from clobbering
   live state.
 * `.env` always comes fresh from `/etc/hermes/hermes.env`; `config.yaml` comes from
   the snapshot (dashboard edits win over the repo baseline).
@@ -180,7 +180,7 @@ systemctl is-active hermes-gateway.service hermes-dashboard.service
 curl -fsS http://127.0.0.1:9119/api/status        # auth_required / auth_providers
 ss -ltn | grep -E ':(22|9119)\b'                  # :22 loopback, :9119 all interfaces
 journalctl -u cloudflared --no-pager -n 50 | grep "Registered tunnel connection"
-ssudo cat /home/hermes/.hermes/.restored            # restored <object> | started empty
+sudo cat /home/hermes/.hermes/.restored           # restored <object> | started empty
 tail -n 20 /var/log/hermes-backup.log
 ```
 
@@ -189,16 +189,16 @@ Emergency backdoor (tunnel or Access down): OCI serial console
 
 ## Maintenance
 
-**Monthly, 5th at 03:05** (`/etc/cron.d/maintenance` → `maintenance.sh`):
+Monthly, 5th at 03:05 (`/etc/cron.d/maintenance` → `maintenance.sh`):
 
-1. `apt-get update && apt-get upgrade` — kernel, cloudflared.
+1. `apt-get update && apt-get upgrade`: kernel, cloudflared.
 2. As `hermes`: `hermes update` (brings Python, Node and the checkout forward, and
    rolls the checkout back if the pulled code does not parse).
 3. Reboot.
 
 Each step is logged and skipped on failure, so a bad step never blocks a later one
 or the reboot. `hermes update` may skip its new-config prompt when it runs from
-cron, so after a monthly pass run `hermes config check` over SSH — and
+cron, so after a monthly pass run `hermes config check` over SSH, and
 `hermes config migrate` if it lists missing options.
 
 ## Destroy
@@ -211,5 +211,5 @@ The instance is disposable; the snapshot bucket is not. The rebuild path targets
 the instance only, and the bucket carries `prevent_destroy = true`, so a full
 `terraform destroy` fails during planning instead of removing your snapshots.
 To destroy it deliberately, comment out that guard (or delete the bucket in the
-console) — and remove the objects first, because OCI refuses to delete a
+console), and remove the objects first, because OCI refuses to delete a
 non-empty bucket.
