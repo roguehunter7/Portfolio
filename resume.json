@@ -174,7 +174,7 @@
           "skills_used": ["Terraform", "GCP VPC", "Firewalls", "GCS", "GCP IAP"]
         },
         {
-          "what": "Provisioned an Oracle Cloud Always Free A1.Flex (2 OCPU/12 GB) Hermes host from the same IaC with no security group: sshd binds loopback and admin arrives as SSH carried by the Cloudflare Tunnel, gated by Access (a service token lets CI in).",
+          "what": "Provisioned an Oracle Cloud Always Free A1.Flex (2 OCPU/12 GB) Hermes host from the same IaC with no security group: sshd binds loopback and admin arrives as SSH carried by the Cloudflare Tunnel, gated by Access; CI never needs a shell on the box.",
           "why": "Extend the zero-ingress pattern to a second cloud without paying.",
           "impact": "$0/mo cross-cloud compute; shell access only through the Cloudflare tunnel.",
           "evidence": "infra/oci/main.tf",
@@ -213,7 +213,7 @@
     {
       "name": "Hermes — Self-Hosted AI Assistant",
       "url": "https://sreeramkr.com",
-      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) running natively under systemd on the zero-ingress Oracle A1.Flex box — its own uv-managed Python and Node, loopback-only listeners, no exposed ports; provisioned end-to-end by Terraform + cloud-init.",
+      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) running natively under systemd on the zero-ingress Oracle A1.Flex box — its own uv-managed Python and Node, sshd loopback-only and the dashboard auth-gated behind ufw; provisioned end-to-end by Terraform + cloud-init.",
       "achievements": [
         {
           "what": "Installed the assistant natively as a dedicated `hermes` systemd user: the official installer brings uv-managed Python, Node and ripgrep into its own home, so the distro's versions are never in the dependency path and a monthly apt upgrade cannot break the agent.",
@@ -237,10 +237,10 @@
           "skills_used": ["DeepSeek API", "LLM configuration", "YAML config"]
         },
         {
-          "what": "Kept a strict zero-ingress posture: no security group, ufw denies inbound, sshd and the dashboard bind loopback, and both are reached only as SSH/HTTP carried by the Cloudflare Tunnel behind Access (a service token for CI).",
+          "what": "Kept a strict zero-ingress posture: no security group, ufw denies inbound, sshd loopback-only, and the dashboard reachable only through the Cloudflare Tunnel behind Access, with its own username/password gate enforced.",
           "why": "Nothing inbound is reachable from the internet, yet admin and the dashboard still work from anywhere.",
-          "impact": "No public listener; the host is invisible to port scanners.",
-          "evidence": "ufw deny-inbound + loopback-only :22/:9119",
+          "impact": "No reachable listener; the host is invisible to port scanners and the dashboard still requires a login.",
+          "evidence": "ufw deny-inbound + sshd loopback :22, dashboard :9119 auth-gated",
           "skills_used": ["Cloudflare Access", "cloudflared", "ufw", "zero-trust networking"]
         }
       ]

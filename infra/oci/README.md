@@ -4,8 +4,9 @@ No-open-ports Oracle A1.Flex provisioned by GitHub Actions + Terraform. The box
 runs **Hermes natively** as its own user, and is administered over **SSH carried
 by the Cloudflare Tunnel**: `ssh.sreeramkr.com` → `ssh://localhost:22`, and the
 Hermes dashboard on `hermes.sreeramkr.com` → `http://localhost:9119`. Cloudflare
-Access gates both routes, sshd and the dashboard bind loopback, and `ufw` denies
-inbound — so nothing is ever publicly reachable.
+Access gates both routes and `ufw` denies inbound. sshd is loopback-only; the
+dashboard listens on every interface and is reachable only from the box itself,
+because `ufw` drops inbound connections before they arrive (reason below).
 
 ## Why Ubuntu 24.04
 
@@ -22,12 +23,19 @@ inbound — so nothing is ever publicly reachable.
 | Workload | How it runs | Reachable at |
 |---|---|---|
 | Cloudflare Tunnel | `cloudflared.service`, outbound | the only ingress path |
-| SSH (admin + CI) | `sshd`, loopback `:22`, user `ubuntu` | `ssh.sreeramkr.com` (Access) |
+| SSH (admin) | `sshd`, loopback `:22`, user `ubuntu` | `ssh.sreeramkr.com` (Access) |
 | Hermes gateway | `hermes-gateway.service`, user `hermes` | Telegram (long poll, outbound) |
-| Hermes dashboard | `hermes-dashboard.service`, loopback `:9119` | `hermes.sreeramkr.com` (Access) |
+| Hermes dashboard | `hermes-dashboard.service`, listens on `:9119` behind `ufw` | `hermes.sreeramkr.com` (Access) |
 
 Nothing else runs on the host. There is no Docker, no multiplexer and no browser
 terminal: SSH is the admin path and Hermes is the workload.
+
+**Dashboard bind — deliberate.** `hermes-dashboard.service` runs with
+`--host 0.0.0.0` because Hermes only engages its username/password gate on a
+non-loopback bind. The listener is therefore on every interface, and `ufw` is
+what keeps it unreachable; the trade is a second auth layer in exchange for
+depending on the firewall for the bind. Binding `127.0.0.1` would remove that
+dependency but leave Cloudflare Access as the single gate.
 
 ## Blast radius — read this before changing anything
 
@@ -82,7 +90,8 @@ you / CI ── ssh.sreeramkr.com ──> Cloudflare Access ──> cloudflared 
                                                           └─> 127.0.0.1:22   sshd (ubuntu)
 
 browser ── hermes.sreeramkr.com ─> Cloudflare Access ──> cloudflared
-                                                          └─> 127.0.0.1:9119 hermes dashboard
+                                                          └─> 0.0.0.0:9119   hermes dashboard
+                                                              (ufw denies inbound)
 
 Telegram <── long poll (outbound) ── hermes-gateway ──> api.deepseek.com
 
@@ -90,7 +99,7 @@ cron (6-hourly) ── hermes-backup.sh ──> OCI Object Storage bucket hermes
 ```
 
 * VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
-* No security group; `ufw` allows nothing in; both listeners bind loopback
+* No security group; `ufw` allows nothing in; sshd loopback, dashboard auth-gated behind ufw
 * A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 aarch64, 50 GB boot, ephemeral public IP
 
 ## One-time setup
@@ -139,6 +148,10 @@ CI never logs into the box. A targeted `terraform apply` creates the snapshot
 bucket, dynamic group and policy before the instance is built, and the host
 restores its own state at first boot.
 
+First boot measured on this box: **9 min 12 s** from instance start to
+`/var/log/cloud_init_complete`. CI has no way to see that marker, so judge
+readiness from the box, not from a green job.
+
 ```bash
 # from a laptop, with cloudflared installed and an Access login
 ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.com
@@ -165,7 +178,7 @@ ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.
 ```bash
 systemctl is-active hermes-gateway.service hermes-dashboard.service
 curl -fsS http://127.0.0.1:9119/api/status        # auth_required / auth_providers
-ss -ltn | grep -E ':(22|9119)\b'                  # loopback only
+ss -ltn | grep -E ':(22|9119)\b'                  # :22 loopback, :9119 all interfaces
 journalctl -u cloudflared --no-pager -n 50 | grep "Registered tunnel connection"
 ssudo cat /home/hermes/.hermes/.restored            # restored <object> | started empty
 tail -n 20 /var/log/hermes-backup.log

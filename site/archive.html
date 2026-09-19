@@ -288,11 +288,11 @@ document.documentElement.dataset.theme =
             Terraform + cloud-init from this repository. Hermes is installed <strong>natively</strong> as its own
             systemd user: the official installer brings uv-managed Python and its own Node, so the distro's
             versions are never in the dependency path and a monthly <code>apt upgrade</code> cannot break the
-            agent. <code>sshd</code> binds loopback <code>:22</code> and the dashboard binds loopback
-            <code>:9119</code>; the tunnel points <code>ssh.sreeramkr.com</code> at <code>ssh://localhost:22</code>
-            and <code>hermes.sreeramkr.com</code> at the dashboard, with Cloudflare Access — and a service token
-            for CI — gating both. There is no security group: <code>ufw</code> denies inbound and nothing binds a
-            public interface. Agent state lives in <code>/home/hermes/.hermes</code> and is snapshotted every six
+            agent. <code>sshd</code> binds loopback <code>:22</code>. The dashboard listens on
+            <code>:9119</code> across all interfaces and keeps its own username/password gate — Hermes only
+            enforces that gate on a non-loopback bind — with <code>ufw</code> dropping inbound connections before
+            they reach it. The tunnel points <code>ssh.sreeramkr.com</code> at <code>ssh://localhost:22</code> and
+            <code>hermes.sreeramkr.com</code> at the dashboard, with Cloudflare Access gating both. Agent state lives in <code>/home/hermes/.hermes</code> and is snapshotted every six
             hours to a private OCI Object Storage bucket using the instance principal; the host restores the
             newest snapshot itself at first boot. One workflow run rebuilds the box — destroy the instance and
             keep the snapshots, or wipe both for a factory-fresh agent.
@@ -300,7 +300,7 @@ document.documentElement.dataset.theme =
             tunnel. One monthly maintenance pass updates the OS and runs <code>hermes update</code>, then reboots.
           </p>
           <ul>
-            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Access in front of both the SSH and dashboard routes, with a service token for CI.</li>
+            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Access in front of both the SSH and dashboard routes.</li>
             <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, sshd loopback-only.</li>
             <li><strong>Workloads:</strong> native Hermes (gateway + dashboard) under systemd — no Docker, no terminal multiplexer.</li>
             <li><strong>State:</strong> six-hourly snapshots to a private OCI bucket via the instance principal; a rebuild restores the newest one at boot, and a reset wipes the instance and the snapshots.</li>
@@ -308,7 +308,7 @@ document.documentElement.dataset.theme =
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html" title="Phase 7 architecture diagram — Oracle dev box with Hermes in Docker" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html" title="Phase 7 architecture diagram — Oracle Hermes host, native under systemd" loading="lazy"></iframe>
           <figcaption>The Oracle box: Cloudflare Tunnel to loopback services only, ufw denying inbound, and Hermes running natively under systemd.</figcaption>
         </figure>
         <figure class="diagram-container">
