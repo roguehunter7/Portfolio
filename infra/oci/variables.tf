@@ -16,7 +16,7 @@ variable "region" {
 # --- VM access --------------------------------------------------------------
 
 variable "ssh_public_key" {
-  description = "Public half of the CI deploy key (secret OCI_SSH_PRIVATE_KEY). Injected into the ubuntu user; sshd is loopback-only and reachable solely through the Cloudflare Access tunnel, so the key never crosses a public port."
+  description = "Public half of your deploy key (GitHub variable OCI_SSH_PUBLIC_KEY). Injected into the ubuntu user at build time; sshd is loopback-only and reachable solely through the Cloudflare Access tunnel, so the private half never leaves your machine and the key never crosses a public port."
   type        = string
 }
 
