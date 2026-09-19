@@ -100,13 +100,13 @@ document.documentElement.dataset.theme =
     <div class="stats">
       <div class="stat"><span class="stat-num">$0</span><span class="stat-label">per month</span></div>
       <div class="stat"><span class="stat-num">100%</span><span class="stat-label">uptime</span></div>
-      <div class="stat"><span class="stat-num">7</span><span class="stat-label">phases documented</span></div>
+      <div class="stat"><span class="stat-num">8</span><span class="stat-label">phases documented</span></div>
       <div class="stat"><span class="stat-num">0</span><span class="stat-label">open ports</span></div>
     </div>
   </header>
 
   <h2 class="section-title">The Story</h2>
-  <p class="section-sub">Seven phases, from a hand-built VM to a no-open-ports Oracle dev box and a self-hosted password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
+  <p class="section-sub">Eight phases, from a hand-built VM to a consolidated Hermes host and a self-hosted password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
 
   <ol class="timeline">
     <li class="js-reveal">
@@ -139,10 +139,15 @@ document.documentElement.dataset.theme =
       <span class="tl-status live">Live</span>
       <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>
     </li>
-    <li class="js-reveal status-live">
+    <li class="js-reveal">
       <span class="tl-num">07</span><span class="tl-title">Oracle dev box + Hermes</span>
+      <span class="tl-status historical">Historical</span>
+      <div class="tl-gist">Ubuntu 24.04 dev box with a browser terminal, DSH and Hermes in Docker — no NSG, ufw deny-inbound, OpenSSH removed.</div>
+    </li>
+    <li class="js-reveal status-live">
+      <span class="tl-num">08</span><span class="tl-title">Consolidation</span>
       <span class="tl-status live">Live</span>
-      <div class="tl-gist">Ubuntu 24.04 box running Hermes natively under systemd — SSH and the dashboard behind Access, state snapshotted to an OCI bucket, no open ports.</div>
+      <div class="tl-gist">One workload: native Hermes under systemd, SSH and the dashboard behind Access, six-hourly snapshots to an OCI bucket and a rebuild that restores itself.</div>
     </li>
   </ol>
 

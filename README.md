@@ -15,7 +15,7 @@ dashboard loopback-bound behind Cloudflare Access) and a self-hosted password va
 ## What this repo is
 
 A case study in free-tier cloud infrastructure with no open ports. It started as a plain static site on a
-VM and evolved through seven phases — from a pull-based GitOps loop, to a serverless rebuild, back to a
+VM and evolved through eight phases — from a pull-based GitOps loop, to a serverless rebuild, back to a
 Docker Compose host with no open ports behind a Cloudflare Tunnel, to the edge, and on to re-purposing the
 compute into an AI host and a self-hosted password vault.
 

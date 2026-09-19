@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Consolidated fleet — Hermes host + Vaultwarden host",
+    "output": "site/diagrams/phase8-fleet.html",
+    "animation": "none",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "viewBox": [
+      1280,
+      700
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [
+      0,
+      0
+    ],
+    "cols": 12,
+    "gapX": 30,
+    "gapY": 24,
+    "cellW": 100,
+    "cellH": 40
+  },
+  "components": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "You",
+      "sublabel": "laptop + phone",
+      "pos": [
+        40,
+        320
+      ],
+      "size": [
+        130,
+        62
+      ]
+    },
+    {
+      "id": "access",
+      "type": "security",
+      "label": "Cloudflare Access",
+      "sublabel": "email policy",
+      "pos": [
+        260,
+        320
+      ],
+      "size": [
+        160,
+        62
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "cloud",
+      "label": "Cloudflare edge",
+      "sublabel": "two tunnel routes",
+      "pos": [
+        470,
+        320
+      ],
+      "size": [
+        160,
+        62
+      ]
+    },
+    {
+      "id": "ingress",
+      "type": "security",
+      "label": "loopback listeners",
+      "sublabel": "sshd :22 · dashboard :9119",
+      "pos": [
+        700,
+        170
+      ],
+      "size": [
+        230,
+        58
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "backend",
+      "label": "hermes-gateway",
+      "sublabel": "systemd · Telegram poll",
+      "pos": [
+        700,
+        330
+      ],
+      "size": [
+        230,
+        58
+      ]
+    },
+    {
+      "id": "cron",
+      "type": "backend",
+      "label": "hermes-backup.sh",
+      "sublabel": "every 6 hours",
+      "pos": [
+        700,
+        420
+      ],
+      "size": [
+        230,
+        58
+      ]
+    },
+    {
+      "id": "oci_bucket",
+      "type": "cloud",
+      "label": "hermes-backups",
+      "sublabel": "OCI Object Storage",
+      "pos": [
+        1010,
+        420
+      ],
+      "size": [
+        200,
+        58
+      ]
+    },
+    {
+      "id": "vault",
+      "type": "backend",
+      "label": "Vaultwarden",
+      "sublabel": "loopback :8000",
+      "pos": [
+        700,
+        570
+      ],
+      "size": [
+        200,
+        58
+      ]
+    },
+    {
+      "id": "gcs_bucket",
+      "type": "cloud",
+      "label": "vaultwarden-backups",
+      "sublabel": "GCS bucket",
+      "pos": [
+        1010,
+        570
+      ],
+      "size": [
+        200,
+        58
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Oracle A1.Flex · Ubuntu 24.04 · ufw deny inbound",
+      "wraps": [
+        "ingress",
+        "gateway",
+        "cron"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "GCP e2-micro · IAP-only SSH",
+      "wraps": [
+        "vault"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "operator",
+      "to": "access",
+      "label": "SSH + HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "access",
+      "to": "edge",
+      "variant": "security"
+    },
+    {
+      "from": "edge",
+      "to": "ingress",
+      "label": "SSH + HTTPS",
+      "variant": "security"
+    },
+    {
+      "from": "ingress",
+      "to": "gateway",
+      "label": "loopback",
+      "labelAt": [
+        780,
+        285
+      ]
+    },
+    {
+      "from": "edge",
+      "to": "vault",
+      "label": "HTTPS",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "from": "cron",
+      "to": "oci_bucket",
+      "label": "snapshot",
+      "variant": "dashed"
+    },
+    {
+      "from": "vault",
+      "to": "gcs_bucket",
+      "label": "nightly SQLite",
+      "variant": "dashed"
+    }
+  ]
+}
