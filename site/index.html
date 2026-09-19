@@ -43,13 +43,19 @@ document.documentElement.dataset.theme =
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-<div class="container">
+<div class="container container--home">
   <nav class="site-nav">
     <span class="brand"><span class="brand-mark">sk_</span><span class="brand-name">Sreeram K R</span></span>
-    <span class="links">
-      <a href="/" aria-current="page">Home</a>
-      <a href="/archive">Archive</a>
-      <a href="/resume.html">Resume</a>
+    <span class="nav-right">
+      <span class="links">
+        <a href="/" aria-current="page">Home</a>
+        <a href="/archive">Archive</a>
+        <a href="/resume.html">Resume</a>
+      </span>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="icon-light">&#9728;</span>
+        <span class="icon-dark">&#9790;</span>
+      </button>
     </span>
   </nav>
 
@@ -58,6 +64,7 @@ document.documentElement.dataset.theme =
       <div class="hero-copy">
         <h1 class="js-reveal">Sreeram <span class="grad-text">K R</span></h1>
         <div class="subtitle js-reveal">Infrastructure Engineer</div>
+        <p class="hero-now js-reveal"><span class="now-dot" aria-hidden="true"></span>Currently consolidating two free-tier hosts into one no-open-ports Hermes box that rebuilds itself from snapshots.</p>
         <p class="tagline js-reveal">
           Automating secure infrastructure with no open ports on free-tier cloud. This project is a live
           case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
@@ -65,23 +72,17 @@ document.documentElement.dataset.theme =
         </p>
         <div class="tag-row js-reveal">
           <span class="tag">Terraform</span><span class="tag">GCP</span><span class="tag">Oracle Cloud</span>
-          <span class="tag">GitHub Actions</span><span class="tag">Zero Trust</span><span class="tag">Cloudflare</span>
-          <span class="tag">IAP</span><span class="tag">Docker</span><span class="tag">WIF</span>
+          <span class="tag">Cloudflare</span><span class="tag">GitHub Actions</span>
         </div>
         <div class="links-bar js-reveal">
           <a href="/resume.html" class="btn-primary">View Resume</a>
-          <a href="/resume.pdf" class="btn-ghost">Download PDF</a>
-          <span class="sep" aria-hidden="true">|</span>
           <a href="#" class="email-link"></a>
           <button type="button" class="copy-email" aria-label="Copy email address">copy</button>
-          <span class="sep" aria-hidden="true">|</span>
-          <a href="https://linkedin.com/in/sreeram-k-r" target="_blank" rel="noopener">LinkedIn</a>
-          <a href="https://github.com/roguehunter7" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
 
       <div class="terminal js-terminal" role="img"
-           aria-label="Terminal session: terraform plan and apply complete, then cloudflared tunnel online for vault.sreeramkr.com"
+           aria-label="Terminal session: terraform apply complete, both Hermes units active, then a snapshot uploaded to Object Storage"
            aria-hidden="false">
         <div class="terminal-bar">
           <span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span>
@@ -89,21 +90,32 @@ document.documentElement.dataset.theme =
         </div>
         <div class="terminal-body">
           <div class="t-line"><span class="t-prompt">$</span> <span class="t-cmd" data-type="terraform apply --auto-approve"></span><span class="t-caret" aria-hidden="true"></span></div>
-          <div class="t-line t-dim" aria-hidden="true">&#10003; Plan: 3 to add, 0 to change, 0 to destroy</div>
-          <div class="t-line t-dim" aria-hidden="true">&#10003; Apply complete! Resources: 3 added.</div>
-          <div class="t-line" aria-hidden="true"><span class="t-prompt">$</span> cloudflared tunnel run vault</div>
-          <div class="t-line t-ok" aria-hidden="true">&#10003; tunnel online &#183; vault.sreeramkr.com</div>
+          <div class="t-line t-dim" aria-hidden="true">&#10003; Apply complete! Resources: 11 added, 0 changed.</div>
+          <div class="t-line" aria-hidden="true"><span class="t-prompt">$</span> systemctl is-active hermes-gateway hermes-dashboard</div>
+          <div class="t-line t-ok" aria-hidden="true">active</div>
+          <div class="t-line t-ok" aria-hidden="true">active</div>
+          <div class="t-line" aria-hidden="true"><span class="t-prompt">$</span> sudo hermes-backup.sh</div>
+          <div class="t-line t-ok" aria-hidden="true">&#10003; snapshot uploaded &#183; hermes-backups</div>
+          <div class="t-line t-dim" aria-hidden="true">&#10003; cloudflared registered &#183; 2 routes, 0 open ports</div>
+          <div class="t-line" aria-hidden="true"><span class="t-prompt">$</span> ss -ltn | grep -E ':(22|9119)'</div>
+          <div class="t-line t-dim" aria-hidden="true">LISTEN 127.0.0.1:22 &#183; sshd</div>
+          <div class="t-line t-dim" aria-hidden="true">LISTEN 0.0.0.0:9119 &#183; dashboard, ufw denies inbound</div>
         </div>
       </div>
     </div>
 
     <div class="stats">
-      <div class="stat"><span class="stat-num">$0</span><span class="stat-label">per month</span></div>
-      <div class="stat"><span class="stat-num">100%</span><span class="stat-label">uptime</span></div>
-      <div class="stat"><span class="stat-num">8</span><span class="stat-label">phases documented</span></div>
-      <div class="stat"><span class="stat-num">0</span><span class="stat-label">open ports</span></div>
+      <a class="stat" href="/archive#phase-8"><span class="stat-num">$0</span><span class="stat-label">per month, both hosts</span></a>
+      <a class="stat" href="/archive#phase-8"><span class="stat-num">6h</span><span class="stat-label">snapshot cadence</span></a>
+      <a class="stat" href="/archive"><span class="stat-num">8</span><span class="stat-label">phases documented</span></a>
+      <a class="stat" href="/archive#phase-8"><span class="stat-num">0</span><span class="stat-label">open ports</span></a>
     </div>
   </header>
+
+  <figure class="diagram-container diagram-container--home">
+    <iframe class="diagram-frame" src="/diagrams/phase8-fleet.html?embed=1" style="aspect-ratio: 1280 / 700" title="Current fleet — Hermes host and Vaultwarden host" loading="lazy"></iframe>
+    <figcaption>The current fleet: one Hermes host that restores itself from six-hourly snapshots, and the GCP Vaultwarden host — each reached only through its own outbound tunnel.</figcaption>
+  </figure>
 
   <h2 class="section-title">The Story</h2>
   <p class="section-sub">Eight phases, from a hand-built VM to a consolidated Hermes host and a self-hosted password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
@@ -168,11 +180,6 @@ document.documentElement.dataset.theme =
     <a href="/resume.html" target="_blank">Resume (HTML)</a>
   </div>
 </div>
-
-<button class="theme-toggle" aria-label="Toggle theme">
-  <span class="icon-light">&#9728;</span>
-  <span class="icon-dark">&#9790;</span>
-</button>
 
 </body>
 </html>
