@@ -188,7 +188,7 @@
           "skills_used": ["Oracle Cloud (OCI)", "Terraform", "cloud budgets/quota"]
         },
         {
-          "what": "Built a keyless CI/CD pipeline on GitHub Actions using Workload Identity Federation (WIF) and OIDC: IAP-SSH deploys for the vault host, SSH over the Cloudflare Tunnel (Access service token) for the Hermes host with a pre-destroy snapshot and automatic restore, and wrangler pages deploy for the site under a hardened _headers policy (HSTS, nosniff, frame denial, Permissions-Policy; no CSP by design).",
+          "what": "Built a keyless CI/CD pipeline on GitHub Actions using Workload Identity Federation (WIF) and OIDC: IAP-SSH deploys for the vault host and wrangler pages deploy for the site under a hardened _headers policy (HSTS, nosniff, frame denial, Permissions-Policy; no CSP by design); the Hermes host restores its own state from Object Storage at first boot, so CI never needs a shell on it.",
           "why": "No long-lived cloud credentials in CI; static content served at the edge.",
           "impact": "Zero static keys; one commit renders the ATS-safe resume PDF and publishes the site.",
           "evidence": ".github/workflows/deploy.yml + scripts/render-pdf.sh",
@@ -223,7 +223,7 @@
           "skills_used": ["systemd", "Oracle Cloud (OCI)", "cloud-init", "Linux"]
         },
         {
-          "what": "Snapshotted the agent's state to a private OCI Object Storage bucket every six hours using the instance principal (no API key on the box), and taught the rebuild workflow to take a fresh snapshot, destroy only the instance, and restore automatically on first boot.",
+          "what": "Snapshotted the agent's state to a private OCI Object Storage bucket every six hours using the instance principal (no API key on the box), and made the host restore the newest snapshot itself at first boot — a rebuild is one workflow run, and a reset wipes the instance and the bucket for a factory-fresh agent.",
           "why": "The box is disposable; the agent's sessions, skills and memories are not.",
           "impact": "A rebuild is one workflow run with at most six hours of state loss; restore refuses archives with absolute or parent-traversal paths.",
           "evidence": "scripts/hermes-backup.sh + scripts/hermes-restore.sh",

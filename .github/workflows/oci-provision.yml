@@ -3,12 +3,12 @@ name: OCI Provision
 on:
   workflow_dispatch:
     inputs:
-      destroy_first:
-        description: 'Destroy VM, then re-apply (rebuild + restore from the snapshot bucket)'
+      reset:
+        description: 'Reset: destroy the instance and rebuild it from scratch'
         type: boolean
         default: false
-      skip_snapshot:
-        description: 'Rebuild without a pre-destroy snapshot (the new box starts empty)'
+      keep_snapshots:
+        description: 'Keep the snapshots during a reset (requires reset; the rebuilt box then restores the newest one)'
         type: boolean
         default: false
 
@@ -22,11 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # cloudflared 2026.6.0 ignores service tokens for `access ssh` (issue #1674),
-  # so the client is pinned to the last release that honoured them.
-  CLOUDFLARED_VERSION: "2026.5.1"
   BACKUP_BUCKET: hermes-backups
-  SSH_HOST: ssh.sreeramkr.com
 
 jobs:
   # Cheap static guards. Both of these caught real bugs during development (a
@@ -56,11 +52,10 @@ jobs:
   provision:
     needs: [checks]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     # Secrets are scoped to this job only — the checks job has no business
     # carrying them. Passed as TF_VAR_* rather than -var flags: they stay out of
     # the process list and the command line, and GitHub masks them in the log.
-    # (Terraform variables: the tenancy OCID doubles as the root compartment OCID.)
     env:
       TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
       TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
@@ -70,14 +65,16 @@ jobs:
       TF_VAR_telegram_allowed_users: ${{ secrets.TELEGRAM_ALLOWED_USERS }}
       TF_VAR_hermes_dashboard_password: ${{ secrets.HERMES_DASHBOARD_PASSWORD }}
       TF_VAR_hermes_dashboard_secret: ${{ secrets.HERMES_DASHBOARD_SECRET }}
-      # The SSH-over-tunnel path: the private half of the deploy key, and the
-      # Access service token that cloudflared reads from these two variables.
-      OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-      TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-      TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check inputs
+        if: ${{ inputs.keep_snapshots && !inputs.reset }}
+        run: |
+          echo "keep_snapshots only means something together with reset — with no reset there is nothing to protect." >&2
+          echo "Untick keep_snapshots, or tick reset as well." >&2
+          exit 1
 
       - name: Install OCI CLI (pinned, venv)
         run: |
@@ -129,10 +126,10 @@ jobs:
             -backend-config="key=oci/terraform.tfstate"
 
       - name: Terraform Apply (backup prerequisites)
-        # The pre-destroy snapshot uploads to the snapshot bucket, so Terraform
-        # has to create it — plus the dynamic group and policy the box
-        # authenticates with — before the snapshot runs. Targeted, so the
-        # running instance is untouched, and idempotent on later runs.
+        # The host restores itself from this bucket on first boot, so the
+        # bucket, the dynamic group and the policy must exist before the
+        # instance does. Targeted, so a running box is untouched, and
+        # idempotent on every later run.
         working-directory: infra/oci
         run: |
           terraform apply -auto-approve \
@@ -140,135 +137,32 @@ jobs:
             -target=oci_identity_dynamic_group.hermes_backup \
             -target=oci_identity_policy.hermes_backup
 
-      - name: Install cloudflared (pinned) + deploy key
+      - name: Wipe snapshots (reset path)
+        # bulk-delete with no prefix removes every object in the bucket, so the
+        # rebuilt box starts with no state at all.
+        if: ${{ inputs.reset && !inputs.keep_snapshots }}
         run: |
-          set -euo pipefail
-          curl -fsSL -o /usr/local/bin/cloudflared \
-            "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64"
-          chmod +x /usr/local/bin/cloudflared
-          cloudflared --version
-          mkdir -p ~/.ssh
-          printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          cat > ~/.ssh/config <<EOF
-          Host $SSH_HOST
-            User ubuntu
-            IdentityFile ~/.ssh/id_ed25519
-            ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
-            StrictHostKeyChecking accept-new
-          EOF
-          chmod 600 ~/.ssh/config
+          oci os object bulk-delete \
+            --namespace "$OCI_NAMESPACE" \
+            --bucket-name "$BACKUP_BUCKET" \
+            --force
+          echo "$BACKUP_BUCKET is empty — the rebuilt box starts with no state"
 
-      - name: Check Access token and deploy key
-        # Both of these used to surface as three silent 20-second timeouts.
-        run: |
-          set -euo pipefail
-          redirect="$(curl -sS -o /dev/null -w '%{redirect_url}' \
-            -H "CF-Access-Client-Id: $TUNNEL_SERVICE_TOKEN_ID" \
-            -H "CF-Access-Client-Secret: $TUNNEL_SERVICE_TOKEN_SECRET" \
-            https://ssh.sreeramkr.com/ || true)"
-          case "$redirect" in
-            *cdn-cgi/access/login*)
-              echo "Access rejected the service token (redirect to its login page)." >&2
-              echo "Check the Service Auth policy on the ssh.sreeramkr.com app and the token's expiry." >&2
-              exit 1
-              ;;
-            *) echo "service token accepted (origin redirect: ${redirect:-none})" ;;
-          esac
-          printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > /tmp/deploy_key
-          chmod 600 /tmp/deploy_key
-          if ! ssh-keygen -yf /tmp/deploy_key > /tmp/deploy_key.pub 2>/dev/null; then
-            echo "OCI_SSH_PRIVATE_KEY is not a readable OpenSSH private key" >&2
-            exit 1
-          fi
-          want="$(printf '%s' "$TF_VAR_ssh_public_key" | awk '{print $1, $2}')"
-          got="$(awk '{print $1, $2}' /tmp/deploy_key.pub)"
-          if [ "$want" != "$got" ]; then
-            echo "OCI_SSH_PRIVATE_KEY does not match OCI_SSH_PUBLIC_KEY" >&2
-            exit 1
-          fi
-          echo "deploy key matches OCI_SSH_PUBLIC_KEY"
-          rm -f /tmp/deploy_key /tmp/deploy_key.pub
-
-      - name: Pre-destroy snapshot (rebuild path)
-        # The snapshot is fetched over SSH and uploaded with CI's own OCI
-        # credentials, so a box whose cron or tooling is broken still gets a
-        # last backup. The bucket must hold at least one object before anything
-        # is destroyed. Skipped when skip_snapshot is set: the new box then
-        # starts empty instead of failing on an unreachable old one.
-        if: ${{ inputs.destroy_first && !inputs.skip_snapshot }}
-        run: |
-          set -euo pipefail
-          STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-          SNAPSHOT="/tmp/hermes-${STAMP}.tar.gz"
-          ok=0
-          for i in 1 2 3; do
-            if ssh -o ConnectTimeout=20 "$SSH_HOST" \
-              'sudo tar -czf - -C /home/hermes --exclude=hermes-agent .hermes' > "$SNAPSHOT"; then
-              ok=1; break
-            fi
-            echo "snapshot attempt $i failed"; sleep 15
-          done
-          [ "$ok" = 1 ] || { echo "could not take a fresh snapshot" >&2; exit 1; }
-          tar -tzf "$SNAPSHOT" >/dev/null
-          oci os object put --namespace "$OCI_NAMESPACE" --bucket-name "$BACKUP_BUCKET" \
-            --name "hermes-${STAMP}.tar.gz" --file "$SNAPSHOT" --force >/dev/null
-          count="$(oci os object list --namespace "$OCI_NAMESPACE" --bucket-name "$BACKUP_BUCKET" --query 'length(data)' --raw-output)"
-          [ "$count" -ge 1 ] || { echo "$BACKUP_BUCKET holds no snapshot — refusing to destroy" >&2; exit 1; }
-          echo "$BACKUP_BUCKET holds $count snapshot(s)"
-
-      - name: Terraform Destroy (rebuild path)
-        # Target only the instance: a full destroy would delete the snapshot
-        # bucket, the dynamic group and the policy — the things we restore from.
-        if: ${{ inputs.destroy_first }}
+      - name: Terraform Destroy (reset path)
+        # Target only the instance: a full destroy would try to take the
+        # snapshot bucket with it, which prevent_destroy refuses.
+        if: ${{ inputs.reset }}
         working-directory: infra/oci
-        run: terraform destroy -auto-approve -target=oci_core_instance.portfolio_node
+        run: |
+          if terraform state list | grep -q '^oci_core_instance.portfolio_node$'; then
+            terraform destroy -auto-approve -target=oci_core_instance.portfolio_node
+          else
+            echo "no instance in state — nothing to destroy"
+          fi
 
       - name: Terraform Apply
         working-directory: infra/oci
         run: terraform apply -auto-approve
-
-      - name: Wait for SSH and cloud-init
-        run: |
-          set -euo pipefail
-          # A rebuild replaces the instance, so the host key the pre-destroy
-          # snapshot learned no longer matches; accept-new only auto-accepts
-          # hosts it has never seen.
-          ssh-keygen -R "$SSH_HOST" >/dev/null 2>&1 || true
-          for i in $(seq 1 40); do
-            ssh -o ConnectTimeout=20 "$SSH_HOST" true >/dev/null 2>&1 && break
-            [ "$i" = 40 ] && { echo "SSH never answered over the tunnel" >&2; exit 1; }
-            sleep 15
-          done
-          ssh -o ConnectTimeout=20 "$SSH_HOST" \
-            "timeout 1800 bash -c 'until [ -f /var/log/cloud_init_complete ]; do sleep 10; done'"
-
-      - name: Restore state and start Hermes
-        # required=true on the rebuild path: a rebuild with no snapshot must fail
-        # loudly instead of booting an empty agent.
-        run: |
-          set -euo pipefail
-          # required=true only when a snapshot was taken on this run, so a
-          # first build or a recovery rebuild is not blocked by an empty bucket.
-          ssh -o ConnectTimeout=20 "$SSH_HOST" "sudo /usr/local/sbin/hermes-restore.sh '${{ inputs.destroy_first && !inputs.skip_snapshot }}'"
-          ssh -o ConnectTimeout=20 "$SSH_HOST" 'sudo systemctl start hermes-gateway.service hermes-dashboard.service'
-
-      - name: Verify
-        run: |
-          set -euo pipefail
-          ok=0
-          for i in 1 2 3 4 5; do
-            ssh -o ConnectTimeout=20 "$SSH_HOST" '
-              set -e
-              echo "--- units ---"; systemctl is-active hermes-gateway.service hermes-dashboard.service
-              echo "--- dashboard ---"; curl -fsS http://127.0.0.1:9119/api/status
-              echo; echo "--- listeners ---"; ss -ltn | grep -E ":(22|9119)\b"
-              echo "--- state ---"; sudo test -f /home/hermes/.hermes/.restored && echo "restored snapshot present"
-              echo "--- tunnel ---"; journalctl -u cloudflared --no-pager -n 50 | grep -c "Registered tunnel connection"
-            ' && { ok=1; break; }
-            echo "verify attempt $i failed"; sleep 15
-          done
-          [ "$ok" = 1 ] || { echo "verification failed" >&2; exit 1; }
 
       - name: Show outputs
         working-directory: infra/oci

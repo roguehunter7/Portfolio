@@ -70,12 +70,13 @@ install -d -m 0700 -o hermes -g hermes /home/hermes/.hermes
 install -m 0600 -o hermes -g hermes /etc/hermes/hermes.env /home/hermes/.hermes/.env
 install -m 0644 -o hermes -g hermes /etc/hermes/config.yaml /home/hermes/.hermes/config.yaml
 
-# --- 7. Hermes services ----------------------------------------------------
-# Enabled, not started: state is restored first, then the workflow (or the two
-# commands in the runbook) starts them, so the agent never writes state into a
-# directory that is about to be replaced by a snapshot.
+# --- 7. Hermes: restore state, then start ----------------------------------
+# The host owns the restore: on a rebuild it installs the newest snapshot from
+# the bucket, and an empty bucket simply starts clean. Nothing here needs CI to
+# reach the box.
 systemctl daemon-reload
-systemctl enable hermes-gateway.service hermes-dashboard.service
+/usr/local/sbin/hermes-restore.sh false
+systemctl enable --now hermes-gateway.service hermes-dashboard.service
 
 # --- 8. Host firewall ------------------------------------------------------
 systemctl enable --now cron

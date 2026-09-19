@@ -30,6 +30,9 @@ if [ -z "${LATEST}" ] || [ "${LATEST}" = "null" ]; then
     log "rebuild requested but ${BUCKET} holds no snapshot — aborting" >&2
     exit 1
   fi
+  install -d -m 0700 -o hermes -g hermes "${DATA}"
+  printf 'started empty\n' > "${MARKER}"
+  chown hermes:hermes "${MARKER}"
   log "no snapshot yet — starting empty"
   exit 0
 fi
@@ -54,6 +57,6 @@ tar -xzf "${TMP}/state.tar.gz" -C /home/hermes
 # Secrets are authoritative in the repo/CI chain, never in the snapshot.
 install -m 0600 -o hermes -g hermes /etc/hermes/hermes.env "${DATA}/.env"
 chown -R hermes:hermes "${DATA}"
-touch "${MARKER}"
+printf 'restored %s\n' "${LATEST}" > "${MARKER}"
 chown hermes:hermes "${MARKER}"
 log "restored ${LATEST} into ${DATA}"

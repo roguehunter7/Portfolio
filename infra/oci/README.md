@@ -48,7 +48,7 @@ consequences, stated plainly:
   `/home/hermes/.hermes`.
 
 If the agent is ever compromised: rotate the tunnel token, the Telegram bot
-token and the DeepSeek key, then rebuild with `destroy_first`.
+token and the DeepSeek key, then rebuild with `reset`.
 
 ## Always Free compliance
 
@@ -71,7 +71,7 @@ token and the DeepSeek key, then rebuild with `destroy_first`.
   means one prompt injection is host root. That is the deliberate trade for a box
   with nothing but Hermes on it.
 * `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
-  nothing on a running instance — use `destroy_first` to rebuild.
+  nothing on a running instance — use `reset` to rebuild.
 * OCI caps user data + metadata at **32,000 bytes**; the rendered payload is
   ~17.6 KB and `scripts/check-cloud-init.py` fails CI past the cap.
 
@@ -100,47 +100,44 @@ CI reads credentials from GitHub **Secrets / Variables**:
 | Name | Kind | Used for |
 |---|---|---|
 | `OCI_API_KEY`, `OCI_USER_OCID`, `OCI_FINGERPRINT`, `OCI_TENANCY_OCID` | secret | Terraform + CLI auth |
-| `OCI_SSH_PUBLIC_KEY` | variable | public half of the deploy key (injected into `ubuntu`) |
-| `OCI_SSH_PRIVATE_KEY` | secret | private half, used by the workflow to reach the box |
+| `OCI_SSH_PUBLIC_KEY` | variable | public half of your deploy key, injected into `ubuntu` for Access-gated SSH |
 | `OCI_TFSTATE_BUCKET` | variable | Terraform state bucket |
 | `CLOUDFLARE_TUNNEL_TOKEN` | secret | the tunnel itself |
-| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | secret | Access service token for SSH |
 | `DEEPSEEK_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` | secret | Hermes |
 | `HERMES_DASHBOARD_PASSWORD`, `HERMES_DASHBOARD_SECRET` | secret | dashboard auth (user `admin`; secret = `openssl rand -base64 32`) |
 
 Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 
-1. `ssh.sreeramkr.com` → **SSH** `localhost:22` — Access app with two policies:
-   your email, and a **Service Auth** rule for the CI service token.
-2. `hermes.sreeramkr.com` → **HTTP** `localhost:9119` — Access app, same policies.
+1. `ssh.sreeramkr.com` → **SSH** `localhost:22` — Access app allowing your email.
+2. `hermes.sreeramkr.com` → **HTTP** `localhost:9119` — Access app allowing your email.
    Hermes' own username/password provider is the second layer.
 
-Generate the deploy key once and keep the halves apart:
+CI never logs into the box, so no service token is needed. Generate the key pair
+once; only the public half goes to GitHub:
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/oci-deploy -C oci-deploy   # private -> OCI_SSH_PRIVATE_KEY
-cat ~/.ssh/oci-deploy.pub                                   # public  -> OCI_SSH_PUBLIC_KEY
+ssh-keygen -t ed25519 -f ~/.ssh/oci_key -C oci-deploy   # private half stays with you
+cat ~/.ssh/oci_key.pub                                   # public half -> OCI_SSH_PUBLIC_KEY
 ```
 
 ## Deploy
 
-Run **Actions → OCI Provision → Run workflow**. The workflow renders and validates
-the cloud-init template first (`checks`: shell syntax, `terraform fmt`, render +
-validate), then applies. On the rebuild path it also:
+Run **Actions → OCI Provision → Run workflow**. The workflow validates the
+cloud-init template first (`checks`: shell syntax, `terraform fmt`, render +
+validate), then applies. Two checkboxes:
 
-1. takes a **fresh snapshot** over SSH and refuses to continue if the bucket is empty,
-2. destroys **only the instance** (`-target=oci_core_instance.portfolio_node`) so the
-   bucket, dynamic group and policy survive,
-3. waits for SSH and `/var/log/cloud_init_complete`,
-4. runs `hermes-restore.sh true` and starts both units,
-5. verifies units, dashboard status, listeners and the restored-state marker.
+| Input | Effect |
+|---|---|
+| `reset` | destroys the instance (`-target=oci_core_instance.portfolio_node`) and rebuilds it from scratch |
+| `keep_snapshots` | only meaningful with `reset`: skips the snapshot wipe, so the rebuilt box restores the newest snapshot on boot |
 
-Two details worth knowing: a **targeted `terraform apply`** creates the snapshot
-bucket, dynamic group and policy *before* the snapshot runs (the snapshot uploads
-to that bucket), and a preflight check fails fast when Access rejects the service
-token or when `OCI_SSH_PRIVATE_KEY` does not match `OCI_SSH_PUBLIC_KEY`. Use
-`skip_snapshot: true` to rebuild when the old box is unreachable or has nothing
-worth keeping — the new box then starts empty instead of blocking on the snapshot.
+* **Neither ticked** — a plain `terraform apply`: Terraform builds or updates the box, nothing is destroyed.
+* **`reset`** — every snapshot is deleted, the instance is destroyed, and the new box starts with no state at all. Unrecoverable.
+* **`reset` + `keep_snapshots`** — the instance is destroyed but the snapshots survive, so the rebuilt box restores the newest one, up to six hours old.
+
+CI never logs into the box. A targeted `terraform apply` creates the snapshot
+bucket, dynamic group and policy before the instance is built, and the host
+restores its own state at first boot.
 
 ```bash
 # from a laptop, with cloudflared installed and an Access login
@@ -152,45 +149,16 @@ ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.
 * `/etc/cron.d/hermes-backup` runs `hermes-backup.sh` every six hours: stop both
   units, tar `/home/hermes/.hermes` (excluding the re-clonable `hermes-agent`
   checkout), upload with the instance principal, prune to the newest 10, start.
-* On the rebuild path, CI fetches the same tar over SSH and uploads it with its
-  own OCI credentials before destroying anything, so a box whose cron or tooling
-  is broken still gets a last backup.
-* `hermes-restore.sh` installs the newest snapshot and writes a `.restored` marker,
-  so it is safe to run on every deploy. `.env` always comes fresh from
-  `/etc/hermes/hermes.env`; `config.yaml` comes from the snapshot (dashboard edits
-  win over the repo baseline).
-* Force a fresh snapshot before a rebuild you care about:
+* `provision.sh` runs `hermes-restore.sh` before starting the units, so a rebuilt
+  box restores the newest snapshot by itself and an empty bucket simply starts
+  clean. The marker at `/home/hermes/.hermes/.restored` records which path ran —
+  `restored <object>` or `started empty` — and keeps a re-run from clobbering
+  live state.
+* `.env` always comes fresh from `/etc/hermes/hermes.env`; `config.yaml` comes from
+  the snapshot (dashboard edits win over the repo baseline).
+* The newest snapshot is at most six hours old, because CI has no way into the box
+  to take one at destroy time. Force a fresh one before a rebuild you care about:
   `sudo /usr/local/sbin/hermes-backup.sh`.
-
-## First migration from the Docker-era box (one time only)
-
-The live box still runs the Docker-era layout and has no `sshd`, so CI cannot
-reach it and the pre-destroy snapshot cannot run. Order matters here:
-
-1. In the Cloudflare dashboard, point `ssh.sreeramkr.com` at **SSH**
-   `localhost:22` and attach the Access app with the service-token policy.
-2. From the existing ttyd terminal on the box, open the SSH path and move the
-   agent's data into the native layout:
-
-   ```bash
-   sudo apt-get install -y openssh-server
-   printf 'ListenAddress 127.0.0.1\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\nAllowUsers ubuntu\nX11Forwarding no\n' \
-     | sudo tee /etc/ssh/sshd_config.d/99-devbox.conf
-   sudo systemctl restart ssh
-   # The instance was built with the PREVIOUS OCI_SSH_PUBLIC_KEY, so a freshly
-   # generated pair must be trusted here or CI cannot reach the box at all.
-   # Paste the single line from your new oci_key.pub:
-   echo 'ssh-ed25519 AAAA… oci-deploy' | sudo tee -a /home/ubuntu/.ssh/authorized_keys
-   sudo mkdir -p /home/hermes
-   sudo cp -a /opt/hermes /home/hermes/.hermes
-   ```
-
-3. Run **OCI Provision** with `destroy_first`. The snapshot now succeeds, and the
-   rebuilt box restores it.
-
-If the old state is not worth keeping, skip this and destroy the instance
-directly (`terraform destroy -target=oci_core_instance.portfolio_node`); the
-rebuild then starts empty.
 
 ## Verification
 
@@ -199,7 +167,7 @@ systemctl is-active hermes-gateway.service hermes-dashboard.service
 curl -fsS http://127.0.0.1:9119/api/status        # auth_required / auth_providers
 ss -ltn | grep -E ':(22|9119)\b'                  # loopback only
 journalctl -u cloudflared --no-pager -n 50 | grep "Registered tunnel connection"
-sudo test -f /home/hermes/.hermes/.restored && echo restored
+ssudo cat /home/hermes/.hermes/.restored            # restored <object> | started empty
 tail -n 20 /var/log/hermes-backup.log
 ```
 
@@ -223,7 +191,7 @@ cron, so after a monthly pass run `hermes config check` over SSH — and
 ## Destroy
 
 ```bash
-cd infra/oci && terraform destroy      # or run the workflow with destroy_first
+cd infra/oci && terraform destroy      # or run the workflow with reset
 ```
 
 The instance is disposable; the snapshot bucket is not. The rebuild path targets

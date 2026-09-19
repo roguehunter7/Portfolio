@@ -293,8 +293,9 @@ document.documentElement.dataset.theme =
             and <code>hermes.sreeramkr.com</code> at the dashboard, with Cloudflare Access — and a service token
             for CI — gating both. There is no security group: <code>ufw</code> denies inbound and nothing binds a
             public interface. Agent state lives in <code>/home/hermes/.hermes</code> and is snapshotted every six
-            hours to a private OCI Object Storage bucket using the instance principal, so the rebuild workflow
-            takes a fresh snapshot, destroys only the instance, and restores automatically on first boot.
+            hours to a private OCI Object Storage bucket using the instance principal; the host restores the
+            newest snapshot itself at first boot. One workflow run rebuilds the box — destroy the instance and
+            keep the snapshots, or wipe both for a factory-fresh agent.
             Vaultwarden keeps running on the GCP box (Phase 6), loopback <code>:8000</code> behind its own
             tunnel. One monthly maintenance pass updates the OS and runs <code>hermes update</code>, then reboots.
           </p>
@@ -302,7 +303,7 @@ document.documentElement.dataset.theme =
             <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Access in front of both the SSH and dashboard routes, with a service token for CI.</li>
             <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, sshd loopback-only.</li>
             <li><strong>Workloads:</strong> native Hermes (gateway + dashboard) under systemd — no Docker, no terminal multiplexer.</li>
-            <li><strong>State:</strong> six-hourly snapshots to a private OCI bucket via the instance principal; a rebuild destroys only the instance and restores automatically.</li>
+            <li><strong>State:</strong> six-hourly snapshots to a private OCI bucket via the instance principal; a rebuild restores the newest one at boot, and a reset wipes the instance and the snapshots.</li>
             <li><strong>Fleet:</strong> the GCP e2-micro stays the Vaultwarden host from Phase 6.</li>
           </ul>
         </div>

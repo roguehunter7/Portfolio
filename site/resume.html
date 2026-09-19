@@ -301,7 +301,7 @@
       </div>
       <ul>
         <li><b>Terraform</b> (state-locked) with <b>cost guardrails</b>: custom VPC plus deny-all ingress (0-65535), IAP-only SSH, and a <b>zero-ingress</b> <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box — tenancy budget + quota that caps at the <b>$0/mo</b> allocation.</li>
-        <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: IAP-SSH deploys for the vault host, SSH over the Cloudflare Tunnel (Access service token) for the Hermes host with a pre-destroy snapshot and automatic restore, and <code>wrangler pages deploy</code> for the site under hardened <code>_headers</code> (HSTS, nosniff, frame denial); CI renders the ATS-safe resume PDF.</li>
+        <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: IAP-SSH deploys for the vault host and <code>wrangler pages deploy</code> for the site under hardened <code>_headers</code> (HSTS, nosniff, frame denial); the Hermes host restores its own state at first boot, so CI never needs a shell on it, and CI renders the ATS-safe resume PDF.</li>
         <li>All services behind outbound <b>Cloudflare Tunnels</b> with loopback-only listeners — zero exposed host ports; admin SSH and the Hermes dashboard are both Access-gated.</li>
       </ul>
     </div>
@@ -314,7 +314,7 @@
       <ul>
         <li>Provisioned an <b>AI assistant</b> (Telegram gateway + <b>DeepSeek API</b>, native systemd install with its own uv-managed Python/Node) and a <b>Vaultwarden</b> password vault, both on free-tier VMs — loopback-only services behind outbound <b>Cloudflare Tunnels</b>, zero open ports, outbound polling/LLM traffic only.</li>
         <li>Secrets in a root-owned <code>0600 .env</code> (Argon2 admin token, signups disabled); nightly CLI-free SQLite backup via the metadata token, auto-pruned to the newest 10.</li>
-        <li>Snapshotted the assistant's state to a private OCI Object Storage bucket every six hours (keyless instance principal); the rebuild workflow takes a fresh snapshot, destroys only the instance, and restores automatically.</li>
+        <li>Snapshotted the assistant's state to a private OCI Object Storage bucket every six hours (keyless instance principal); the host restores the newest snapshot at first boot, and a reset wipes the instance and the bucket for a factory-fresh agent.</li>
       </ul>
     </div>
   </section>
