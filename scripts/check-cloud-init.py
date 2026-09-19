@@ -7,6 +7,7 @@ does (the same variable map as infra/oci/main.tf), then checks:
   * the result parses as YAML (catches $${} / interpolation mistakes)
   * every write_files body decodes (text, b64, gz+b64)
   * every decoded *.sh passes `bash -n`
+  * the sudoers drop-in carries the expected rule (visudo runs on the box)
   * the rendered user_data still fits OCI's 32,000-byte metadata cap
 
 Run locally or from CI before `terraform apply`.
@@ -42,12 +43,18 @@ def build_vars() -> dict:
             "DEEPSEEK_API_KEY=" + "x" * 35 + "\n"
             "TELEGRAM_BOT_TOKEN=" + "x" * 46 + "\n"
             "TELEGRAM_ALLOWED_USERS=123456789\n"
+            "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=admin\n"
+            "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=" + "x" * 32 + "\n"
+            "HERMES_DASHBOARD_BASIC_AUTH_SECRET=" + "x" * 44 + "\n"
         ),
-        "dsh_env_b64": b64("DEEPSEEK_API_KEY=" + "x" * 35 + "\n"),
         "hermes_config_gzb64": gz(ROOT / "infra/hermes/config.yaml"),
-        "hermes_compose_gzb64": gz(ROOT / "infra/hermes/docker-compose.yml"),
         "provision_gzb64": gz(ROOT / "scripts/provision.sh"),
         "maintenance_gzb64": gz(ROOT / "scripts/maintenance.sh"),
+        "backup_gzb64": gz(ROOT / "scripts/hermes-backup.sh"),
+        "restore_gzb64": gz(ROOT / "scripts/hermes-restore.sh"),
+        "oci_namespace": "nsexample",
+        "backup_bucket": "hermes-backups",
+        "region": "ap-hyderabad-1",
     }
 
 
@@ -91,6 +98,12 @@ def main() -> int:
                 )
                 if result.returncode != 0:
                     failures.append(f"{path}: bash -n failed: {result.stderr.strip()}")
+            elif path == "/etc/sudoers.d/hermes":
+                # visudo runs on the box before anything else; this catches a
+                # truncated or empty write.
+                for rule in ("hermes ALL=(ALL:ALL) NOPASSWD:ALL", "ubuntu ALL=(ALL:ALL) NOPASSWD:ALL"):
+                    if rule not in decoded:
+                        failures.append(f"{path}: missing the expected rule: {rule}")
             elif path.endswith("docker-compose.yml"):
                 try:
                     yaml.safe_load(decoded)

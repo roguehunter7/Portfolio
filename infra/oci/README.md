@@ -1,31 +1,54 @@
-# infra/oci — Ubuntu 24.04 dev box
+# infra/oci — Ubuntu 24.04 Hermes host
 
-No-open-ports Oracle A1.Flex provisioned by GitHub Actions + Terraform. The VM has
-**no open ports**: `ufw` allows nothing in, the OpenSSH server is removed at the
-end of provisioning, and no service binds a public interface. Everything
-reachable arrives over the outbound Cloudflare Tunnel.
+No-open-ports Oracle A1.Flex provisioned by GitHub Actions + Terraform. The box
+runs **Hermes natively** as its own user, and is administered over **SSH carried
+by the Cloudflare Tunnel**: `ssh.sreeramkr.com` → `ssh://localhost:22`, and the
+Hermes dashboard on `hermes.sreeramkr.com` → `http://localhost:9119`. Cloudflare
+Access gates both routes, sshd and the dashboard bind loopback, and `ufw` denies
+inbound — so nothing is ever publicly reachable.
 
 ## Why Ubuntu 24.04
 
 * It is a first-class OCI platform image for Arm (`Canonical Ubuntu 24.04`), with the
-  default `ubuntu` user and native `apt`/`ufw` tooling that the provisioning
-  scripts are written against.
-* Node is **not** an apt package here. The interactive user (`ubuntu`) gets Node via
-  **nvm** (the official installer); Hermes runs in the official image and carries
-  its own Node/Python/Chromium, so a monthly Node bump can never touch the gateway.
+  default `ubuntu` user and native `apt`/`ufw` tooling the provisioning scripts
+  are written against.
+* Hermes is **not** a distro package. Its installer brings uv-managed Python,
+  Node and ripgrep into `/home/hermes`, so a monthly `apt upgrade` cannot break
+  the agent and there is no distro Python/Node version to track. The only OS
+  packages the installer needs are `git`, `curl` and `xz-utils`.
 
 ## Workloads
 
 | Workload | How it runs | Reachable at |
 |---|---|---|
 | Cloudflare Tunnel | `cloudflared.service`, outbound | the only ingress path |
-| Browser terminal | `ttyd` + bash, loopback `:7681`, user `ubuntu` | `ssh.sreeramkr.com` |
-| DeepSeek Harness | installed at first boot as `ubuntu` (nvm): pnpm, the `dsh` launcher, the `tui` profile and the `web` profile (Archify bundle); **run on demand** from the terminal; `dsh web` loopback `:3080` | `dsh.sreeramkr.com` |
-| Hermes Agent | Docker container from the official image; loopback API only | Telegram (long poll outbound) |
+| SSH (admin + CI) | `sshd`, loopback `:22`, user `ubuntu` | `ssh.sreeramkr.com` (Access) |
+| Hermes gateway | `hermes-gateway.service`, user `hermes` | Telegram (long poll, outbound) |
+| Hermes dashboard | `hermes-dashboard.service`, loopback `:9119` | `hermes.sreeramkr.com` (Access) |
 
-Docker runs **only Hermes**: the official image carries its own Python/Node/Chromium,
-so the host gets no Hermes toolchain and the agent never reads the host's credentials
-(`~/.dsh`, `~/.config/gh`, the repo).
+Nothing else runs on the host. There is no Docker, no multiplexer and no browser
+terminal: SSH is the admin path and Hermes is the workload.
+
+## Blast radius — read this before changing anything
+
+The `hermes` user has **full sudo by design** (`/etc/sudoers.d/hermes`). Hermes is
+the control surface on this box, so the agent is root-equivalent on purpose. The
+consequences, stated plainly:
+
+* The box holds the **Cloudflare tunnel token**. Anyone holding it can run a
+  second connector for this tunnel and receive a share of its traffic. Rotating
+  the token is the only recovery.
+* The box holds **DeepSeek and Telegram credentials** and the **OCI instance
+  identity** (instance principal, scoped by policy to the snapshot bucket only).
+* **No GitHub credential lives here.** CI keeps its deploy private key in GitHub
+  secrets, so a compromised box cannot push to the repository.
+* The rebuild path restores from the snapshot bucket, so a tampered snapshot
+  would persist across rebuilds. `hermes-restore.sh` therefore refuses archives
+  with absolute paths or `..` traversal, and extracts only into
+  `/home/hermes/.hermes`.
+
+If the agent is ever compromised: rotate the tunnel token, the Telegram bot
+token and the DeepSeek key, then rebuild with `destroy_first`.
 
 ## Always Free compliance
 
@@ -33,193 +56,168 @@ so the host gets no Hermes toolchain and the agent never reads the host's creden
 |---|---|---|---|
 | Compute | `VM.Standard.A1.Flex`, 2 OCPU / 12 GB | 1,500 OCPU-hrs + 9,000 GB-hrs/mo (= 2 OCPU / 12 GB continuous) | within |
 | Block volume | boot volume 50 GB | 200 GB total (boot + block) | within |
-| Object Storage | tfstate bucket (KB-size) | 20 GB | within |
+| Object Storage | tfstate bucket + `hermes-backups` (a few MB per snapshot, 10 kept) | 20 GB | within |
 | Networking | VCN, IGW, route table, subnet, 1 ephemeral public IP | all $0 | within |
 | Image | Canonical Ubuntu 24.04 (aarch64) | Always Free-eligible platform image | within |
 
 **Caveats**
-- Oracle may **reclaim idle A1 instances** (CPU 95th pct <20%, network <20%, and — A1 only — memory <20% over 7 days). Keep the box busy.
-- The tunnel token and the app secrets are injected via cloud-init, so they land in
-  the OCI tfstate (private bucket) and in instance metadata (readable from the box
-  itself). Both are scoped to this tenancy. Accepted trade-off.
-- `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
+
+* Oracle may **reclaim idle A1 instances** (CPU 95th pct <20%, network <20%, and —
+  A1 only — memory <20% over 7 days). Keep the box busy.
+* The tunnel token and the app secrets are injected via cloud-init, so they land
+  in the OCI tfstate (private bucket) and in instance metadata (readable from the
+  box itself). Both are scoped to this tenancy. Accepted trade-off.
+* Running the agent as root-equivalent, with the dashboard exposed behind Access,
+  means one prompt injection is host root. That is the deliberate trade for a box
+  with nothing but Hermes on it.
+* `user_data` runs on **first boot only**. Editing `cloud-init.yaml.tftpl` changes
   nothing on a running instance — use `destroy_first` to rebuild.
-- OCI caps user data + metadata at **32,000 bytes**. The rendered payload is ~16 KB
-  (scripts and configs are embedded `gz+b64`); `scripts/check-cloud-init.py` fails CI
-  if that ever grows past the cap.
+* OCI caps user data + metadata at **32,000 bytes**; the rendered payload is
+  ~17.6 KB and `scripts/check-cloud-init.py` fails CI past the cap.
 
 ## Architecture
 
 ```
-browser ── https://dsh.sreeramkr.com ─> Cloudflare edge ─> cloudflared (on VM, outbound)
-                                                              └─> 127.0.0.1:3080  dsh web
-                                                                  (run on demand from ttyd)
+you / CI ── ssh.sreeramkr.com ──> Cloudflare Access ──> cloudflared (host, outbound)
+                                                          └─> 127.0.0.1:22   sshd (ubuntu)
 
-browser ── https://ssh.sreeramkr.com ─> Cloudflare edge ─> cloudflared ─> 127.0.0.1:7681  ttyd -> bash
+browser ── hermes.sreeramkr.com ─> Cloudflare Access ──> cloudflared
+                                                          └─> 127.0.0.1:9119 hermes dashboard
 
-Telegram  <── long poll (outbound) ── Hermes container ──> api.deepseek.com
+Telegram <── long poll (outbound) ── hermes-gateway ──> api.deepseek.com
+
+cron (6-hourly) ── hermes-backup.sh ──> OCI Object Storage bucket hermes-backups
 ```
 
-- VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
-- No security group; `ufw` allows nothing in and no service binds a public interface
-- A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 aarch64, 50 GB boot, ephemeral public IP
-- ufw: default deny incoming, allow outgoing; all published ports bound to loopback
+* VCN `10.0.0.0/16`, public subnet `10.0.0.0/24`, IGW + default route
+* No security group; `ufw` allows nothing in; both listeners bind loopback
+* A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04 aarch64, 50 GB boot, ephemeral public IP
 
 ## One-time setup
 
-CI reads credentials from GitHub **Secrets / Variables** (names are in
-`.github/workflows/oci-provision.yml`):
+CI reads credentials from GitHub **Secrets / Variables**:
 
-`OCI_API_KEY`, `OCI_USER_OCID`, `OCI_FINGERPRINT`, `OCI_TENANCY_OCID`,
-`CLOUDFLARE_TUNNEL_TOKEN`, `DEEPSEEK_API_KEY`,
-`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` (optional); variables:
-`OCI_SSH_PUBLIC_KEY`, `OCI_TFSTATE_BUCKET`.
+| Name | Kind | Used for |
+|---|---|---|
+| `OCI_API_KEY`, `OCI_USER_OCID`, `OCI_FINGERPRINT`, `OCI_TENANCY_OCID` | secret | Terraform + CLI auth |
+| `OCI_SSH_PUBLIC_KEY` | variable | public half of the deploy key (injected into `ubuntu`) |
+| `OCI_SSH_PRIVATE_KEY` | secret | private half, used by the workflow to reach the box |
+| `OCI_TFSTATE_BUCKET` | variable | Terraform state bucket |
+| `CLOUDFLARE_TUNNEL_TOKEN` | secret | the tunnel itself |
+| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | secret | Access service token for SSH |
+| `DEEPSEEK_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` | secret | Hermes |
+| `HERMES_DASHBOARD_PASSWORD`, `HERMES_DASHBOARD_SECRET` | secret | dashboard auth (user `admin`; secret = `openssl rand -base64 32`) |
 
 Tunnel routes (Cloudflare dashboard → Zero Trust → Networks → Tunnels):
 
-1. `ssh.sreeramkr.com` → **HTTP** `127.0.0.1:7681` (ttyd) — **put Cloudflare Access in front of this one; ttyd has no credential**
-2. `dsh.sreeramkr.com` → **HTTP** `127.0.0.1:3080` (dsh web)
+1. `ssh.sreeramkr.com` → **SSH** `localhost:22` — Access app with two policies:
+   your email, and a **Service Auth** rule for the CI service token.
+2. `hermes.sreeramkr.com` → **HTTP** `localhost:9119` — Access app, same policies.
+   Hermes' own username/password provider is the second layer.
 
-Either `127.0.0.1` or `localhost` works. cloudflared is a Go program, and Go
-resolves `localhost` to both `::1` and `127.0.0.1` and falls back to whichever
-answers, so a service bound to IPv4 loopback is reached either way. What matters
-is that the origin port matches the service's listening port and the service
-binds loopback only.
+Generate the deploy key once and keep the halves apart:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/oci-deploy -C oci-deploy   # private -> OCI_SSH_PRIVATE_KEY
+cat ~/.ssh/oci-deploy.pub                                   # public  -> OCI_SSH_PUBLIC_KEY
+```
 
 ## Deploy
 
 Run **Actions → OCI Provision → Run workflow**. The workflow renders and validates
 the cloud-init template first (`checks`: shell syntax, `terraform fmt`, render +
-validate), then applies. `destroy_first` destroys the VM and re-applies, which is
-the only way to re-run cloud-init.
+validate), then applies. On the rebuild path it also:
 
-First boot is ordered for fast access: cloudflared and ttyd come up first
-(~2–3 min), then the full `apt upgrade`, nvm/Node and Hermes. So
-`ssh.sreeramkr.com` is usable long before `/var/log/cloud_init_complete`
-appears.
-
-## Access
-
-- **Terminal:** https://ssh.sreeramkr.com → a bash login shell. Access is gated by
-  **Cloudflare Access** in front of the tunnel route; ttyd itself has no
-  credential. History scrolls with the mouse wheel (xterm.js in the browser);
-  Shift+wheel if a TUI has grabbed the mouse.
-- **dsh-tui (on demand):** `provision.sh` already installed it
-  (`dsh plugin --profile tui add @tomowang/dsh-tui`), so at the prompt just run
-  `dsh --profile tui` (or `--resume` to reopen a session). It outlives the
-  browser tab, but a ttyd restart or reboot ends the shell — `--resume` picks the
-  session back up.
-- **dsh web (on demand):** `dsh web --trusted-host dsh.sreeramkr.com`, then open
-  https://dsh.sreeramkr.com and paste the token the harness prints. The login
-  shell already exports `DEEPSEEK_API_KEY` from `~/.dsh/env`.
-- **From a phone:** the grid autoscales (FitAddon → RESIZE_TERMINAL → PTY), but the
-  soft keyboard has no Esc, Ctrl or arrows, so dsh-tui's modal input is unusable
-  there. Use the DSH web UI (responsive) on a phone.
-- **Hermes:** message the bot on Telegram. It cannot message you first — open the bot
-  once and send `/start`.
-
-Emergency backdoor (tunnel down): OCI serial console
-(`Compute → instance → Resources → Console connection`).
-
-## Browser terminal — scrollback model
-
-`ttyd` owns the PTY and pumps bytes to xterm.js in the browser, which is where the
-terminal — and its history — actually lives. There is no multiplexer in the chain:
-bash is the child, and nothing intercepts the wheel. `tmux` was removed because
-its `mouse on` default binds WheelUp to copy-mode, so scrolls ran in a buffer the
-browser could not see; tmux did survive a ttyd restart, which plain bash does not.
-
-Two consequences worth knowing:
-
-- Shell history (prompts, command output) accumulates in xterm.js and scrolls with
-  the wheel; the cap is xterm's default 1000 lines, so old lines age out rather than
-  surviving until `clear`.
-- `dsh-tui` runs `fullscreen: true`, i.e. the alternate screen, which has no
-  scrollback of its own. Its transcript scrolls in-app (wheel, scrollbar gutter) and
-  is not written to browser history. To read turns back later, use the in-app scroll,
-  or `dsh --profile tui --resume` for the session itself.
-- If a full-screen TUI ever grabs the mouse, Shift+wheel still reaches xterm.js.
-
-## Verifying (CI cannot reach the box)
-
-No open ports means the workflow can only apply. Verification happens in the browser
-terminal:
+1. takes a **fresh snapshot** over SSH and refuses to continue if the bucket is empty,
+2. destroys **only the instance** (`-target=oci_core_instance.portfolio_node`) so the
+   bucket, dynamic group and policy survive,
+3. waits for SSH and `/var/log/cloud_init_complete`,
+4. runs `hermes-restore.sh true` and starts both units,
+5. verifies units, dashboard status, listeners and the restored-state marker.
 
 ```bash
-ls /var/log/cloud_init_complete                 # cloud-init ran to the end
-systemctl status cloudflared ttyd --no-pager     # the two system services
-command -v node && node -v                       # nvm toolchain
-ss -ltnp | grep -E '7681|3080'                    # ttyd; :3080 only while dsh runs
-docker compose -f /opt/hermes/docker-compose.yml ps   # Hermes container
-docker logs hermes --tail 40 | grep -i telegram       # gateway + Telegram
-curl -fsS http://127.0.0.1:8642/healthz || true       # Hermes health (loopback)
+# from a laptop, with cloudflared installed and an Access login
+ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.com
 ```
 
-## Hermes (Docker)
+## State snapshots
 
-- Official image `nousresearch/hermes-agent:latest`, `gateway run`,
-  `restart: unless-stopped` (`infra/hermes/docker-compose.yml`). Everything Hermes
-  needs — Python, Node, Chromium — lives in the image, so the host gains only the
-  Docker runtime. The monthly maintenance job pulls new releases.
-- `/opt/hermes` is mounted at `/opt/data` (config, sessions, skills, memories).
-  Updating means `docker compose pull && up -d`; `hermes update` is not supported
-  inside Docker by design.
-- Secrets and model config: cloud-init stages `/etc/hermes/hermes.env` (0600) and
-  `/etc/hermes/config.yaml`; `provision.sh` installs them as `/opt/hermes/.env`
-  (0600) and `/opt/hermes/config.yaml`. Model routing: every call — main loop,
-  delegation and auxiliary tasks — runs `deepseek-flash`.
-- No port is published to the network: Telegram is long-polled outbound, and the
-  gateway's API/dashboard on `:8642` is bound to loopback only. The agent is not
-  reachable from the internet even if the rest of the box is.
-- The gateway is s6-supervised inside the container, so a crash is restarted
-  without losing the container; a reboot brings it back via `restart: unless-stopped`.
+* `/etc/cron.d/hermes-backup` runs `hermes-backup.sh` every six hours: stop both
+  units, tar `/home/hermes/.hermes` (excluding the re-clonable `hermes-agent`
+  checkout), upload with the instance principal, prune to the newest 10, start.
+* On the rebuild path, CI fetches the same tar over SSH and uploads it with its
+  own OCI credentials before destroying anything, so a box whose cron or tooling
+  is broken still gets a last backup.
+* `hermes-restore.sh` installs the newest snapshot and writes a `.restored` marker,
+  so it is safe to run on every deploy. `.env` always comes fresh from
+  `/etc/hermes/hermes.env`; `config.yaml` comes from the snapshot (dashboard edits
+  win over the repo baseline).
+* Force a fresh snapshot before a rebuild you care about:
+  `sudo /usr/local/sbin/hermes-backup.sh`.
 
-## DeepSeek Harness
+## First migration from the Docker-era box (one time only)
 
-- **Installed by `provision.sh`** as `ubuntu` into nvm's global tree: `pnpm`,
-  then `npm install -g @deepseek-ai/dsh@next`, then two bundles:
-  `dsh plugin --profile tui add @tomowang/dsh-tui` (terminal front door) and
-  `dsh plugin --profile web add @tt-a1i/archify-dsh` (Skill-only bundle adding the
-  Archify architecture-diagram skill to the web profile). Each command creates its
-  profile on first use (`~/.dsh/profiles/tui`, `…/web`) and resolves the newest
-  published version; nothing here is version-pinned. `pnpm` is required, not
-  optional: `dsh plugin` is a pnpm forwarder and exits 127 without it. Run on
-  demand (`dsh --profile tui`, loopback terminal; `dsh web --trusted-host
-  dsh.sreeramkr.com`, loopback `:3080`, browser UI). ttyd keeps the process alive
-  when the browser tab closes; a reboot ends it.
-- No reverse-proxy plugin: the tunnel points straight at `:3080`, so the harness
-  startup token is the credential and is pasted into the URL after a restart.
-- `npm install -g` runs as `ubuntu`, never as root — DSH's dependency tree compiles
-  `node-pty` and `koffi`, and running install scripts as root is the
-  `sudo npm install` trap. On npm 11+ the install-script allowlist is seeded in
-  `~/.npmrc` before the installs:
-  `allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs,@earendil-works/pi-tui`.
-  If an install fails with a blocked-script error, add the package npm names to
-  that list and re-run `provision.sh`.
-- The LLM key is staged at `/etc/dsh/env` (0600 root) and installed to
-  `~/.dsh/env` (0600 `ubuntu`); the login shell exports it.
+The live box still runs the Docker-era layout and has no `sshd`, so CI cannot
+reach it and the pre-destroy snapshot cannot run. Order matters here:
 
-## Maintenance — one cadence
+1. In the Cloudflare dashboard, point `ssh.sreeramkr.com` at **SSH**
+   `localhost:22` and attach the Access app with the service-token policy.
+2. From the existing ttyd terminal on the box, open the SSH path and move the
+   agent's data into the native layout:
 
-**Monthly, 5th at 03:05** (`/etc/cron.d/maintenance` →
-`/usr/local/sbin/maintenance.sh`): one pass that runs, in order,
+   ```bash
+   sudo apt-get install -y openssh-server
+   printf 'ListenAddress 127.0.0.1\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\nAllowUsers ubuntu\nX11Forwarding no\n' \
+     | sudo tee /etc/ssh/sshd_config.d/99-devbox.conf
+   sudo systemctl restart ssh
+   # The instance was built with the PREVIOUS OCI_SSH_PUBLIC_KEY, so a freshly
+   # generated pair must be trusted here or CI cannot reach the box at all.
+   # Paste the single line from your new oci_key.pub:
+   echo 'ssh-ed25519 AAAA… oci-deploy' | sudo tee -a /home/ubuntu/.ssh/authorized_keys
+   sudo mkdir -p /home/hermes
+   sudo cp -a /opt/hermes /home/hermes/.hermes
+   ```
 
-1. `apt-get update && apt-get upgrade` — kernel, cloudflared, ttyd, ripgrep, htop, gh.
-2. As `ubuntu`: re-run the nvm installer (newest nvm tag), `nvm install --lts`,
-   `nvm install-latest-npm`, repoint `~/.nvm/current`.
-3. Pull and recreate the Hermes container — `docker compose -f /opt/hermes/docker-compose.yml pull --quiet` then `up -d`; it follows `:latest`.
+3. Run **OCI Provision** with `destroy_first`. The snapshot now succeeds, and the
+   rebuilt box restores it.
 
-Then it reboots, and every supervised service plus the Hermes container comes
-back. Each step is logged and skipped on failure, so a bad step never blocks a
-later one or the reboot.
+If the old state is not worth keeping, skip this and destroy the instance
+directly (`terraform destroy -target=oci_core_instance.portfolio_node`); the
+rebuild then starts empty.
 
-DSH and its bundles are installed at **first boot only**, so the monthly pass does
-not touch them: `dsh` and `@tomowang/dsh-tui` stay at whatever version
-`destroy_first` pinned. Update on demand as `ubuntu` (`npm install -g
-@deepseek-ai/dsh`, then `dsh plugin --profile tui add @tomowang/dsh-tui`).
+## Verification
+
+```bash
+systemctl is-active hermes-gateway.service hermes-dashboard.service
+curl -fsS http://127.0.0.1:9119/api/status        # auth_required / auth_providers
+ss -ltn | grep -E ':(22|9119)\b'                  # loopback only
+journalctl -u cloudflared --no-pager -n 50 | grep "Registered tunnel connection"
+sudo test -f /home/hermes/.hermes/.restored && echo restored
+tail -n 20 /var/log/hermes-backup.log
+```
+
+Emergency backdoor (tunnel or Access down): OCI serial console
+(`Compute → instance → Resources → Console connection`).
+
+## Maintenance
+
+**Monthly, 5th at 03:05** (`/etc/cron.d/maintenance` → `maintenance.sh`):
+
+1. `apt-get update && apt-get upgrade` — kernel, cloudflared.
+2. As `hermes`: `hermes update` (brings Python, Node and the checkout forward, and
+   rolls the checkout back if the pulled code does not parse).
+3. Reboot.
+
+Each step is logged and skipped on failure, so a bad step never blocks a later one
+or the reboot. `hermes update` may skip its new-config prompt when it runs from
+cron, so after a monthly pass run `hermes config check` over SSH — and
+`hermes config migrate` if it lists missing options.
 
 ## Destroy
 
 ```bash
 cd infra/oci && terraform destroy      # or run the workflow with destroy_first
 ```
+
+The instance is disposable; the snapshot bucket is not. A full `terraform destroy`
+deletes it, which is why the rebuild path targets the instance only.

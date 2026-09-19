@@ -1,5 +1,7 @@
-# Minimal, failure-proof header set for a fully static site with no user input,
-# no third-party origins and no dynamic code. Deliberately no CSP: with nothing
+# Minimal, failure-proof header set for a fully static site with no user input
+# and no dynamic code. The main pages self-host their fonts; the diagram pages
+# load JetBrains Mono from Google Fonts, the only third-party request.
+# Deliberately no CSP: with nothing
 # to inject into, script-src 'self' would not have stopped the only plausible
 # attack (a compromised repo or deploy token can publish a same-origin script),
 # and the policy's exceptions were a real source of breakage.

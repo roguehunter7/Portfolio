@@ -34,10 +34,10 @@
         { "name": "GCP", "level": "advanced", "context": "Compute Engine, VPC, GCS, Cloud Run, IAP, WIF — all used in production personal + client infra" },
         { "name": "Terraform (IaC)", "level": "advanced", "context": "state-locked declarative provisioning of VPCs, firewalls, instances" },
         { "name": "Docker / Docker Compose", "level": "advanced", "context": "multi-container stacks on unprivileged, private bridge networks" },
-        { "name": "GitHub Actions (CI/CD)", "level": "advanced", "context": "OIDC/WIF keyless auth, buildx, IAP SSH deploys, Cloudflare Pages deploys" },
-        { "name": "Cloudflare Pages", "level": "intermediate", "context": "static hosting, _headers CSP, custom domain, wrangler deploys" },
+        { "name": "GitHub Actions (CI/CD)", "level": "advanced", "context": "OIDC/WIF keyless auth, IAP SSH deploys, Cloudflare Pages deploys" },
+        { "name": "Cloudflare Pages", "level": "intermediate", "context": "static hosting, hardened _headers policy, custom domain, wrangler deploys" },
         { "name": "GCP IAP", "level": "advanced", "context": "zero-trust SSH-only access, no public ports" },
-        { "name": "Oracle Cloud (OCI)", "level": "intermediate", "context": "Always Free A1.Flex (2 OCPU/12 GB), VCN/NSG deny-all, budget + quota cost guardrails" },
+        { "name": "Oracle Cloud (OCI)", "level": "intermediate", "context": "Always Free A1.Flex (2 OCPU/12 GB), VCN with no security group (host ufw denies inbound), budget + quota cost guardrails" },
         { "name": "Vaultwarden", "level": "intermediate", "context": "self-hosted vault container behind cloudflared tunnel, least-privilege GCS backups" }
       ]
     },
@@ -174,11 +174,11 @@
           "skills_used": ["Terraform", "GCP VPC", "Firewalls", "GCS", "GCP IAP"]
         },
         {
-          "what": "Provisioned an Oracle Cloud Always Free A1.Flex (2 OCPU/12 GB) dev box from the same IaC, with a zero-rule NSG (deny-all) and cloudflared-only SSH.",
+          "what": "Provisioned an Oracle Cloud Always Free A1.Flex (2 OCPU/12 GB) Hermes host from the same IaC with no security group: sshd binds loopback and admin arrives as SSH carried by the Cloudflare Tunnel, gated by Access (a service token lets CI in).",
           "why": "Extend the zero-ingress pattern to a second cloud without paying.",
           "impact": "$0/mo cross-cloud compute; shell access only through the Cloudflare tunnel.",
           "evidence": "infra/oci/main.tf",
-          "skills_used": ["Oracle Cloud (OCI)", "Terraform", "cloudflared", "NSG"]
+          "skills_used": ["Oracle Cloud (OCI)", "Terraform", "cloudflared", "ufw", "SSH"]
         },
         {
           "what": "Enforced tenancy-wide cost guardrails in IaC: a budget alerting on any spend ($1 / $0.01 threshold) plus quota that zeros all compute/memory families then re-allows exactly the Always-Free A1 allowance.",
@@ -188,11 +188,11 @@
           "skills_used": ["Oracle Cloud (OCI)", "Terraform", "cloud budgets/quota"]
         },
         {
-          "what": "Built a keyless CI/CD pipeline on GitHub Actions using Workload Identity Federation (WIF) and OIDC, with buildx, IAP-SSH deploys, and wrangler pages deploy under a hardened _headers policy (CSP+nonce, HSTS, COOP/CORP).",
+          "what": "Built a keyless CI/CD pipeline on GitHub Actions using Workload Identity Federation (WIF) and OIDC: IAP-SSH deploys for the vault host, SSH over the Cloudflare Tunnel (Access service token) for the Hermes host with a pre-destroy snapshot and automatic restore, and wrangler pages deploy for the site under a hardened _headers policy (HSTS, nosniff, frame denial, Permissions-Policy; no CSP by design).",
           "why": "No long-lived cloud credentials in CI; static content served at the edge.",
           "impact": "Zero static keys; one commit renders the ATS-safe resume PDF and publishes the site.",
           "evidence": ".github/workflows/deploy.yml + scripts/render-pdf.sh",
-          "skills_used": ["GitHub Actions", "OIDC", "WIF", "Cloudflare Pages", "buildx"]
+          "skills_used": ["GitHub Actions", "OIDC", "WIF", "Cloudflare Pages", "IAP SSH", "Cloudflare Access"]
         },
         {
           "what": "Built a lighter serverless phase: a low-latency visitor tracker + session analytics API in Go (Golang) on Google Cloud Run, with transactional state and atomic increments in Cloud Firestore (Native Mode), automated expired-session cleanup (no DB bloat), and strict HTTP Cache-Control headers.",
@@ -213,14 +213,21 @@
     {
       "name": "Hermes — Self-Hosted AI Assistant",
       "url": "https://sreeramkr.com",
-      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) on a zero-ingress GCP e2-micro VM — outbound-only traffic, no exposed ports; provisioned end-to-end by Terraform + an idempotent install script.",
+      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) running natively under systemd on the zero-ingress Oracle A1.Flex box — its own uv-managed Python and Node, loopback-only listeners, no exposed ports; provisioned end-to-end by Terraform + cloud-init.",
       "achievements": [
         {
-          "what": "Deployed a self-hosted AI assistant on a free-tier e2-micro VM with an outbound-only posture — no tunnel, no exposed ports, systemd user service (linger) + zram.",
-          "why": "Run an always-on assistant without paying for a VPS or exposing SSH.",
-          "impact": "24/7 assistant at $0/month.",
-          "evidence": "systemd user service (linger) + IAP-only SSH",
-          "skills_used": ["systemd", "GCP e2-micro", "IAP", "zram"]
+          "what": "Installed the assistant natively as a dedicated `hermes` systemd user: the official installer brings uv-managed Python, Node and ripgrep into its own home, so the distro's versions are never in the dependency path and a monthly apt upgrade cannot break the agent.",
+          "why": "Own the stack directly on the box with one service to supervise — no container layer in the way.",
+          "impact": "The agent and its runtime move forward together; `hermes update` rolls the checkout back if the pulled code does not parse.",
+          "evidence": "scripts/provision.sh + /etc/systemd/system/hermes-{gateway,dashboard}.service",
+          "skills_used": ["systemd", "Oracle Cloud (OCI)", "cloud-init", "Linux"]
+        },
+        {
+          "what": "Snapshotted the agent's state to a private OCI Object Storage bucket every six hours using the instance principal (no API key on the box), and taught the rebuild workflow to take a fresh snapshot, destroy only the instance, and restore automatically on first boot.",
+          "why": "The box is disposable; the agent's sessions, skills and memories are not.",
+          "impact": "A rebuild is one workflow run with at most six hours of state loss; restore refuses archives with absolute or parent-traversal paths.",
+          "evidence": "scripts/hermes-backup.sh + scripts/hermes-restore.sh",
+          "skills_used": ["OCI Object Storage", "instance principal", "bash", "cron"]
         },
         {
           "what": "Wired the assistant to the DeepSeek API (v4-flash everywhere) for main and all auxiliary tasks.",
@@ -230,11 +237,11 @@
           "skills_used": ["DeepSeek API", "LLM configuration", "YAML config"]
         },
         {
-          "what": "Kept a strict zero-ingress posture: deny-all ingress, admin only via GCP IAP SSH, outbound Telegram polling + LLM API.",
-          "why": "An assistant that needs no inbound ports needs no tunnel — less moving surface.",
-          "impact": "No tunnel to maintain; invisible to internet scanners.",
-          "evidence": "IAP-only SSH + outbound-only services",
-          "skills_used": ["Hermes", "Telegram Bot API", "GCP IAP", "zero-trust networking"]
+          "what": "Kept a strict zero-ingress posture: no security group, ufw denies inbound, sshd and the dashboard bind loopback, and both are reached only as SSH/HTTP carried by the Cloudflare Tunnel behind Access (a service token for CI).",
+          "why": "Nothing inbound is reachable from the internet, yet admin and the dashboard still work from anywhere.",
+          "impact": "No public listener; the host is invisible to port scanners.",
+          "evidence": "ufw deny-inbound + loopback-only :22/:9119",
+          "skills_used": ["Cloudflare Access", "cloudflared", "ufw", "zero-trust networking"]
         }
       ]
     },
@@ -258,7 +265,7 @@
           "skills_used": ["Vaultwarden", "GitHub Actions", "env_file", "bash"]
         },
         {
-          "what": "Backed up nightly using a least-privilege SA (roles/storage.objectUser) on one private GCS bucket, uploading the SQLite DB via the instance's metadata token and pruning to the newest 5.",
+          "what": "Backed up nightly using a least-privilege SA (roles/storage.objectUser) on one private GCS bucket, uploading the SQLite DB via the instance's metadata token and pruning to the newest 10.",
           "why": "No keys on the host; the backup SA can never touch the tfstate bucket.",
           "impact": "Credential-free, auto-pruned off-site backups at $0.",
           "evidence": "infra/vaultwarden/backup.sh",

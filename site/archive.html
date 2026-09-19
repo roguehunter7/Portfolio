@@ -178,17 +178,17 @@ document.documentElement.dataset.theme =
           <h4>How</h4>
           <p>
             We migrated the static site to <strong>Cloudflare Pages</strong> with a <code>_headers</code> policy that
-            hardens HSTS, nosniff, framing and permissions. The resume PDF is rendered by CI (headless Chrome) with
-            ATS assertions. We made the site AI-friendly with <code>robots.txt</code>, <code>llms.txt</code>, and a
+            hardens HSTS, nosniff, framing and permissions. The resume PDF is rendered by CI (headless Chrome) from the
+            ATS-safe HTML. We made the site AI-friendly with <code>robots.txt</code>, <code>llms.txt</code>, and a
             JSON-LD Person schema, and documented the HTML-resume rationale.
           </p>
           <ul>
             <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
             <li><strong>Hardening:</strong> HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, immutable font caching, preview noindex.</li>
-            <li><strong>No CSP (deliberate):</strong> a static site with no input, no forms and no third-party origins has nothing for a policy to protect — and <code>script-src 'self'</code> would not stop the one plausible attack, since a compromised repo or deploy token can publish a same-origin script. The strict policy's per-route exception broke the resume twice, so it was cut.</li>
+            <li><strong>No CSP (deliberate):</strong> a static site with no input, no forms and no third-party origins except the diagram pages' webfont has nothing for a policy to protect — and <code>script-src 'self'</code> would not stop the one plausible attack, since a compromised repo or deploy token can publish a same-origin script. The strict policy's per-route exception broke the resume twice, so it was cut.</li>
             <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
             <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now plain HTML+CSS rendered to PDF by headless Chrome.</li>
-            <li><strong>Diagrams:</strong> hand-authored inline SVG (no client-side render, no CDN); styled from the site stylesheet, so dark/light theming is a pure CSS variable swap.</li>
+            <li><strong>Diagrams:</strong> inline SVG generated with Archify (no client-side renderer, no chart library); each page is self-contained with its own CSS variables, so dark/light theming is a variable swap — the one external request is JetBrains Mono from Google Fonts.</li>
           </ul>
         </div>
         <figure class="diagram-container">
@@ -251,13 +251,13 @@ document.documentElement.dataset.theme =
             <code>cloudflared</code> container) reached only via the <code>vault.sreeramkr.com</code> tunnel route.
             Secrets live in a root-owned <code>0600 .env</code> written by CI, and the Argon2 admin token is
             interpolated correctly (<code>$</code> doubled). It runs on a <strong>least-privilege service account</strong>
-            scoped to one private GCS bucket, with a nightly SQLite backup that prunes to the newest five. Admin is
+            scoped to one private GCS bucket, with a nightly SQLite backup that prunes to the newest ten. Admin is
             over IAP SSH; no open ports.
           </p>
           <ul>
             <li><strong>No open ports:</strong> deny-all firewall + IAP-only SSH; loopback-only <code>:8000</code>.</li>
             <li><strong>Secrets:</strong> <code>0600 .env</code> via <code>env_file</code>, correct <code>$</code> escaping.</li>
-            <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 5.</li>
+            <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 10.</li>
           </ul>
         </div>
         <figure class="diagram-container">
@@ -269,42 +269,46 @@ document.documentElement.dataset.theme =
       <!-- Phase 7 -->
       <article class="archive-entry js-reveal" id="phase-7" data-phase="07">
         <h3>Phase 7 — Oracle dev box + Hermes (current)</h3>
-        <p class="archive-tagline">The freed Oracle compute becomes a no-open-ports Ubuntu dev box running Hermes in Docker.</p>
+        <p class="archive-tagline">The freed Oracle compute becomes a no-open-ports Ubuntu box where Hermes is the only workload.</p>
         <p class="archive-meta">September 2026 — current</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
             The site had moved to the edge and the free-tier compute was idle. Rather than leave it dark, the
-            Oracle A1.Flex became a general-purpose dev box: a browser terminal over the existing Cloudflare
-            Tunnel, with Hermes moved off GCP into a container on the same host. The GCP <code>e2-micro</code>
-            stays the Vaultwarden host (Phase 6), so this phase covers the whole current fleet.
+            Oracle A1.Flex became the place Hermes lives: installed natively under systemd, reachable through
+            the existing Cloudflare Tunnel, and backed by its own snapshot bucket so the box can be rebuilt
+            without losing the agent's state. The GCP <code>e2-micro</code> stays the Vaultwarden host
+            (Phase 6), so this phase covers the whole current fleet.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
             The box runs <strong>Ubuntu 24.04 (aarch64)</strong> on the Always Free A1.Flex shape, provisioned by
-            Terraform + cloud-init from this repository. <code>ttyd</code> serves a plain bash login shell on
-            loopback <code>:7681</code>; the tunnel points <code>ssh.sreeramkr.com</code> at it and Cloudflare
-            Access gates that route — ttyd itself carries no credential. Node and DSH come from nvm: pnpm,
-            <code>@deepseek-ai/dsh@next</code>, the <code>dsh-tui</code> profile, and the Archify web bundle.
-            Hermes runs from the official <code>nousresearch/hermes-agent</code> image with
-            <code>/opt/hermes</code> mounted at <code>/opt/data</code>; Telegram is long-polled outbound and its
-            gateway API stays on loopback <code>:8642</code>. There is no security group: <code>ufw</code> denies
-            inbound and the OpenSSH server is removed, so no service binds a public interface. Vaultwarden keeps
-            running on the GCP box (Phase 6), loopback <code>:8000</code> behind its own tunnel. One monthly
-            maintenance pass updates apt, nvm/DSH, and the Hermes image, then reboots.
+            Terraform + cloud-init from this repository. Hermes is installed <strong>natively</strong> as its own
+            systemd user: the official installer brings uv-managed Python and its own Node, so the distro's
+            versions are never in the dependency path and a monthly <code>apt upgrade</code> cannot break the
+            agent. <code>sshd</code> binds loopback <code>:22</code> and the dashboard binds loopback
+            <code>:9119</code>; the tunnel points <code>ssh.sreeramkr.com</code> at <code>ssh://localhost:22</code>
+            and <code>hermes.sreeramkr.com</code> at the dashboard, with Cloudflare Access — and a service token
+            for CI — gating both. There is no security group: <code>ufw</code> denies inbound and nothing binds a
+            public interface. Agent state lives in <code>/home/hermes/.hermes</code> and is snapshotted every six
+            hours to a private OCI Object Storage bucket using the instance principal, so the rebuild workflow
+            takes a fresh snapshot, destroys only the instance, and restores automatically on first boot.
+            Vaultwarden keeps running on the GCP box (Phase 6), loopback <code>:8000</code> behind its own
+            tunnel. One monthly maintenance pass updates the OS and runs <code>hermes update</code>, then reboots.
           </p>
           <ul>
-            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Cloudflare Access in front of the terminal route.</li>
-            <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, OpenSSH removed.</li>
-            <li><strong>Workloads:</strong> ttyd + bash, DSH (tui + web), and Hermes in Docker on loopback.</li>
+            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Access in front of both the SSH and dashboard routes, with a service token for CI.</li>
+            <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, sshd loopback-only.</li>
+            <li><strong>Workloads:</strong> native Hermes (gateway + dashboard) under systemd — no Docker, no terminal multiplexer.</li>
+            <li><strong>State:</strong> six-hourly snapshots to a private OCI bucket via the instance principal; a rebuild destroys only the instance and restores automatically.</li>
             <li><strong>Fleet:</strong> the GCP e2-micro stays the Vaultwarden host from Phase 6.</li>
           </ul>
         </div>
         <figure class="diagram-container">
           <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html" title="Phase 7 architecture diagram — Oracle dev box with Hermes in Docker" loading="lazy"></iframe>
-          <figcaption>The Oracle dev box: Cloudflare Tunnel to loopback services only, ufw denying inbound, and Hermes in its own container.</figcaption>
+          <figcaption>The Oracle box: Cloudflare Tunnel to loopback services only, ufw denying inbound, and Hermes running natively under systemd.</figcaption>
         </figure>
         <figure class="diagram-container">
           <iframe class="diagram-frame" src="/diagrams/phase7-fleet.html" title="Phase 7 architecture diagram — Zero-ingress fleet with Vaultwarden" loading="lazy"></iframe>

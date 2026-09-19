@@ -20,17 +20,19 @@ provider "oci" {
 # Hermes' environment file, built here (not in the template) so the secrets are
 # written to a 0600 file verbatim — no shell quoting, no interpolation inside
 # the rendered cloud-init. Optional entries are dropped when empty.
+#
+# The dashboard is a systemd unit bound to 0.0.0.0 inside the box, so Hermes
+# engages its auth gate and refuses to start without a provider: the
+# username/password pair below is mandatory, and Access sits in front of it.
 locals {
   hermes_env = join("\n", compact([
     "DEEPSEEK_API_KEY=${var.deepseek_api_key}",
     "TELEGRAM_BOT_TOKEN=${var.telegram_bot_token}",
     var.telegram_allowed_users != "" ? "TELEGRAM_ALLOWED_USERS=${var.telegram_allowed_users}" : "",
+    "HERMES_DASHBOARD_BASIC_AUTH_USERNAME=admin",
+    "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${var.hermes_dashboard_password}",
+    "HERMES_DASHBOARD_BASIC_AUTH_SECRET=${var.hermes_dashboard_secret}",
   ]))
-  # The harness reads its LLM key from the environment (the credentials provider
-  # ranks an inherited env var above ~/.dsh/.credentials.yaml). There is no
-  # service EnvironmentFile any more: provision.sh installs this into ubuntu's home
-  # and the login shell exports it.
-  dsh_env = "DEEPSEEK_API_KEY=${var.deepseek_api_key}"
 }
 
 # ---------------------------------------------------------------------------
@@ -44,9 +46,9 @@ data "oci_identity_availability_domains" "ads" {
 
 # Latest Canonical Ubuntu 24.04 image for the A1.Flex (aarch64) shape.
 # Ubuntu is a first-class OCI platform image with an `ubuntu` default user and
-# the apt/ufw tooling the provisioning scripts expect. Node is not an OS package
-# here: the interactive user's Node comes from nvm, and Hermes runs in the
-# official image with its own Node, so a monthly Node bump cannot touch it.
+# the apt/ufw tooling the provisioning scripts expect. Hermes is installed
+# natively as a dedicated `hermes` user: its installer brings uv-managed Python
+# and its own Node, so the distro's Python/Node are never in the dependency path.
 data "oci_core_images" "ubuntu_arm" {
   compartment_id           = var.tenancy_ocid
   operating_system         = "Canonical Ubuntu"
@@ -56,10 +58,15 @@ data "oci_core_images" "ubuntu_arm" {
   sort_order               = "DESC"
 }
 
+# Tenancy-wide Object Storage namespace; bucket names are scoped by it.
+data "oci_objectstorage_namespace" "this" {
+  compartment_id = var.tenancy_ocid
+}
+
 # ---------------------------------------------------------------------------
 # Network — the instance has a public IP for EGRESS only. There is no security
-# group; ingress is denied by the host's ufw, and no service binds a public
-# interface. Admin arrives over the cloudflared tunnel (outbound connection).
+# group; ingress is denied by the host's ufw, and the only listeners are
+# loopback-bound (sshd) or loopback-bound behind the cloudflared tunnel.
 # ---------------------------------------------------------------------------
 
 resource "oci_core_vcn" "zero_trust_vcn" {
@@ -97,10 +104,48 @@ resource "oci_core_subnet" "public" {
 }
 
 # ---------------------------------------------------------------------------
+# Hermes state backups — the rebuild path reads from here.
+# ---------------------------------------------------------------------------
+
+# Dedicated private bucket for the state snapshots. Tiny (a few MB each) and
+# inside the Always Free object-storage allowance shared with the tfstate bucket.
+resource "oci_objectstorage_bucket" "hermes_backups" {
+  compartment_id = var.tenancy_ocid
+  namespace      = data.oci_objectstorage_namespace.this.namespace
+  name           = "hermes-backups"
+  access_type    = "NoPublicAccess"
+  storage_tier   = "Standard"
+}
+
+# The box authenticates as itself (instance principal), so no API key ever lives
+# on it. Matching on the compartment is deliberate: a rule pinned to
+# instance.id would stop matching the moment the instance is rebuilt.
+# ponytail: compartment-wide match. Any instance added to this tenancy inherits
+# this policy. Switch to a tag.hermes.backup matching rule if a second instance
+# ever lands here.
+resource "oci_identity_dynamic_group" "hermes_backup" {
+  compartment_id = var.tenancy_ocid
+  name           = "hermes-backup"
+  description    = "The Hermes dev box, for keyless object-storage state backups"
+  matching_rule  = "All {instance.compartment.id = '${var.tenancy_ocid}'}"
+}
+
+resource "oci_identity_policy" "hermes_backup" {
+  compartment_id = var.tenancy_ocid
+  name           = "hermes-backup"
+  description    = "Allow the Hermes dev box to manage only its own snapshot bucket"
+
+  statements = [
+    "Allow dynamic-group ${oci_identity_dynamic_group.hermes_backup.name} to read buckets in tenancy where target.bucket.name='hermes-backups'",
+    "Allow dynamic-group ${oci_identity_dynamic_group.hermes_backup.name} to manage objects in tenancy where target.bucket.name='hermes-backups'",
+  ]
+}
+
+# ---------------------------------------------------------------------------
 # Compute — Always Free A1.Flex: 2 OCPU / 12 GB (June-2026 limits).
-# cloud-init brings up cloudflared, the ttyd browser terminal, the nvm toolchain
-# for the on-demand DeepSeek Harness and a containerised Hermes install; the SSH
-# server is removed last.
+# cloud-init brings up sshd (loopback), cloudflared, the native Hermes install
+# and the backup cron. The instance also holds the Always Free budget/quota
+# guardrails' target resources.
 # ---------------------------------------------------------------------------
 
 resource "oci_core_instance" "portfolio_node" {
@@ -111,8 +156,13 @@ resource "oci_core_instance" "portfolio_node" {
 
   # The cost-guard quota zeroes compute families then re-allows A1; the
   # instance must NOT launch until the quota update lands (race: it would hit
-  # the still-zeroed regional limits).
-  depends_on = [oci_limits_quota.free_tier_guard]
+  # the still-zeroed regional limits). The backup policy must exist first too,
+  # so the very first backup works without a retry loop.
+  depends_on = [
+    oci_limits_quota.free_tier_guard,
+    oci_objectstorage_bucket.hermes_backups,
+    oci_identity_policy.hermes_backup,
+  ]
 
   shape_config {
     ocpus         = 2
@@ -134,19 +184,22 @@ resource "oci_core_instance" "portfolio_node" {
   # File bodies are passed encoded and written with cloud-init's `encoding`
   # field, so YAML indentation can never corrupt them and the rendered scripts
   # never contain a secret.
-  # OCI caps user data + metadata at 32,000 bytes: the multi-kilobyte scripts
-  # and the Hermes config use `gz+b64` (base64gzip), the small secret files use
-  # plain `b64` (gzip would cost more than it saves there).
+  # OCI caps user data + metadata at 32,000 bytes: everything that carries shell
+  # metacharacters uses `gz+b64` (base64gzip); the small secret files use plain
+  # `b64` (gzip would cost more than it saves there).
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      tunnel_token_b64     = base64encode(var.cloudflare_tunnel_token)
-      hermes_env_b64       = base64encode(local.hermes_env)
-      dsh_env_b64          = base64encode(local.dsh_env)
-      hermes_config_gzb64  = base64gzip(file("${path.module}/../hermes/config.yaml"))
-      hermes_compose_gzb64 = base64gzip(file("${path.module}/../hermes/docker-compose.yml"))
-      provision_gzb64      = base64gzip(file("${path.module}/../../scripts/provision.sh"))
-      maintenance_gzb64    = base64gzip(file("${path.module}/../../scripts/maintenance.sh"))
+      tunnel_token_b64    = base64encode(var.cloudflare_tunnel_token)
+      hermes_env_b64      = base64encode(local.hermes_env)
+      hermes_config_gzb64 = base64gzip(file("${path.module}/../hermes/config.yaml"))
+      provision_gzb64     = base64gzip(file("${path.module}/../../scripts/provision.sh"))
+      maintenance_gzb64   = base64gzip(file("${path.module}/../../scripts/maintenance.sh"))
+      backup_gzb64        = base64gzip(file("${path.module}/../../scripts/hermes-backup.sh"))
+      restore_gzb64       = base64gzip(file("${path.module}/../../scripts/hermes-restore.sh"))
+      oci_namespace       = data.oci_objectstorage_namespace.this.namespace
+      backup_bucket       = oci_objectstorage_bucket.hermes_backups.name
+      region              = var.region
     }))
   }
 
@@ -157,8 +210,8 @@ resource "oci_core_instance" "portfolio_node" {
 # Cost guardrails — most-restrictive, tenancy-wide (the whole account).
 # Budget: alert on ANY spend ($1 budget, $0.01 absolute actual+forecast).
 # Quota: allow exactly the Always Free A1.Flex (2 OCPU / 12 GB) + 1 boot
-# volume + tfstate bucket; deny every other resource. Even on PAYG this
-# keeps the account at $0 while inside Always Free limits.
+# volume + the tfstate/backup buckets; deny every other resource. Even on PAYG
+# this keeps the account at $0 while inside Always Free limits.
 # ---------------------------------------------------------------------------
 
 resource "oci_budget_budget" "free_tier_guard" {
@@ -196,7 +249,7 @@ resource "oci_budget_alert_rule" "forecast_spend" {
 resource "oci_limits_quota" "free_tier_guard" {
   compartment_id = var.tenancy_ocid
   name           = "free-tier-guard"
-  description    = "Deny everything except the Always Free A1.Flex VM (2 OCPU/12 GB), its storage, and the tfstate bucket"
+  description    = "Deny everything except the Always Free A1.Flex VM (2 OCPU/12 GB), its storage, and the object-storage buckets"
   statements = [
     # Compute — zero ALL core/memory quotas, then re-allow exactly the Always
     # Free A1.Flex allowance (AD-scoped AND regional names). Nothing else
@@ -210,7 +263,7 @@ resource "oci_limits_quota" "free_tier_guard" {
     # Block storage — free tier is 200 GB total block+boot; no backups.
     "set block-storage quota total-storage-gb to 200 in tenancy",
     "set block-storage quota backup-count to 0 in tenancy",
-    # Object storage — free tier is 20 GB (21474836480 bytes); tfstate bucket only.
+    # Object storage — free tier is 20 GB (21474836480 bytes); tfstate + snapshots.
     "set object-storage quota storage-bytes to 21474836480 in tenancy",
   ]
 }

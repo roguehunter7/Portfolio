@@ -1,80 +1,123 @@
 #cloud-config
-# Ubuntu 24.04 (aarch64) — Always Free A1.Flex 2 OCPU / 12 GB dev box.
+# Ubuntu 24.04 (aarch64) — Always Free A1.Flex 2 OCPU / 12 GB Hermes host.
 #
 # Workloads, all loopback-only:
-#   - cloudflared tunnel (outbound)  the only way in; no public listeners
-#   - ttyd browser terminal          admin shell, loopback :7681, user ubuntu
-#   - DeepSeek Harness              installed by provision.sh as ubuntu (nvm),
-#                                    run on demand from the terminal; dsh web
-#                                    serves loopback :3080
-#   - Hermes Agent (Docker)          official image, loopback API only
+#   - cloudflared tunnel (outbound)   the only ingress; no public listeners
+#   - sshd (loopback :22)             admin, reachable only via the tunnel + Access
+#   - Hermes (native, user hermes)    gateway + dashboard (:9119), systemd units
 #
-# Node for the interactive harness comes from nvm (official script); Hermes runs
-# in the official image and carries its own Node/Python/Chromium, so a monthly
-# Node bump cannot touch the gateway. One monthly maintenance script (5th
-# 03:05) updates the OS, nvm/Node/npm and the Hermes image, then reboots.
+# Hermes' installer brings its own uv-managed Python and Node, so the distro's
+# Python/Node are not in the dependency path and a monthly apt upgrade cannot
+# break the agent. State lives in /home/hermes/.hermes and is snapshotted to OCI
+# Object Storage every six hours by hermes-backup.sh.
 #
 # Terraform template: every interpolation below is rendered by templatefile().
 # Bodies that carry credentials or shell metacharacters are passed encoded, so
 # the rendered scripts never contain a secret.
 
 package_update: true
-package_upgrade: false  # provision.sh upgrades after ttyd is reachable
+package_upgrade: false  # provision.sh upgrades after access is reachable
 
 write_files:
   # --- Network tuning -------------------------------------------------------
-  # BBR only: this box has no swap, so swappiness/vfs_cache tuning is a no-op.
   - path: /etc/sysctl.d/99-devbox.conf
     content: |
       net.core.default_qdisc=fq
       net.ipv4.tcp_congestion_control=bbr
 
-  # --- ttyd: browser terminal -> login shell --------------------------------
-  # No multiplexer: ttyd owns the PTY and pumps bytes to xterm.js in the
-  # browser, so a plain bash session is enough and the wheel reaches xterm.js
-  # (browser scrollback). bash --login gives the shell nvm's node/dsh on PATH
-  # and DEEPSEEK_API_KEY from ~/.dsh/env. Nothing survives a reboot; sessions
-  # are server-side, so dsh-tui resumes with --resume.
-  # ttyd has no credential of its own: Cloudflare Access fronts
-  # ssh.sreeramkr.com, and the tunnel is the only ingress. Emergency backdoor if
-  # ttyd breaks = OCI serial console.
-  - path: /etc/systemd/system/ttyd.service
+  # --- sshd: loopback only ---------------------------------------------------
+  # The tunnel points ssh.sreeramkr.com at ssh://localhost:22 and Cloudflare
+  # Access gates that route. Binding loopback means ufw needs no rule and no
+  # port is ever publicly reachable.
+  - path: /etc/ssh/sshd_config.d/99-devbox.conf
+    permissions: "0644"
+    content: |
+      ListenAddress 127.0.0.1
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowUsers ubuntu
+      X11Forwarding no
+
+  # --- sudoers: full access by design ---------------------------------------
+  # Hermes is the sole control surface on this box, so the agent is
+  # root-equivalent on purpose. provision.sh validates this file with visudo
+  # before anything else runs, so a typo can never lock out sudo.
+  - path: /etc/sudoers.d/hermes
+    permissions: "0440"
+    content: |
+      # Full access by design — see the blast-radius note in infra/oci/README.md.
+      # ubuntu is declared explicitly too, so the workflow's sudo calls never
+      # depend on an image default.
+      hermes ALL=(ALL:ALL) NOPASSWD:ALL
+      ubuntu ALL=(ALL:ALL) NOPASSWD:ALL
+
+  # --- Hermes: gateway + dashboard units ------------------------------------
+  # Native per-user install under /home/hermes. provision.sh enables them; the
+  # workflow starts them after restoring state.
+  - path: /etc/systemd/system/hermes-gateway.service
     permissions: "0644"
     content: |
       [Unit]
-      Description=ttyd web terminal (login shell)
+      Description=Hermes gateway (Telegram + DeepSeek)
       After=network-online.target
+      Wants=network-online.target
 
       [Service]
-      User=ubuntu
-      Group=ubuntu
-      WorkingDirectory=/home/ubuntu
-      Environment=TERM=xterm-256color
-      # -W: writable. --login: source /home/ubuntu/.bashrc, so the shell has
-      # nvm's node/dsh and the DSH key without pinning a version path here.
-      ExecStart=/usr/bin/ttyd -W -p 7681 -i 127.0.0.1 /usr/bin/bash --login
+      User=hermes
+      Group=hermes
+      WorkingDirectory=/home/hermes
+      EnvironmentFile=/etc/hermes/hermes.env
+      ExecStart=/home/hermes/.local/bin/hermes gateway run
       Restart=always
       RestartSec=5
-      StandardOutput=append:/var/log/ttyd.log
-      StandardError=append:/var/log/ttyd.log
 
       [Install]
       WantedBy=multi-user.target
 
+  - path: /etc/systemd/system/hermes-dashboard.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Hermes web dashboard (loopback :9119, behind Cloudflare Access)
+      After=network-online.target hermes-gateway.service
+      Wants=network-online.target
+
+      [Service]
+      User=hermes
+      Group=hermes
+      WorkingDirectory=/home/hermes
+      EnvironmentFile=/etc/hermes/hermes.env
+      # A non-loopback bind engages Hermes' auth gate, and the basic-auth
+      # provider comes from hermes.env. Without it the dashboard refuses to
+      # start rather than serving unauthenticated.
+      ExecStart=/home/hermes/.local/bin/hermes dashboard --host 0.0.0.0 --port 9119 --no-open
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+  # --- Six-hourly state snapshot to OCI Object Storage -----------------------
+  - path: /etc/cron.d/hermes-backup
+    permissions: "0644"
+    content: |
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      0 */6 * * * root /usr/local/sbin/hermes-backup.sh >> /var/log/hermes-backup.log 2>&1
+
   # --- Monthly: the single maintenance pass ---------------------------------
-  # One script for OS + nvm/Node/npm + the Hermes image, then reboot. DSH is
-  # deliberately not installed or updated here; manage it by hand.
   - path: /etc/cron.d/maintenance
     permissions: "0644"
     content: |
-      # Monthly: update everything, then reboot. Mirrors the Vaultwarden host.
+      # Monthly: update Hermes and the OS, then reboot.
       SHELL=/bin/bash
       PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       5 3 5 * * root /usr/local/sbin/maintenance.sh >> /var/log/maintenance.log 2>&1
 
   # --- Secrets (from GitHub Actions -> Terraform) ----------------------------
-  # 0600 root; read by the setup scripts. The instance-metadata copy is the
-  # accepted trade-off documented in infra/oci/README.md.
+  # 0600 root; read by provision.sh and the systemd units. The instance-metadata
+  # copy is the accepted trade-off documented in infra/oci/README.md.
   - path: /etc/cloudflared/tunnel-token
     permissions: "0600"
     encoding: b64
@@ -85,17 +128,19 @@ write_files:
     encoding: b64
     content: ${hermes_env_b64}
 
-  # Staged root-only, then installed into ubuntu's home by provision.sh (the
-  # interactive shell exports it, because there is no service EnvironmentFile).
-  - path: /etc/dsh/env
-    permissions: "0600"
-    encoding: b64
-    content: ${dsh_env_b64}
-
   - path: /etc/hermes/config.yaml
     permissions: "0644"
     encoding: gz+b64
     content: ${hermes_config_gzb64}
+
+  # --- Snapshot target (not a secret) ---------------------------------------
+  - path: /etc/hermes/backup.conf
+    permissions: "0644"
+    content: |
+      OCI_NAMESPACE=${oci_namespace}
+      BUCKET=${backup_bucket}
+      REGION=${region}
+      KEEP=10
 
   # --- Scripts (repo files, embedded gz+b64 to fit the 32 KB metadata cap) ---
   - path: /usr/local/sbin/provision.sh
@@ -103,15 +148,20 @@ write_files:
     encoding: gz+b64
     content: ${provision_gzb64}
 
-  - path: /opt/hermes/docker-compose.yml
-    permissions: "0644"
-    encoding: gz+b64
-    content: ${hermes_compose_gzb64}
-
   - path: /usr/local/sbin/maintenance.sh
     permissions: "0755"
     encoding: gz+b64
     content: ${maintenance_gzb64}
+
+  - path: /usr/local/sbin/hermes-backup.sh
+    permissions: "0755"
+    encoding: gz+b64
+    content: ${backup_gzb64}
+
+  - path: /usr/local/sbin/hermes-restore.sh
+    permissions: "0755"
+    encoding: gz+b64
+    content: ${restore_gzb64}
 
 runcmd:
   - [bash, /usr/local/sbin/provision.sh]

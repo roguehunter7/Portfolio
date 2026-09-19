@@ -1,17 +1,26 @@
 #!/bin/bash
-# provision.sh — first-boot provisioning for the Ubuntu 24.04 dev box.
+# provision.sh — first-boot provisioning for the Ubuntu 24.04 Hermes host.
 #
-# Order matters: cloudflared first (it is the only way in), then the browser
-# terminal, THEN the full OS upgrade and the workloads, then hardening LAST so
-# a failure never locks us out (backdoor: OCI serial console).
-# Idempotent — safe to re-run by hand from the browser terminal.
+# Order matters: SSH and the tunnel are the only ways in, so both come up before
+# the OS upgrade and the workload; the firewall posture is set last. Hermes is
+# installed natively as its own user and is deliberately root-equivalent
+# (sudoers drop-in) — this box is the control surface, not a hardened multi-tenant
+# host. Idempotent: safe to re-run by hand over SSH.
 set -euo pipefail
 
 log() { printf '[provision] %s\n' "$*"; }
 
-# --- 1. Cloudflare Tunnel (outbound only; the only ingress path) -----------
-# The token is written by cloud-init to a 0600 file, so this script (which is
-# a repo file, embedded in user_data) never contains a credential.
+# --- 0. Guard: a broken sudoers drop-in must fail loudly, not silently ------
+if [ -f /etc/sudoers.d/hermes ]; then
+  visudo -cf /etc/sudoers.d/hermes
+fi
+
+# --- 1. SSH first (the admin path; loopback-only behind the tunnel) --------
+systemctl enable --now ssh
+
+# --- 2. Cloudflare Tunnel (outbound only; the only ingress path) -----------
+# The token is written by cloud-init to a 0600 file, so this script (which is a
+# repo file, embedded in user_data) never contains a credential.
 install -d --mode=0755 /usr/share/keyrings
 if [ ! -f /usr/share/keyrings/cloudflare-main.gpg ]; then
   curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
@@ -26,113 +35,60 @@ if [ ! -f /etc/cloudflared/token ]; then
 fi
 systemctl enable --now cloudflared
 
-# --- 2. Base packages ------------------------------------------------------
-# No nodejs: Node is nvm's job for ubuntu (step 5), as are pnpm and DSH via npm.
-# Hermes runs in Docker and carries its own toolchain, so nothing here serves it.
-apt-get install -y \
-  ca-certificates curl git gnupg jq cron ufw tar xz-utils \
-  build-essential python3 python3-venv unzip \
-  ttyd ripgrep htop gh
+# --- 3. Base packages ------------------------------------------------------
+# The Hermes installer needs git, curl and xz-utils (it fetches Node as a
+# .tar.xz); everything else it brings itself. No distro Python/Node packages
+# are in the dependency path.
+apt-get install -y ca-certificates curl git gnupg jq cron ufw tar xz-utils python3 python3-venv
 
-# --- 3. Browser terminal FIRST (it is the admin path) ----------------------
-# ttyd comes up before the OS upgrade and the workloads, so the tunnel is
-# usable within minutes and a failed upgrade or workload cannot lock us out.
-systemctl daemon-reload
-systemctl enable --now ttyd
-
-# --- 4. Full OS upgrade (after access is up) -------------------------------
-# cloud-init runs with package_upgrade:false, so this no longer blocks ttyd.
-# Non-fatal: a mirror hiccup must not skip the workloads or the hardening.
+# --- 4. Full OS upgrade (access is up; harmless for the agent) -------------
+# Non-fatal: a mirror hiccup must not skip the workload or the hardening.
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -y || log "WARNING: apt upgrade failed"
 
-# --- 5. nvm + Node LTS + npm, as ubuntu ------------------------------------
-# nvm is per-user and has no apt package; the official installer is the only
-# supported path. It edits ubuntu's shell profile, so the ttyd login shell gets
-# node/npm on PATH. Non-interactive callers (the monthly script) source nvm.sh
-# themselves.
-sudo -u ubuntu env HOME=/home/ubuntu bash -c '
-  set -euo pipefail
-  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.7/install.sh | bash
-  export NVM_DIR="$HOME/.nvm"
-  . "$NVM_DIR/nvm.sh"
-  nvm install --lts
-  nvm alias default "lts/*"
-  # pnpm is not an apt package and DSH installs profiles with it, so it comes
-  # from npm's global tree. All three installs run as ubuntu: root-run install
-  # scripts are the sudo-npm trap.
-  # @next is the maintained release channel; npm's "latest" dist-tag here is an
-  # older rc than next, so install the channel explicitly.
-  npm install -g pnpm
-  npm install -g @deepseek-ai/dsh@next
-'
+# --- 5. OCI CLI (pinned venv) ----------------------------------------------
+# Used by the six-hourly snapshot and the rebuild restore, authenticated with
+# the instance principal: no API key is stored on the box.
+python3 -m venv /opt/oci-cli
+/opt/oci-cli/bin/pip install --quiet --upgrade pip
+/opt/oci-cli/bin/pip install --quiet "oci-cli==3.90.2"
+ln -sf /opt/oci-cli/bin/oci /usr/local/bin/oci
 
-# --- 6. DSH plugin bundles --------------------------------------------------
-# Both profiles are created on first use: `dsh plugin` initializes a profile
-# whose package.json is missing, then reconciles its bundle layer list.
-#   tui — @tomowang/dsh-tui: the terminal front door (out-of-tree mode bundle).
-#   web — @tt-a1i/archify-dsh: Skill-only bundle adding the Archify skill.
-# The npm allowlist has to be in place first: npm 11+ refuses to run dependency
-# build scripts otherwise, and DSH's tree needs the subprocess spawn helper
-# (`dsh-subprocess-local` postinstall) plus node-pty's native build. Archify has
-# no dependencies and no install hooks, so it needs no allowlist entry.
-sudo -u ubuntu env HOME=/home/ubuntu bash -c '
-  set -euo pipefail
-  export NVM_DIR="$HOME/.nvm"
-  . "$NVM_DIR/nvm.sh"
-  printf "%s\n" "allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs,@earendil-works/pi-tui" >> "$HOME/.npmrc"
-  dsh plugin --profile tui add @tomowang/dsh-tui
-  dsh plugin --profile web add @tt-a1i/archify-dsh
-'
-
-# --- 7. DSH key for the interactive shell ----------------------------------
-# No service means no EnvironmentFile: the key lives in ubuntu's home and the
-# login shell exports it, so `dsh web` picks it up from the environment.
-install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/.dsh
-install -m 0600 -o ubuntu -g ubuntu /etc/dsh/env /home/ubuntu/.dsh/env
-if ! grep -q 'dsh/env' /home/ubuntu/.bashrc 2>/dev/null; then
-  printf '\n[ -f "$HOME/.dsh/env" ] && set -a && . "$HOME/.dsh/env" && set +a\n' >> /home/ubuntu/.bashrc
+# --- 6. Hermes: native per-user install ------------------------------------
+# A dedicated user keeps the agent's files in one home directory; the sudoers
+# drop-in from cloud-init grants it full access by design (see the runbook).
+if ! id -u hermes >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash hermes
 fi
-chown ubuntu:ubuntu /home/ubuntu/.bashrc
-
-# --- 8. Docker Engine + Compose plugin (official Ubuntu repo) --------------
-# Hermes is the only container: the image replaces a host-wide Python/Node/
-# Chromium toolchain and keeps the agent out of ubuntu's home.
-install -m 0755 -d /etc/apt/keyrings
-if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-    | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
-  chmod a+r /etc/apt/keyrings/docker.gpg
+if [ ! -x /home/hermes/.local/bin/hermes ]; then
+  # --non-interactive is install.sh's own flag for this case (its stages use
+  # read -p, which fails with EOF when stdin is not a terminal); stdin stays
+  # closed so a stray prompt can never hang cloud-init.
+  sudo -u hermes env HOME=/home/hermes bash -c \
+    'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --non-interactive' </dev/null
 fi
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  > /etc/apt/sources.list.d/docker.list
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-systemctl enable --now docker
+install -d -m 0700 -o hermes -g hermes /home/hermes/.hermes
+install -m 0600 -o hermes -g hermes /etc/hermes/hermes.env /home/hermes/.hermes/.env
+install -m 0644 -o hermes -g hermes /etc/hermes/config.yaml /home/hermes/.hermes/config.yaml
 
-# --- 9. Hermes (official image) --------------------------------------------
-# cloud-init writes the compose file to /opt/hermes; stage the secrets/config
-# beside it and let the image carry everything else. /opt/hermes is mounted at
-# /opt/data, so sessions, skills and memories survive an image upgrade.
-install -d -m 0755 /opt/hermes
-install -m 0600 /etc/hermes/hermes.env /opt/hermes/.env
-install -m 0644 /etc/hermes/config.yaml /opt/hermes/config.yaml
-# Best-effort: a broken Hermes must not skip ufw, the tunnel check or hardening.
-docker compose -f /opt/hermes/docker-compose.yml up -d || log "WARNING: Hermes compose up failed; see docker logs"
+# --- 7. Hermes services ----------------------------------------------------
+# Enabled, not started: state is restored first, then the workflow (or the two
+# commands in the runbook) starts them, so the agent never writes state into a
+# directory that is about to be replaced by a snapshot.
+systemctl daemon-reload
+systemctl enable hermes-gateway.service hermes-dashboard.service
 
-# --- 10. Services + host firewall ------------------------------------------
+# --- 8. Host firewall ------------------------------------------------------
 systemctl enable --now cron
-# Nothing inbound: ufw denies by default and nothing binds a public interface.
-# ttyd, dsh web and the Hermes gateway all listen on loopback only.
+# Nothing inbound: ufw denies by default and every listener binds loopback.
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow in on lo
 ufw --force enable
 
-# --- 11. Network tuning ----------------------------------------------------
-# BBR only: this box has no swap, so swappiness/vfs_cache tuning is a no-op.
+# --- 9. Network tuning -----------------------------------------------------
 sysctl --system
 
-# --- 12. Verify the tunnel registered (wait up to 120s) --------------------
+# --- 10. Verify the tunnel registered (wait up to 120s) --------------------
 for _ in $(seq 1 24); do
   if journalctl -u cloudflared --no-pager -n 200 2>/dev/null | grep -q "Registered tunnel connection"; then
     echo "cloudflared registered with Cloudflare"
@@ -140,8 +96,5 @@ for _ in $(seq 1 24); do
   fi
   sleep 5
 done
-
-# --- 13. HARDEN LAST: remove the SSH server (admin is the browser terminal) --
-DEBIAN_FRONTEND=noninteractive apt-get purge -y openssh-server
 
 touch /var/log/cloud_init_complete
