@@ -99,12 +99,35 @@ write_files:
       WantedBy=multi-user.target
 
   # --- Six-hourly state snapshot to OCI Object Storage -----------------------
-  - path: /etc/cron.d/hermes-backup
+  # A systemd timer, not cron: the calendar names its zone, while a cron entry is
+  # evaluated in whatever local zone the host happens to carry, so moving the zone
+  # re-fires the job at the new boundary within the same hour (two snapshots half
+  # an hour apart, each stopping both units). The run also lands in the journal.
+  - path: /etc/systemd/system/hermes-backup.service
     permissions: "0644"
     content: |
-      SHELL=/bin/bash
-      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      0 */6 * * * root /usr/local/sbin/hermes-backup.sh >> /var/log/hermes-backup.log 2>&1
+      [Unit]
+      Description=Snapshot the Hermes state directory to OCI Object Storage
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/hermes-backup.sh
+      # The file the cron entry used to write; kept for muscle memory.
+      StandardOutput=append:/var/log/hermes-backup.log
+
+  - path: /etc/systemd/system/hermes-backup.timer
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Six-hourly Hermes state snapshot
+
+      [Timer]
+      OnCalendar=*-*-* 00,06,12,18:00:00 Asia/Kolkata
+
+      [Install]
+      WantedBy=timers.target
 
   # --- Monthly: the single maintenance pass ---------------------------------
   - path: /etc/cron.d/maintenance

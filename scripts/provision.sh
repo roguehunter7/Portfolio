@@ -77,6 +77,9 @@ install -m 0644 -o hermes -g hermes /etc/hermes/config.yaml /home/hermes/.hermes
 systemctl daemon-reload
 /usr/local/sbin/hermes-restore.sh false
 systemctl enable --now hermes-gateway.service hermes-dashboard.service
+# Starts after the restore above. The calendar names its zone, so the snapshot
+# stays put if the host's local zone ever changes.
+systemctl enable --now hermes-backup.timer
 
 # --- 8. Host firewall ------------------------------------------------------
 systemctl enable --now cron
