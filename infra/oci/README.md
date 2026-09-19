@@ -135,6 +135,13 @@ validate), then applies. On the rebuild path it also:
 4. runs `hermes-restore.sh true` and starts both units,
 5. verifies units, dashboard status, listeners and the restored-state marker.
 
+Two details worth knowing: a **targeted `terraform apply`** creates the snapshot
+bucket, dynamic group and policy *before* the snapshot runs (the snapshot uploads
+to that bucket), and a preflight check fails fast when Access rejects the service
+token or when `OCI_SSH_PRIVATE_KEY` does not match `OCI_SSH_PUBLIC_KEY`. Use
+`skip_snapshot: true` to rebuild when the old box is unreachable or has nothing
+worth keeping — the new box then starts empty instead of blocking on the snapshot.
+
 ```bash
 # from a laptop, with cloudflared installed and an Access login
 ssh -o ProxyCommand="cloudflared access ssh --hostname %h" ubuntu@ssh.sreeramkr.com

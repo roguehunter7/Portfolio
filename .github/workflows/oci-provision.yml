@@ -7,6 +7,10 @@ on:
         description: 'Destroy VM, then re-apply (rebuild + restore from the snapshot bucket)'
         type: boolean
         default: false
+      skip_snapshot:
+        description: 'Rebuild without a pre-destroy snapshot (the new box starts empty)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -124,6 +128,18 @@ jobs:
             -backend-config="namespace=${{ env.OCI_NAMESPACE }}" \
             -backend-config="key=oci/terraform.tfstate"
 
+      - name: Terraform Apply (backup prerequisites)
+        # The pre-destroy snapshot uploads to the snapshot bucket, so Terraform
+        # has to create it — plus the dynamic group and policy the box
+        # authenticates with — before the snapshot runs. Targeted, so the
+        # running instance is untouched, and idempotent on later runs.
+        working-directory: infra/oci
+        run: |
+          terraform apply -auto-approve \
+            -target=oci_objectstorage_bucket.hermes_backups \
+            -target=oci_identity_dynamic_group.hermes_backup \
+            -target=oci_identity_policy.hermes_backup
+
       - name: Install cloudflared (pinned) + deploy key
         run: |
           set -euo pipefail
@@ -143,12 +159,44 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
+      - name: Check Access token and deploy key
+        # Both of these used to surface as three silent 20-second timeouts.
+        run: |
+          set -euo pipefail
+          redirect="$(curl -sS -o /dev/null -w '%{redirect_url}' \
+            -H "CF-Access-Client-Id: $TUNNEL_SERVICE_TOKEN_ID" \
+            -H "CF-Access-Client-Secret: $TUNNEL_SERVICE_TOKEN_SECRET" \
+            https://ssh.sreeramkr.com/ || true)"
+          case "$redirect" in
+            *cdn-cgi/access/login*)
+              echo "Access rejected the service token (redirect to its login page)." >&2
+              echo "Check the Service Auth policy on the ssh.sreeramkr.com app and the token's expiry." >&2
+              exit 1
+              ;;
+            *) echo "service token accepted (origin redirect: ${redirect:-none})" ;;
+          esac
+          printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          if ! ssh-keygen -yf /tmp/deploy_key > /tmp/deploy_key.pub 2>/dev/null; then
+            echo "OCI_SSH_PRIVATE_KEY is not a readable OpenSSH private key" >&2
+            exit 1
+          fi
+          want="$(printf '%s' "$TF_VAR_ssh_public_key" | awk '{print $1, $2}')"
+          got="$(awk '{print $1, $2}' /tmp/deploy_key.pub)"
+          if [ "$want" != "$got" ]; then
+            echo "OCI_SSH_PRIVATE_KEY does not match OCI_SSH_PUBLIC_KEY" >&2
+            exit 1
+          fi
+          echo "deploy key matches OCI_SSH_PUBLIC_KEY"
+          rm -f /tmp/deploy_key /tmp/deploy_key.pub
+
       - name: Pre-destroy snapshot (rebuild path)
         # The snapshot is fetched over SSH and uploaded with CI's own OCI
         # credentials, so a box whose cron or tooling is broken still gets a
         # last backup. The bucket must hold at least one object before anything
-        # is destroyed.
-        if: ${{ inputs.destroy_first }}
+        # is destroyed. Skipped when skip_snapshot is set: the new box then
+        # starts empty instead of failing on an unreachable old one.
+        if: ${{ inputs.destroy_first && !inputs.skip_snapshot }}
         run: |
           set -euo pipefail
           STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -200,7 +248,9 @@ jobs:
         # loudly instead of booting an empty agent.
         run: |
           set -euo pipefail
-          ssh -o ConnectTimeout=20 "$SSH_HOST" "sudo /usr/local/sbin/hermes-restore.sh '${{ inputs.destroy_first }}'"
+          # required=true only when a snapshot was taken on this run, so a
+          # first build or a recovery rebuild is not blocked by an empty bucket.
+          ssh -o ConnectTimeout=20 "$SSH_HOST" "sudo /usr/local/sbin/hermes-restore.sh '${{ inputs.destroy_first && !inputs.skip_snapshot }}'"
           ssh -o ConnectTimeout=20 "$SSH_HOST" 'sudo systemctl start hermes-gateway.service hermes-dashboard.service'
 
       - name: Verify
