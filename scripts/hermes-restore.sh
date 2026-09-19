@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# hermes-restore.sh — install the newest Hermes state snapshot from OCI Object
+# hermes-restore.sh: install the newest Hermes state snapshot from OCI Object
 # Storage. Run before the units start on a fresh instance. Safe to run on every
 # deploy: a .restored marker makes it a no-op once state is in place.
 #
@@ -20,10 +20,14 @@ if [ -e "${MARKER}" ]; then
   exit 0
 fi
 
-# Newest object wins: names are hermes_<UTC timestamp>.tar.gz, so sort ascending.
+# Newest object wins: names are hermes-<UTC timestamp>.zip, so sort ascending.
+# The API answers in JSON (--raw-output only unquotes a single string value), so
+# jq unrolls it first. The pattern also keeps a pre-zip .tar.gz object out of the
+# running, since `hermes import` cannot read one.
 LATEST="$(oci --auth instance_principal --region "${REGION}" os object list \
   --namespace "${OCI_NAMESPACE}" --bucket-name "${BUCKET}" \
-  --query 'data[].name' --raw-output 2>/dev/null | LC_ALL=C sort | tail -n1 || true)"
+  --query 'data[].name' 2>/dev/null \
+  | jq -r '.[]?' | grep -E '^hermes-[0-9]{8}T[0-9]{6}Z\.zip$' | LC_ALL=C sort | tail -n1 || true)"
 
 if [ -z "${LATEST}" ] || [ "${LATEST}" = "null" ]; then
   if [ "${REQUIRED}" = "true" ]; then
@@ -39,24 +43,23 @@ fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "${TMP}"' EXIT
+install -d -m 0700 -o hermes -g hermes "${TMP}"
 oci --auth instance_principal --region "${REGION}" os object get \
   --namespace "${OCI_NAMESPACE}" --bucket-name "${BUCKET}" \
-  --name "${LATEST}" --file "${TMP}/state.tar.gz" >/dev/null
+  --name "${LATEST}" --file "${TMP}/state.zip" >/dev/null
 
-# Validate before installing: a truncated upload or a hostile archive must never
-# reach the live tree. The snapshot is extracted into /home/hermes, so absolute
-# paths and parent traversal are refused outright.
-tar -tzf "${TMP}/state.tar.gz" >/dev/null
-if tar -tzf "${TMP}/state.tar.gz" | grep -qE '^/|(^|/)\.\.(/|$)'; then
-  log "snapshot ${LATEST} contains unsafe paths — refusing" >&2
-  exit 1
-fi
-
+# `hermes import` replaces the previous tar extract: it is the inverse of the
+# tool that wrote the archive, it restores owner-only modes for
+# .env/auth.json/state.db (zipfile drops Unix mode bits), and it refuses to
+# write a foreign gateway_state.json, pid or lock file over the fresh install,
+# which is more than the path check below it used to do.
 install -d -m 0700 -o hermes -g hermes "${DATA}"
-tar -xzf "${TMP}/state.tar.gz" -C /home/hermes
-# Secrets are authoritative in the repo/CI chain, never in the snapshot.
+sudo -u hermes env HOME=/home/hermes /home/hermes/.local/bin/hermes import \
+  "${TMP}/state.zip" --force
+
+# The archive carries a .env of its own, but the repo/CI copy stays
+# authoritative on a rebuild: it is installed over whatever the snapshot held.
 install -m 0600 -o hermes -g hermes /etc/hermes/hermes.env "${DATA}/.env"
-chown -R hermes:hermes "${DATA}"
 printf 'restored %s\n' "${LATEST}" > "${MARKER}"
 chown hermes:hermes "${MARKER}"
 log "restored ${LATEST} into ${DATA}"
