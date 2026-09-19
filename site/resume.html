@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sreeram K R — Resume</title>
+<title>Sreeram K R | Resume</title>
 <style>
   @font-face {
     font-family: 'Inter';
@@ -300,19 +300,19 @@
         <span class="entry-date"><a href="https://sreeramkr.com">sreeramkr.com</a></span>
       </div>
       <ul>
-        <li><b>Terraform</b> (state-locked) with <b>cost guardrails</b>: custom VPC plus deny-all ingress (0-65535), IAP-only SSH, and a <b>zero-ingress</b> <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box — tenancy budget + quota that caps at the <b>$0/mo</b> allocation.</li>
+        <li><b>Terraform</b> (state-locked) with <b>cost guardrails</b>: custom VPC plus deny-all ingress (0-65535), IAP-only SSH, and a <b>zero-ingress</b> <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box, with a tenancy budget and quota that cap it at the <b>$0/mo</b> allocation.</li>
         <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: IAP-SSH deploys for the vault host and <code>wrangler pages deploy</code> for the site under hardened <code>_headers</code> (HSTS, nosniff, frame denial); the Hermes host restores its own state at first boot, so CI never needs a shell on it, and CI renders the ATS-safe resume PDF.</li>
-        <li>All services behind outbound <b>Cloudflare Tunnels</b> with no reachable inbound ports — sshd loopback-only and the dashboard auth-gated behind <code>ufw</code>; both routes are Access-gated.</li>
+        <li>All services behind outbound <b>Cloudflare Tunnels</b> with no reachable inbound ports: sshd on loopback, the dashboard auth-gated behind <code>ufw</code>, and both routes behind Access.</li>
       </ul>
     </div>
 
     <div class="entry">
       <div class="entry-head">
-        <span class="entry-title">Hermes &amp; Vaultwarden — Self-Hosted Services</span>
+        <span class="entry-title">Hermes &amp; Vaultwarden: Self-Hosted Services</span>
         <span class="entry-date"><a href="https://vault.sreeramkr.com">vault.sreeramkr.com</a></span>
       </div>
       <ul>
-        <li>Provisioned an <b>AI assistant</b> (Telegram gateway + <b>DeepSeek API</b>, native systemd install with its own uv-managed Python/Node) and a <b>Vaultwarden</b> password vault, both on free-tier VMs — loopback-only services behind outbound <b>Cloudflare Tunnels</b>, zero open ports, outbound polling/LLM traffic only.</li>
+        <li>Provisioned an <b>AI assistant</b> (Telegram gateway + <b>DeepSeek API</b>, native systemd install with its own uv-managed Python/Node) and a <b>Vaultwarden</b> password vault, both on free-tier VMs: loopback-only services behind outbound <b>Cloudflare Tunnels</b>, zero open ports, outbound polling and LLM traffic only.</li>
         <li>Secrets in a root-owned <code>0600 .env</code> (Argon2 admin token, signups disabled); nightly CLI-free SQLite backup via the metadata token, auto-pruned to the newest 10.</li>
         <li>Snapshotted the assistant's state to a private OCI Object Storage bucket every six hours (keyless instance principal); the host restores the newest snapshot at first boot, and a reset wipes the instance and the bucket for a factory-fresh agent.</li>
       </ul>

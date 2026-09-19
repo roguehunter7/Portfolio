@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Archive — Sreeram K R</title>
+<title>Archive | Sreeram K R</title>
 <meta name="description" content="Phase-by-phase archive of a cloud infrastructure case study with no open ports: from a bare VM to Cloudflare Pages and a self-hosted password vault.">
-<meta property="og:title" content="Infrastructure Archive — Sreeram K R">
+<meta property="og:title" content="Infrastructure Archive | Sreeram K R">
 <meta property="og:description" content="Eight phases, each with its own architecture diagram and the reason behind it.">
 <meta property="og:image" content="https://sreeramkr.com/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -43,13 +43,13 @@ document.documentElement.dataset.theme =
   <header class="hero hero--compact">
     <h1>Infrastructure <span class="grad-text">Archive</span></h1>
     <p class="tagline measure">
-      Every phase of this project, capture by capture. Each entry shows the architecture diagram for that
-      point in time, <strong>why</strong> it was built that way, and <strong>how</strong> it was put together
-      — so the reasoning is as visible as the code. Everything here is grounded in the repository's commit history.
+      Eight phases, written as they happened. Each entry has the diagram from that point in time, the
+      <strong>problem</strong> that forced the change, and <strong>how</strong> it was built. Where a decision cost
+      me something later, that is in there too. Every claim traces back to a commit in this repository.
     </p>
     <p class="archive-meta measure">
-      The repo previously told this as phases 1-9 across its own README and site. It's consolidated here into eight
-      phases grouped by the real architectural arc; the commit history still shows the full, finer-grained sequence.
+      The README once counted nine phases. I folded them into eight, grouped by the architectural shift rather than
+      by the date. The commit history still has the finer sequence.
     </p>
   </header>
 
@@ -68,303 +68,296 @@ document.documentElement.dataset.theme =
     <div class="archive-content">
       <!-- Phase 1 -->
       <article class="archive-entry js-reveal" id="phase-1" data-phase="01">
-        <h3>Phase 1 — Bootstrap &amp; GitOps polling</h3>
-        <p class="archive-tagline">A hand-deployed VM learns to deploy itself.</p>
+        <h3>Phase 1: Bootstrap &amp; GitOps polling</h3>
+        <p class="archive-tagline">The first box learned to deploy itself. Slowly, and with no audit trail.</p>
         <p class="archive-meta">May 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            The project started as a plain static portfolio served from a single cloud VM. Manual re-deploys didn't
-            scale and there was no way to audit what was live. We wanted the site to track the repository without
-            anyone babysitting a deploy, and we needed a repeatable way to route traffic and secure the host.
+            I built this by hand on one cloud VM and redeployed it over SSH. That worked twice. By the fifth change I
+            could not tell which commit was live, so the box started polling the repository and redeploying whenever
+            the SHA moved.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            A pull-based GitOps loop polled the repository for changes and re-deployed on delta. Nginx served the site
-            from a Docker image built and pushed earlier. As it hardened, we added HSTS, Docker image CVE remediation,
-            and introduced Terraform to declare the VM and networking.
+            Nginx served the site from a Docker image I built and pushed by hand. The poller watched the repo and
+            swapped containers on a delta. Hardening came next: HSTS, a rebuilt base image to clear CVEs, and
+            Terraform, so the VM and its network were written down instead of remembered.
           </p>
           <ul>
-            <li><strong>Deploy:</strong> pull-based polling loop; Docker + nginx to serve the static site.</li>
-            <li><strong>Hardening:</strong> HSTS header, hardened base image, strict firewall posture.</li>
-            <li><strong>IaC:</strong> Terraform introduced to describe the cloud resources reproducibly.</li>
+            <li><strong>Deploy:</strong> a polling loop plus Docker and nginx on one VM.</li>
+            <li><strong>Hardening:</strong> HSTS, a slimmer base image, a firewall that allowed only what the deploy needed.</li>
+            <li><strong>IaC:</strong> Terraform took over the VM and the network.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase1-bootstrap.html?embed=1" style="aspect-ratio: 1110 / 598" title="Phase 1 architecture diagram — Bootstrap and GitOps polling" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase1-bootstrap.html?embed=1" style="aspect-ratio: 1110 / 598" title="Phase 1 architecture diagram: Bootstrap and GitOps polling" loading="lazy"></iframe>
           <figcaption>Developer to GitHub to the box: the VM polls for a SHA delta and redeploys; Terraform declares it.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 2 -->
       <article class="archive-entry js-reveal" id="phase-2" data-phase="02">
-        <h3>Phase 2 — Observability &amp; IaC serverless</h3>
-        <p class="archive-tagline">Knowing what's happening, then rebuilding the whole thing declaratively.</p>
+        <h3>Phase 2: Observability &amp; IaC serverless</h3>
+        <p class="archive-tagline">Watch it while it runs, then write the whole stack down.</p>
         <p class="archive-meta">June 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            Hand-rolled sidecar scripts gave no real-time signal, and the growing fleet of bespoke shell scripts
-            became unmaintainable. We wanted live observability and a path where the deployment was fully declared
-            in code — and we wanted to prove the whole stack could run serverless.
+            The sidecar shell scripts told me nothing until something broke. I wanted numbers while the box was
+            healthy, and I wanted the stack in files rather than in my head. There was a second question too: could
+            any of this run serverless?
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            We added an Nginx <code>stub_status</code>/frontend-polling metrics daemon with a systemd service and
-            containerized the resume build (LaTeX compiled in CI). Then we rebuilt the deployment on
-            <strong>Terraform + GitHub Actions</strong> with a proper migration to
-            <strong>Cloud Run + Firestore</strong>: a Go visitor-tracker API authenticated via
-            <strong>Workload Identity Federation</strong>, shipped as a multi-stage image.
+            An nginx <code>stub_status</code> feed, a small polling daemon and a systemd unit gave me live numbers,
+            with a switch that injected failures so I could see what one looked like. The resume build moved into CI
+            as LaTeX. Then I rebuilt the deployment on <strong>Terraform and GitHub Actions</strong>: a Go visitor
+            tracker on <strong>Cloud Run</strong>, state in <strong>Firestore</strong>, and
+            <strong>Workload Identity Federation</strong> so CI held no keys at all.
           </p>
           <ul>
-            <li><strong>Observability:</strong> stub_status polling + a metrics daemon with chaos injection.</li>
-            <li><strong>Resume:</strong> LaTeX compiled in CI and served from the container (later migrated to HTML+CSS — see Phase 4).</li>
-            <li><strong>Serverless:</strong> Terraform + Actions; Cloud Run, Firestore, WIF keyless auth, multi-stage Go image.</li>
+            <li><strong>Observability:</strong> stub_status polling, a metrics daemon, and a deliberate failure switch.</li>
+            <li><strong>Resume:</strong> LaTeX in CI, served from the container. It moved to HTML in Phase 4.</li>
+            <li><strong>Serverless:</strong> Cloud Run, Firestore, keyless CI, a multi-stage Go image.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase2-serverless.html?embed=1" style="aspect-ratio: 1120 / 568" title="Phase 2 architecture diagram — Observability and IaC serverless" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase2-serverless.html?embed=1" style="aspect-ratio: 1120 / 568" title="Phase 2 architecture diagram: Observability and IaC serverless" loading="lazy"></iframe>
           <figcaption>CI builds and deploys Cloud Run keylessly through WIF; the API writes to Firestore and the VM metrics daemon feeds the site.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 3 -->
       <article class="archive-entry js-reveal" id="phase-3" data-phase="03">
-        <h3>Phase 3 — No-Open-Ports Docker Compose</h3>
-        <p class="archive-tagline">The cost of serverless pushed everything back behind a no-public-ports host.</p>
+        <h3>Phase 3: No-Open-Ports Docker Compose</h3>
+        <p class="archive-tagline">Serverless cost more than the problem was worth, so the site went back to one VM.</p>
         <p class="archive-meta">July 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            Cloud Run + Artifact Registry + Firestore read/write fees accumulated for a low-traffic portfolio,
-            breaking the "$0/month" goal. The lesson was honest: serverless removed VM maintenance but added a cost
-            vector the workload didn't justify. We returned to a single free-tier VM — but this time with a
-            fundamentally more secure posture: <strong>no open ports</strong>.
+            Artifact Registry, Cloud Run and Firestore added up. Not by much, but more than zero, for a site that gets
+            a handful of visits a day. Serverless removed the VM maintenance and replaced it with a bill I could not
+            justify. So everything moved back to one free-tier VM, and I used the move to change the posture:
+            <strong>no open ports at all</strong>.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            We removed the tracker API and rebuilt the stack as a <strong>Docker Compose</strong> project: Nginx and
-            <code>cloudflared</code> containers on an isolated Compose network. All ingress arrives via a
-            <strong>Cloudflare Tunnel</strong> (outbound connection), so the host exposes no open ports. We pinned the
-            tunnel image, hardened the VM bootstrap and Nginx, added a VM-readiness check to the deploy, and released
-            the project under MIT.
+            The tracker API went away. Nginx and <code>cloudflared</code> run as containers on an isolated Compose
+            network, and every request arrives through a <strong>Cloudflare Tunnel</strong> that the host opens
+            outward. Nothing listens on the public interface, so there is nothing to scan. I pinned the tunnel image,
+            tightened the VM bootstrap and the nginx config, made the deploy wait for the host to answer, and put the
+            repo under MIT.
           </p>
           <ul>
-            <li><strong>Ingress:</strong> Cloudflare Tunnel only — no open ports, no host firewall exposure.</li>
-            <li><strong>Runtime:</strong> Docker Compose v2, pinned tunnel image, hardened Nginx + VM bootstrapping.</li>
-            <li><strong>Pipeline:</strong> VM-readiness check before deploy; images built in CI and pulled anonymously.</li>
+            <li><strong>Ingress:</strong> Cloudflare Tunnel only. No port is reachable from the internet.</li>
+            <li><strong>Runtime:</strong> Docker Compose v2, a pinned tunnel image, a hardened nginx.</li>
+            <li><strong>Pipeline:</strong> the deploy checks the host is up before it publishes.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase3-compose.html?embed=1" style="aspect-ratio: 944 / 568" title="Phase 3 architecture diagram — No-open-ports Docker Compose" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase3-compose.html?embed=1" style="aspect-ratio: 944 / 568" title="Phase 3 architecture diagram: No-open-ports Docker Compose" loading="lazy"></iframe>
           <figcaption>Visitor to Cloudflare Edge to a tunnel into a host with no open ports; the image is pulled anonymously.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 4 -->
       <article class="archive-entry js-reveal" id="phase-4" data-phase="04">
-        <h3>Phase 4 — Edge migration to Cloudflare Pages</h3>
-        <p class="archive-tagline">Static assets move to the edge; the VM stops serving the site.</p>
+        <h3>Phase 4: Edge migration to Cloudflare Pages</h3>
+        <p class="archive-tagline">The site moved to the edge, which freed the VM for its next job.</p>
         <p class="archive-meta">August 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            A static resume/portfolio doesn't need an origin server at all. Serving it at the edge is faster, has
-            first-class security-header control, and frees the VM for real work. The deploy also became simpler:
-            render the PDF, publish to Pages — one <code>workflow_dispatch</code> run (deliberately manual, so a
-            push never publishes unreviewed).
+            A static resume does not need an origin server. Cloudflare Pages is faster, gives me headers I control,
+            and costs nothing, and it left the VM idle. That was the point: the next phase needed the machine more
+            than the site did. Publishing stayed manual on purpose. Rendering the PDF and shipping are two commands,
+            and I would rather press the button than publish every push.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            We migrated the static site to <strong>Cloudflare Pages</strong> with a <code>_headers</code> policy that
-            hardens HSTS, nosniff, framing and permissions. The resume PDF is rendered by CI (headless Chrome) from the
-            ATS-safe HTML. We made the site AI-friendly with <code>robots.txt</code>, <code>llms.txt</code>, and a
-            JSON-LD Person schema, and documented the HTML-resume rationale.
+            Pages serves the site from a <code>_headers</code> policy: HSTS, nosniff, no framing, a permissions
+            policy, immutable caching for fonts, and <code>noindex</code> on preview URLs. CI renders the resume PDF
+            from the HTML with headless Chrome. I added <code>robots.txt</code>, <code>llms.txt</code> and JSON-LD so
+            both crawlers and language models can read the page without guessing.
           </p>
           <ul>
-            <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, idempotent project create.</li>
-            <li><strong>Hardening:</strong> HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy, immutable font caching, preview noindex.</li>
-            <li><strong>No CSP (deliberate):</strong> a static site with no input, no forms and no third-party origins except the diagram pages' webfont has nothing for a policy to protect — and <code>script-src 'self'</code> would not stop the one plausible attack, since a compromised repo or deploy token can publish a same-origin script. The strict policy's per-route exception broke the resume twice, so it was cut.</li>
-            <li><strong>Content:</strong> robots/llms.txt, JSON-LD, CI-rendered ATS-safe resume PDF.</li>
-            <li><strong>Resume pivot:</strong> the resume left LaTeX — it's now plain HTML+CSS rendered to PDF by headless Chrome.</li>
-            <li><strong>Diagrams:</strong> inline SVG generated with Archify (no client-side renderer, no chart library); each page is self-contained with its own CSS variables, so dark/light theming is a variable swap — the one external request is JetBrains Mono from Google Fonts.</li>
+            <li><strong>Deploy:</strong> <code>wrangler pages deploy site/</code>, creating the project if it is missing.</li>
+            <li><strong>Headers:</strong> HSTS, nosniff, X-Frame-Options, Referrer-Policy, Permissions-Policy.</li>
+            <li><strong>No CSP, on purpose:</strong> the site takes no input and loads nothing from third parties. A strict policy broke the resume twice before I dropped it.</li>
+            <li><strong>Resume:</strong> plain HTML and CSS, rendered to PDF by headless Chrome in CI.</li>
+            <li><strong>Diagrams:</strong> self-contained pages, so light and dark are a variable swap. The one external request is a webfont.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase4-edge.html?embed=1" style="aspect-ratio: 1120 / 598" title="Phase 4 architecture diagram — Edge migration to Cloudflare Pages" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase4-edge.html?embed=1" style="aspect-ratio: 1120 / 598" title="Phase 4 architecture diagram: Edge migration to Cloudflare Pages" loading="lazy"></iframe>
           <figcaption>CI renders the resume PDF and publishes to Pages; visitors reach the edge directly.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 5 -->
       <article class="archive-entry js-reveal" id="phase-5" data-phase="05">
-        <h3>Phase 5 — Repurposing the compute</h3>
-        <p class="archive-tagline">Freed VMs become an AI host and a dev box with no open ports.</p>
+        <h3>Phase 5: Repurposing the compute</h3>
+        <p class="archive-tagline">Two free VMs were still running, so they got jobs.</p>
         <p class="archive-meta">August 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            Once the site was on Pages, the free-tier VMs were idle capacity. Rather than shut them down, we
-            re-purposed them: first a self-hosted AI assistant, then a browser-accessible development box — both
-            keeping the no-open-ports posture so no port is ever reachable from the internet.
+            With the site on Pages, two free-tier VMs sat idle. Shutting them down was the tidy choice. Instead I
+            found two things worth running: an assistant I could reach from my phone, and a development box I could
+            reach from any browser. Both kept the rule from Phase 3, so neither one is reachable from the internet.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            We provisioned a <strong>Hermes</strong> AI-assistant host (outbound-only: Telegram polling + an LLM API,
-            admin via IAP SSH), with a <code>resume.json</code> master data file and DeepSeek backend. Then we built an
-            <strong>Oracle Cloud Always-Free A1.Flex</strong> dev box provisioned by Terraform + GitHub Actions: a
-            ttyd browser terminal, Node LTS via nvm, a hardened firewall, and cost guardrails (tenancy-wide
-            budget + quota that denies everything except the Always-Free allocation).
+            Hermes went on the GCP box with no inbound ports at all. It long-polls Telegram, calls a
+            <strong>DeepSeek</strong> model, and I administer it over IAP SSH. Then the
+            <strong>Oracle A1.Flex</strong> arrived through Terraform and GitHub Actions: a ttyd terminal on loopback,
+            Node from nvm, and guardrails I care about more than the rest. A tenancy budget plus quotas that zero every
+            compute family except the Always Free shape. That turns "I hope I do not get a bill" into "this account
+            cannot launch a paid machine".
           </p>
           <ul>
-            <li><strong>Hermes host:</strong> outbound-only AI assistant, DeepSeek backend, Telegram pairing, IAP SSH admin.</li>
-            <li><strong>Oracle dev box:</strong> A1.Flex (2 OCPU / 12 GB), cloudflared tunnel, browser terminal, monthly maintenance.</li>
-            <li><strong>Guardrails:</strong> tenancy budget + compute/storage quotas limiting to the Always-Free tier ($0).</li>
+            <li><strong>Hermes host:</strong> outbound only, Telegram polling, IAP SSH for admin.</li>
+            <li><strong>Oracle box:</strong> A1.Flex with 2 OCPU and 12 GB, a cloudflared tunnel, a browser terminal.</li>
+            <li><strong>Guardrails:</strong> a budget and quotas that cap the tenancy at the free tier.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase5-repurposing.html?embed=1" style="aspect-ratio: 1160 / 508" title="Phase 5 architecture diagram — Repurposing the compute" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase5-repurposing.html?embed=1" style="aspect-ratio: 1160 / 508" title="Phase 5 architecture diagram: Repurposing the compute" loading="lazy"></iframe>
           <figcaption>The freed compute: a Hermes AI host on GCP and an Oracle dev box with no open ports, both cost-guarded.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 6 -->
       <article class="archive-entry js-reveal" id="phase-6" data-phase="06">
-        <h3>Phase 6 — Vaultwarden host</h3>
-        <p class="archive-tagline">The GCP VM becomes a self-hosted password vault with no open ports.</p>
+        <h3>Phase 6: Vaultwarden host</h3>
+        <p class="archive-tagline">The GCP box became the one thing I refuse to be relaxed about.</p>
         <p class="archive-meta">August 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            With Hermes relocated to Oracle, the GCP <code>e2-micro</code> was available again. A self-hosted
-            password manager is a great use of free-tier compute, and it must be maximally locked down: a credential
-            store is exactly the workload that demands zero public exposure and least-privilege access.
+            When Hermes moved to Oracle, the <code>e2-micro</code> was free again. A password vault is the workload
+            where I am least willing to compromise. If it is reachable from the network, it is wrong. That made it a
+            good fit for the pattern from Phase 3, and a bad place for anything clever.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            The VM now runs <strong>Vaultwarden</strong> (single Rust container on loopback <code>:8000</code> plus a
-            <code>cloudflared</code> container) reached only via the <code>vault.sreeramkr.com</code> tunnel route.
-            Secrets live in a root-owned <code>0600 .env</code> written by CI, and the Argon2 admin token is
-            interpolated correctly (<code>$</code> doubled). It runs on a <strong>least-privilege service account</strong>
-            scoped to one private GCS bucket, with a nightly SQLite backup that prunes to the newest ten. Admin is
-            over IAP SSH; no open ports.
+            <strong>Vaultwarden</strong> runs as one container on loopback <code>:8000</code>, with a
+            <code>cloudflared</code> container beside it and <code>vault.sreeramkr.com</code> as the only way in.
+            Secrets sit in a root-owned <code>0600 .env</code> that CI writes. The Argon2 admin token contains
+            <code>$</code>, which Compose would happily eat, so it is escaped on the way in. The instance runs as a
+            service account scoped to a single private bucket. Every night the SQLite database is copied there, and
+            the oldest of ten is pruned.
           </p>
           <ul>
-            <li><strong>No open ports:</strong> deny-all firewall + IAP-only SSH; loopback-only <code>:8000</code>.</li>
-            <li><strong>Secrets:</strong> <code>0600 .env</code> via <code>env_file</code>, correct <code>$</code> escaping.</li>
-            <li><strong>Least privilege:</strong> dedicated backup SA (<code>storage.objectUser</code>) on one private bucket; nightly backup + prune to 10.</li>
+            <li><strong>Reachability:</strong> a deny-all firewall, IAP-only SSH, and a listener on loopback.</li>
+            <li><strong>Secrets:</strong> a <code>0600 .env</code> written by CI, with signups disabled.</li>
+            <li><strong>Backups:</strong> a dedicated service account, one private bucket, ten snapshots kept.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase6-vaultwarden.html?embed=1" style="aspect-ratio: 1160 / 628" title="Phase 6 architecture diagram — Vaultwarden host" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase6-vaultwarden.html?embed=1" style="aspect-ratio: 1160 / 628" title="Phase 6 architecture diagram: Vaultwarden host" loading="lazy"></iframe>
           <figcaption>The GCP box becomes a loopback-only Vaultwarden behind the tunnel, with nightly backups to a private bucket.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 7 -->
       <article class="archive-entry js-reveal" id="phase-7" data-phase="07">
-        <h3>Phase 7 — Oracle dev box + Hermes</h3>
-        <p class="archive-tagline">The freed Oracle compute becomes a no-open-ports Ubuntu dev box running Hermes in Docker.</p>
+        <h3>Phase 7: Oracle dev box + Hermes</h3>
+        <p class="archive-tagline">A general-purpose dev box, with three ways in.</p>
         <p class="archive-meta">September 2026</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            The site had moved to the edge and the free-tier compute was idle. Rather than leave it dark, the
-            Oracle A1.Flex became a general-purpose dev box: a browser terminal over the existing Cloudflare
-            Tunnel, with Hermes moved off GCP into a container on the same host. The GCP <code>e2-micro</code>
-            stays the Vaultwarden host (Phase 6).
+            Pages had taken the site and the Oracle box was sitting there. I wanted a machine I could reach from any
+            browser, run Hermes on, and use as a dev environment. So it became all three at once, which is exactly
+            how it ended up in the state Phase 8 cleans up.
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
-            The box runs <strong>Ubuntu 24.04 (aarch64)</strong> on the Always Free A1.Flex shape, provisioned by
-            Terraform + cloud-init from this repository. <code>ttyd</code> serves a plain bash login shell on
-            loopback <code>:7681</code>; the tunnel points <code>ssh.sreeramkr.com</code> at it and Cloudflare
-            Access gates that route — ttyd itself carries no credential. Node and DSH come from nvm: pnpm,
-            <code>@deepseek-ai/dsh@next</code>, the <code>dsh-tui</code> profile, and the Archify web bundle.
-            Hermes runs from the official <code>nousresearch/hermes-agent</code> image with
-            <code>/opt/hermes</code> mounted at <code>/opt/data</code>; Telegram is long-polled outbound and its
-            gateway API stays on loopback <code>:8642</code>. There is no security group: <code>ufw</code> denies
-            inbound and the OpenSSH server is removed, so no service binds a public interface. Vaultwarden keeps
-            running on the GCP box (Phase 6), loopback <code>:8000</code> behind its own tunnel. One monthly
-            maintenance pass updates apt, nvm/DSH, and the Hermes image, then reboots.
+            The box ran <strong>Ubuntu 24.04 (aarch64)</strong> on the Always Free A1.Flex shape, provisioned by
+            Terraform and cloud-init from this repository. <code>ttyd</code> served a bash login shell on loopback
+            <code>:7681</code>, and the tunnel pointed <code>ssh.sreeramkr.com</code> at it, with Cloudflare Access in
+            front because ttyd has no credential of its own. Node and DSH came from nvm: pnpm,
+            <code>@deepseek-ai/dsh@next</code>, the <code>dsh-tui</code> profile, the Archify bundle. Hermes ran from
+            the official <code>nousresearch/hermes-agent</code> image, with <code>/opt/hermes</code> mounted at
+            <code>/opt/data</code>, long-polling Telegram and keeping its gateway API on loopback
+            <code>:8642</code>. There was no security group. <code>ufw</code> denied inbound and the OpenSSH server was
+            removed, so nothing bound a public interface. Vaultwarden stayed on the GCP box from Phase 6. A monthly
+            pass updated apt, nvm, DSH and the Hermes image, then rebooted.
           </p>
           <ul>
-            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Cloudflare Access in front of the terminal route.</li>
-            <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, OpenSSH removed.</li>
-            <li><strong>Workloads:</strong> ttyd + bash, DSH (tui + web), and Hermes in Docker on loopback.</li>
-            <li><strong>Fleet:</strong> the GCP e2-micro stays the Vaultwarden host from Phase 6.</li>
+            <li><strong>Ingress:</strong> an outbound tunnel and nothing else, with Access in front of the terminal.</li>
+            <li><strong>Host:</strong> A1.Flex, 2 OCPU and 12 GB, no NSG, OpenSSH removed.</li>
+            <li><strong>Workloads:</strong> ttyd, DSH and Hermes in Docker, all on loopback.</li>
+            <li><strong>Fleet:</strong> the GCP box still runs Vaultwarden from Phase 6.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html?embed=1" style="aspect-ratio: 1140 / 598" title="Phase 7 architecture diagram — Oracle dev box with ttyd, DSH and Hermes in Docker" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase7-devbox.html?embed=1" style="aspect-ratio: 1140 / 598" title="Phase 7 architecture diagram: Oracle dev box with ttyd, DSH and Hermes in Docker" loading="lazy"></iframe>
           <figcaption>The dev box: Cloudflare Tunnel to loopback services only, ufw denying inbound, and Hermes in its own container.</figcaption>
         </figure>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase7-fleet.html?embed=1" style="aspect-ratio: 960 / 568" title="Phase 7 architecture diagram — Zero-ingress fleet with Vaultwarden" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase7-fleet.html?embed=1" style="aspect-ratio: 960 / 568" title="Phase 7 architecture diagram: Zero-ingress fleet with Vaultwarden" loading="lazy"></iframe>
           <figcaption>The fleet as it stood: the Oracle box and the GCP Vaultwarden host, each reached only through its own outbound tunnel.</figcaption>
         </figure>
       </article>
 
       <!-- Phase 8 -->
       <article class="archive-entry js-reveal" id="phase-8" data-phase="08">
-        <h3>Phase 8 — Consolidation: one workload, snapshot-backed rebuilds (current)</h3>
-        <p class="archive-tagline">The dev box stops being three ways to reach a shell and becomes a single Hermes host that can rebuild itself.</p>
-        <p class="archive-meta">September 2026 — current</p>
+        <h3>Phase 8: Consolidation, one workload and a rebuild that works (current)</h3>
+        <p class="archive-tagline">One workload, one way in, and a rebuild I can trust on a bad day.</p>
+        <p class="archive-meta">September 2026 to now</p>
         <div class="archive-block">
           <h4>Why</h4>
           <p>
-            The box carried three overlapping ways in — a browser terminal, the harness's own web UI, and an agent
-            in a container — plus a host toolchain to keep alive. None of that was the point; Hermes was. Every
-            extra service was another listener to patch and another way for the host to fail while the agent was
-            the only thing that mattered. So the question became: what is the smallest host that runs Hermes, and
-            can it be rebuilt from nothing without losing the agent's memory?
+            By this point the box had three ways in: a browser terminal, the harness's own web UI, and an agent in
+            a container. Each one was another thing to patch, and the agent was the only part I used. So I asked a
+            narrower question. What is the smallest host that runs Hermes, and can it be rebuilt from nothing without
+            losing the agent's memory?
           </p>
         </div>
         <div class="archive-block">
           <h4>How</h4>
           <p>
             Everything above the OS changed. Hermes is installed <strong>natively</strong> as a dedicated
-            <code>hermes</code> user: the official installer brings its own uv-managed Python, Node and ripgrep, so
-            the distro's versions are never in the dependency path and a monthly <code>apt upgrade</code> cannot
-            break the agent. Two systemd units run it — the gateway (Telegram long poll, outbound) and the
-            dashboard on <code>:9119</code>. <code>sshd</code> binds loopback <code>:22</code>; the dashboard
-            listens on all interfaces and keeps its own username/password gate — Hermes only enforces that gate on
-            a non-loopback bind — with <code>ufw</code> dropping inbound connections before they reach it. Both
-            are reached only as SSH or HTTP carried by the Cloudflare Tunnel and gated by Access. Docker, ttyd and
-            the harness are gone, and CI never logs into the box. Agent state lives in
-            <code>/home/hermes/.hermes</code> and is snapshotted every six hours to a private OCI Object Storage
+            <code>hermes</code> user. The installer brings its own uv-managed Python, Node and ripgrep, so a monthly
+            <code>apt upgrade</code> cannot break it and I am not tracking the distro's versions. Two systemd units
+            run it: the gateway, which long-polls Telegram, and the dashboard on <code>:9119</code>.
+            <code>sshd</code> binds loopback on <code>:22</code>. The dashboard listens on every interface, which is
+            deliberate, because Hermes only switches on its username and password gate for a non-loopback bind;
+            <code>ufw</code> drops inbound traffic before it arrives. Both are reachable only through the tunnel,
+            behind Access. Docker, ttyd and the harness are gone, and CI has no shell on the box.
+            State lives in <code>/home/hermes/.hermes</code> and is snapshotted every six hours to a private OCI
             bucket using the instance principal, so no key sits on the host. A rebuild is one workflow run with a
-            single <code>reset</code> checkbox: it empties the bucket and destroys the instance for a
-            factory-fresh agent, or keeps the snapshots so the host restores the newest one at first boot. The
-            bucket carries <code>prevent_destroy</code>, so the only copy of the agent's memory cannot be planned
-            away. Vaultwarden keeps running on the GCP box (Phase 6), loopback <code>:8000</code> behind its own
-            tunnel, and one monthly pass updates the OS and runs <code>hermes update</code>.
+            single <code>reset</code> checkbox. It either empties the bucket and rebuilds for a factory-fresh agent,
+            or keeps the snapshots and the host restores the newest one at first boot. That bucket carries
+            <code>prevent_destroy</code>, so the only copy of the agent's memory cannot be planned away by accident.
           </p>
           <ul>
-            <li><strong>Ingress:</strong> outbound Cloudflare Tunnel only; Access in front of both the SSH and dashboard routes.</li>
-            <li><strong>Host:</strong> A1.Flex 2 OCPU / 12 GB, Ubuntu 24.04; no NSG, ufw deny-inbound, sshd loopback-only, dashboard auth-gated.</li>
-            <li><strong>Workloads:</strong> native Hermes (gateway + dashboard) under systemd — no Docker, no browser terminal, no harness.</li>
-            <li><strong>State:</strong> six-hourly snapshots to a private OCI bucket via the instance principal; a rebuild restores the newest one at boot, a reset wipes the instance and the snapshots.</li>
-            <li><strong>Rebuild:</strong> one workflow run, and CI has no shell on the box.</li>
-            <li><strong>Fleet:</strong> the GCP e2-micro stays the Vaultwarden host from Phase 6.</li>
+            <li><strong>Ingress:</strong> an outbound tunnel, with Access in front of both routes.</li>
+            <li><strong>Host:</strong> A1.Flex, 2 OCPU and 12 GB, <code>ufw</code> denying inbound, sshd on loopback.</li>
+            <li><strong>Workloads:</strong> the Hermes gateway and dashboard under systemd. No Docker, no browser terminal, no harness.</li>
+            <li><strong>State:</strong> six-hourly snapshots to a private OCI bucket. A rebuild restores the newest one; a reset wipes everything.</li>
+            <li><strong>Fleet:</strong> the GCP <code>e2-micro</code> still runs Vaultwarden.</li>
           </ul>
         </div>
         <figure class="diagram-container">
-          <iframe class="diagram-frame" src="/diagrams/phase8-fleet.html?embed=1" style="aspect-ratio: 1280 / 700" title="Phase 8 architecture diagram — the consolidated two-box fleet" loading="lazy"></iframe>
+          <iframe class="diagram-frame" src="/diagrams/phase8-fleet.html?embed=1" style="aspect-ratio: 1280 / 700" title="Phase 8 architecture diagram: the consolidated two-box fleet" loading="lazy"></iframe>
           <figcaption>The current fleet: one Hermes host with a snapshot-backed rebuild, and the GCP Vaultwarden host, each reached only through its own outbound tunnel.</figcaption>
         </figure>
       </article>

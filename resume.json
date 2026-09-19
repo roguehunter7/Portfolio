@@ -1,5 +1,5 @@
 {
-  "$comment": "Master resume data — single source of truth. Long-form context + achievements; an LLM (resume.json + JD -> resume.pdf) selects, rewrites and condenses to a 1-page ATS-safe PDF. Add/expand freely; nothing here is 'final resume text'.",
+  "$comment": "Master resume data, single source of truth. Long-form context + achievements; an LLM (resume.json + JD -> resume.pdf) selects, rewrites and condenses to a 1-page ATS-safe PDF. Add/expand freely; nothing here is 'final resume text'.",
   "meta": {
     "name": "Sreeram K R",
     "title": "Cloud & Infrastructure Automation Engineer",
@@ -31,7 +31,7 @@
     {
       "category": "Infrastructure & SRE",
       "items": [
-        { "name": "GCP", "level": "advanced", "context": "Compute Engine, VPC, GCS, Cloud Run, IAP, WIF — all used in production personal + client infra" },
+        { "name": "GCP", "level": "advanced", "context": "Compute Engine, VPC, GCS, Cloud Run, IAP, WIF, all used in production personal and client infra" },
         { "name": "Terraform (IaC)", "level": "advanced", "context": "state-locked declarative provisioning of VPCs, firewalls, instances" },
         { "name": "Docker / Docker Compose", "level": "advanced", "context": "multi-container stacks on unprivileged, private bridge networks" },
         { "name": "GitHub Actions (CI/CD)", "level": "advanced", "context": "OIDC/WIF keyless auth, IAP SSH deploys, Cloudflare Pages deploys" },
@@ -211,19 +211,19 @@
       ]
     },
     {
-      "name": "Hermes — Self-Hosted AI Assistant",
+      "name": "Hermes: Self-Hosted AI Assistant",
       "url": "https://sreeramkr.com",
-      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) running natively under systemd on the zero-ingress Oracle A1.Flex box — its own uv-managed Python and Node, sshd loopback-only and the dashboard auth-gated behind ufw; provisioned end-to-end by Terraform + cloud-init.",
+      "context": "Always-on personal AI assistant (Telegram gateway + DeepSeek API) running natively under systemd on the zero-ingress Oracle A1.Flex box. It brings its own uv-managed Python and Node, sshd loopback-only and the dashboard auth-gated behind ufw; provisioned end-to-end by Terraform + cloud-init.",
       "achievements": [
         {
           "what": "Installed the assistant natively as a dedicated `hermes` systemd user: the official installer brings uv-managed Python, Node and ripgrep into its own home, so the distro's versions are never in the dependency path and a monthly apt upgrade cannot break the agent.",
-          "why": "Own the stack directly on the box with one service to supervise — no container layer in the way.",
+          "why": "Own the stack directly on the box with one service to supervise, with no container layer in the way.",
           "impact": "The agent and its runtime move forward together; `hermes update` rolls the checkout back if the pulled code does not parse.",
           "evidence": "scripts/provision.sh + /etc/systemd/system/hermes-{gateway,dashboard}.service",
           "skills_used": ["systemd", "Oracle Cloud (OCI)", "cloud-init", "Linux"]
         },
         {
-          "what": "Snapshotted the agent's state to a private OCI Object Storage bucket every six hours using the instance principal (no API key on the box), and made the host restore the newest snapshot itself at first boot — a rebuild is one workflow run, and a reset wipes the instance and the bucket for a factory-fresh agent.",
+          "what": "Snapshotted the agent's state to a private OCI Object Storage bucket every six hours using the instance principal (no API key on the box), and made the host restore the newest snapshot itself at first boot. A rebuild is one workflow run, and a reset wipes the instance and the bucket for a factory-fresh agent.",
           "why": "The box is disposable; the agent's sessions, skills and memories are not.",
           "impact": "A rebuild is one workflow run with at most six hours of state loss; restore refuses archives with absolute or parent-traversal paths.",
           "evidence": "scripts/hermes-backup.sh + scripts/hermes-restore.sh",
@@ -246,7 +246,7 @@
       ]
     },
     {
-      "name": "Vaultwarden — Zero-Ingress Self-Hosted Password Vault",
+      "name": "Vaultwarden: Zero-Ingress Self-Hosted Password Vault",
       "url": "https://vault.sreeramkr.com",
       "context": "The freed GCP e2-micro re-purposed into a hardened self-hosted password manager: loopback-only on :8000 behind a Cloudflare Tunnel, a least-privilege service account, and nightly SQLite backups to a private GCS bucket.",
       "achievements": [
@@ -274,7 +274,7 @@
       ]
     },
     {
-      "name": "CornerSentinel — IoT Safety System (Li-Fi Communication)",
+      "name": "CornerSentinel: IoT Safety System (Li-Fi Communication)",
       "url": null,
       "context": "Capstone project: a real-time computer-vision warning system on Raspberry Pi to prevent accidents at blind corners, using Li-Fi (Visible Light Communication) for low-latency signaling.",
       "achievements": [

@@ -2,9 +2,9 @@
 
 > Infrastructure Engineer. Free-tier cloud infrastructure case study with no open ports: Terraform, GCP, Oracle Cloud, Docker, Cloudflare, GitHub Actions. One-page ATS-safe resume plus a full phase-by-phase archive.
 
-[Sreeram K R — Portfolio](https://sreeramkr.com)
-[Sreeram K R — Infrastructure Archive](https://sreeramkr.com/archive)
-[Sreeram K R — Resume (HTML)](https://sreeramkr.com/resume.html)
-[Sreeram K R — Resume (PDF)](https://sreeramkr.com/resume.pdf)
+[Sreeram K R | Portfolio](https://sreeramkr.com)
+[Sreeram K R | Infrastructure Archive](https://sreeramkr.com/archive)
+[Sreeram K R | Resume (HTML)](https://sreeramkr.com/resume.html)
+[Sreeram K R | Resume (PDF)](https://sreeramkr.com/resume.pdf)
 [GitHub](https://github.com/roguehunter7)
 [LinkedIn](https://linkedin.com/in/sreeram-k-r)

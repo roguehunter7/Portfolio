@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sreeram K R | Infrastructure Engineer</title>
-<meta name="description" content="Sreeram K R — Infrastructure Engineer. Free-tier cloud infrastructure case study with no open ports (GCP, Oracle), documented phase by phase.">
+<meta name="description" content="Sreeram K R, infrastructure engineer. A free-tier cloud case study with no open ports (GCP, Oracle), written phase by phase.">
 <meta property="og:title" content="Sreeram K R | Infrastructure Engineer">
-<meta property="og:description" content="Cloud infrastructure case study with no open ports — Terraform, GCP, Oracle Cloud, Docker, Cloudflare. Full archive at /archive.">
+<meta property="og:description" content="Cloud infrastructure case study with no open ports. Terraform, GCP, Oracle Cloud, Cloudflare. Full archive at /archive.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sreeramkr.com">
 <meta property="og:image" content="https://sreeramkr.com/assets/og.png">
@@ -64,11 +64,11 @@ document.documentElement.dataset.theme =
       <div class="hero-copy">
         <h1 class="js-reveal">Sreeram <span class="grad-text">K R</span></h1>
         <div class="subtitle js-reveal">Infrastructure Engineer</div>
-        <p class="hero-now js-reveal"><span class="now-dot" aria-hidden="true"></span>Currently consolidating two free-tier hosts into one no-open-ports Hermes box that rebuilds itself from snapshots.</p>
+        <p class="hero-now js-reveal"><span class="now-dot" aria-hidden="true"></span>Right now: two free-tier hosts, one Hermes box behind no open ports, snapshots every six hours.</p>
         <p class="tagline js-reveal">
-          Automating secure infrastructure with no open ports on free-tier cloud. This project is a live
-          case study: how a portfolio site went from a bare VM to Cloudflare Pages, and how the freed-up
-          capacity became a self-hosted password vault — all documented phase by phase.
+          I build infrastructure that stays cheap and hard to reach. This site is the case study: a portfolio
+          that moved from a hand-built VM to the edge, then back onto two free-tier hosts that cost nothing and
+          expose nothing. Every phase is written down, including the ones I got wrong.
         </p>
         <div class="tag-row js-reveal">
           <span class="tag">Terraform</span><span class="tag">GCP</span><span class="tag">Oracle Cloud</span>
@@ -86,7 +86,7 @@ document.documentElement.dataset.theme =
            aria-hidden="false">
         <div class="terminal-bar">
           <span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span>
-          <span class="t-title">sreeramkr — bash</span>
+          <span class="t-title">sreeramkr: deploy</span>
         </div>
         <div class="terminal-body">
           <div class="t-line"><span class="t-prompt">$</span> <span class="t-cmd" data-type="terraform apply --auto-approve"></span><span class="t-caret" aria-hidden="true"></span></div>
@@ -113,53 +113,53 @@ document.documentElement.dataset.theme =
   </header>
 
   <figure class="diagram-container diagram-container--home">
-    <iframe class="diagram-frame" src="/diagrams/phase8-fleet.html?embed=1" style="aspect-ratio: 1280 / 700" title="Current fleet — Hermes host and Vaultwarden host" loading="lazy"></iframe>
-    <figcaption>The current fleet: one Hermes host that restores itself from six-hourly snapshots, and the GCP Vaultwarden host — each reached only through its own outbound tunnel.</figcaption>
+    <iframe class="diagram-frame" src="/diagrams/phase8-fleet.html?embed=1" style="aspect-ratio: 1280 / 700" title="Current fleet: Hermes host and Vaultwarden host" loading="lazy"></iframe>
+    <figcaption>The current fleet. One Hermes host that restores itself from a six-hourly snapshot, and the GCP box running Vaultwarden. Each is reachable only through its own outbound tunnel.</figcaption>
   </figure>
 
   <h2 class="section-title">The Story</h2>
-  <p class="section-sub">Eight phases, from a hand-built VM to a consolidated Hermes host and a self-hosted password vault. Each phase has its own architecture and its own reason — read the full archive.</p>
+  <p class="section-sub">Eight phases, from a hand-deployed VM to two free-tier hosts with no open ports. Every phase has its own diagram, and the reversals are in there too.</p>
 
   <ol class="timeline">
     <li class="js-reveal">
       <span class="tl-num">01</span><span class="tl-title">Bootstrap &amp; GitOps polling</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">Hand-deployed VM, then a pull-based GitOps loop; moved to push-based deploys and hardened it.</div>
+      <div class="tl-gist">A VM that redeployed itself whenever the repo changed. It worked, and I could not tell which commit was live.</div>
     </li>
     <li class="js-reveal">
       <span class="tl-num">02</span><span class="tl-title">Observability &amp; IaC serverless</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">Live metrics daemon, LaTeX resume in CI, then a full Terraform + Cloud Run / Firestore serverless rebuild.</div>
+      <div class="tl-gist">First I could see what the box was doing. Then I rewrote the deployment in Terraform and tried serverless.</div>
     </li>
     <li class="js-reveal">
       <span class="tl-num">03</span><span class="tl-title">No-Open-Ports Docker Compose</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">Serverless costs returned the stack to a hardened VM — no open ports, everything through a Cloudflare Tunnel.</div>
+      <div class="tl-gist">The serverless bill arrived. Everything went back to one VM, this time with no open ports at all.</div>
     </li>
     <li class="js-reveal">
       <span class="tl-num">04</span><span class="tl-title">Edge migration to Cloudflare Pages</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">Static site moved to the edge; hardened headers, robots/llms.txt, JSON-LD, CI-rendered resume PDF.</div>
+      <div class="tl-gist">The site moved to Cloudflare Pages, which freed the VM for real work.</div>
     </li>
     <li class="js-reveal">
       <span class="tl-num">05</span><span class="tl-title">Repurposing the compute</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">The freed VMs became a Hermes AI host, then an Oracle dev box with no open ports and a browser terminal.</div>
+      <div class="tl-gist">Two idle VMs got jobs: a Telegram assistant, then an Oracle dev box.</div>
     </li>
     <li class="js-reveal status-live">
       <span class="tl-num">06</span><span class="tl-title">Vaultwarden host</span>
       <span class="tl-status live">Live</span>
-      <div class="tl-gist">The GCP e2-micro now serves a self-hosted password vault — loopback-only, least-privilege IAM, nightly GCS backup.</div>
+      <div class="tl-gist">The GCP box became a password vault. Loopback only, with nightly off-site backups.</div>
     </li>
     <li class="js-reveal">
       <span class="tl-num">07</span><span class="tl-title">Oracle dev box + Hermes</span>
       <span class="tl-status historical">Historical</span>
-      <div class="tl-gist">Ubuntu 24.04 dev box with a browser terminal, DSH and Hermes in Docker — no NSG, ufw deny-inbound, OpenSSH removed.</div>
+      <div class="tl-gist">A dev box with three ways in: a browser terminal, a harness, and Hermes in Docker.</div>
     </li>
     <li class="js-reveal status-live">
       <span class="tl-num">08</span><span class="tl-title">Consolidation</span>
       <span class="tl-status live">Live</span>
-      <div class="tl-gist">One workload: native Hermes under systemd, SSH and the dashboard behind Access, six-hourly snapshots to an OCI bucket and a rebuild that restores itself.</div>
+      <div class="tl-gist">All three became one. Native Hermes, a snapshot every six hours, and a rebuild that restores itself.</div>
     </li>
   </ol>
 
