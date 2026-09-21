@@ -26,8 +26,8 @@
   }
 
   @page {
-    size: letter;
-    margin: 0.5in 0.55in;
+    size: A4;
+    margin: 0.4in 0.5in;
   }
 
   * {
@@ -44,8 +44,8 @@
 
   body {
     font-family: 'Inter', 'Segoe UI', system-ui, Arial, sans-serif;
-    font-size: 10pt;
-    line-height: 1.25;
+    font-size: 9.5pt;
+    line-height: 1.18;
     color: var(--ink);
     background: #fff;
   }
@@ -53,7 +53,7 @@
   @media screen {
     body {
       max-width: 8.5in;
-      margin: 0.55in auto;
+      margin: 0.5in auto;
       padding: 0 0.5in;
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
     }
@@ -70,8 +70,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 9pt;
-    margin-bottom: 10pt;
+    font-size: 8.5pt;
+    margin-bottom: 8pt;
   }
   .resume-nav a {
     color: var(--accent);
@@ -87,29 +87,40 @@
   /* ---------- HEADER ---------- */
   header {
     text-align: center;
-    margin-bottom: 6pt;
+    margin-bottom: 4pt;
   }
 
   h1 {
-    font-size: 20pt;
+    font-size: 19pt;
     font-weight: 600;
     letter-spacing: 0.4px;
-    line-height: 1.1;
+    line-height: 1.08;
   }
 
   .subtitle {
-    font-size: 12pt;
+    font-size: 11.5pt;
     margin-top: 1pt;
   }
 
-  .contact {
-    font-size: 9pt;
+  .notice {
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--accent);
+    border: 0.6pt solid var(--accent);
+    border-radius: 2pt;
+    padding: 0.5pt 5pt;
     margin-top: 3pt;
+  }
+
+  .contact {
+    font-size: 8.5pt;
+    margin-top: 2pt;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 2pt 0;
+    gap: 1pt 0;
   }
 
   .contact a {
@@ -125,8 +136,8 @@
   }
 
   .contact svg {
-    width: 8.5pt;
-    height: 8.5pt;
+    width: 8pt;
+    height: 8pt;
     fill: var(--accent);
     flex-shrink: 0;
   }
@@ -139,20 +150,15 @@
   /* ---------- SECTIONS ---------- */
   h2 {
     color: var(--accent);
-    font-size: 11pt;
+    font-size: 10.5pt;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid var(--accent);
-    padding-bottom: 1pt;
-    margin: 5pt 0 1pt;
+    padding-bottom: 0.5pt;
+    margin: 4pt 0 1pt;
     break-after: avoid;
     page-break-after: avoid;
-  }
-
-  section {
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   .summary {
@@ -182,11 +188,14 @@
     font-weight: 600;
   }
 
+  code {
+    font-family: 'DejaVu Sans Mono', Consolas, monospace;
+    font-size: 8.5pt;
+  }
+
   /* ---------- ENTRIES ---------- */
   .entry {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    margin-bottom: 3.5pt;
+    margin-bottom: 2.5pt;
   }
 
   .entry-head,
@@ -224,7 +233,8 @@
 
   <header>
     <h1>Sreeram K R</h1>
-    <div class="subtitle">Infrastructure Engineer</div>
+    <div class="subtitle">Network Engineer &mdash; L2/L3 Operations &amp; Network Automation</div>
+    <div class="notice">Serving notice period | Last working day: 25 September 2026</div>
     <div class="contact">
       <span class="item">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
@@ -255,7 +265,7 @@
 
   <section>
     <h2>Professional Summary</h2>
-    <p class="summary">Infrastructure Engineer automating secure, zero-ingress cloud infrastructure (Terraform, GitHub Actions WIF/OIDC, GCP &amp; Oracle Cloud), with on-prem network automation across L2/L3, Active Directory, and VLANs to cloud-native CI/CD.</p>
+    <p class="summary">Network engineer with hands-on L2/L3 operations across a 1,000+ system, 70-subnet estate: L3-to-L2 migrations, VLAN trunking, AD DNS and firewall drop-log RCA in Splunk. Automates network work in Python (Netmiko, NetworkX, SQLite): built and led a 4-site switch survey of <b>2,000+ network devices</b>, parsing multi-vendor CLI and cutting a 4-month manual baseline to under 2. Held 24/7 solo L1/L2 coverage for 3 months at 100% first-contact resolution.</p>
   </section>
 
   <section>
@@ -264,31 +274,32 @@
     <div class="entry">
       <div class="entry-head">
         <span class="entry-title">Infrastructure Engineer</span>
-        <span class="entry-date"><b>Jan 2025 – Present</b></span>
+        <span class="entry-date"><b>Jan 2025 &ndash; Present</b> (LWD 25 Sept 2026)</span>
       </div>
       <div class="entry-sub">
         <span>Iron Systems (Client: Honeywell)</span>
         <span>Pune / Bangalore, India</span>
       </div>
       <ul>
-        <li>Achieved <b>98% compliance</b> and eliminated configuration drift by automating patching and config management across <b>1,000+ distributed systems</b> (Tanium + PowerShell).</li>
-        <li>Cut a <b>4-month manual switch survey in half</b> and reclaimed <b>500+ unused IPs</b> with a Python/Netmiko automation suite.</li>
-        <li>Slashed ServiceNow privileged-account provisioning by <b>95%</b> (5 min to under 20 s) using custom <b>WMI/RDP PowerShell</b> tooling.</li>
-        <li>Replaced a legacy <b>3,000-line manual workflow</b> with zero-prompt PowerShell automation, accelerating the <b>Windows Autopilot / Intune</b> enrollment pipeline.</li>
-        <li>Ran a clean <b>L3-to-L2 migration across 70 subnets</b> (AD DNS, firewall ports/URLs, VLAN/trunking) with no service disruption.</li>
-        <li>Owned a <b>3-month night shift</b>, resolving all incidents first-line with <b>zero tickets raised to L3</b>.</li>
+        <li>Executed <b>zero-downtime L3-to-L2 migrations across 70 subnets</b> (VLAN/trunking, AD DNS forwarders) and root-caused blocked ports/URLs from <b>Splunk firewall drop logs</b> to restore lab connectivity.</li>
+        <li>Built a <b>Python network-audit suite</b> and led a survey of <b>4 sites and 2,000+ network devices</b>, parsing multi-vendor CLI into a validated schema and cutting the 4-month manual baseline to <b>under 2 months</b>.</li>
+        <li>Reconstructed <b>L2 topology from partial discovery data</b>: switch roles from graph centrality, uplinks from shared MAC tables, LLDP/CDP neighbour de-duplication, segment-ID propagation from the Floor Access Switch.</li>
+        <li>Loaded survey data into a <b>16-table SQLite warehouse</b> driving inventory, vendor, port-capacity and unassigned-network reports; reclaimed <b>500+ unused IPs</b>.</li>
+        <li>Held <b>100% first-contact resolution with zero escalations</b> as sole overnight L1/L2 engineer for <b>3 consecutive months</b>, owning the full incident queue.</li>
+        <li>Achieved <b>98% compliance</b> and eliminated drift across <b>1,000+ servers</b> by automating patching and config baselines (Ansible, Chef, Tanium, PowerShell).</li>
+        <li>Accelerated endpoint deployment by <b>80%</b> by refactoring a <b>3,000-line manual workflow</b> into zero-prompt PowerShell automation (hardware hash, Intune/Autopilot).</li>
+        <li>Slashed ServiceNow privileged-account provisioning by <b>95%</b> (5 min to under 20 s) over <b>REST APIs and remote PowerShell (WMI/WinRM)</b>.</li>
       </ul>
     </div>
-
   </section>
 
   <section>
     <h2>Technical Skills</h2>
     <ul>
-      <li><b>Infrastructure &amp; Cloud:</b> GCP (Compute Engine, VPC, GCS, IAP), Oracle Cloud (OCI), Terraform (IaC) with <code>state</code> locking, Docker, Docker Compose, GitHub Actions (CI/CD, WIF/OIDC), Cloudflare Pages.</li>
-      <li><b>Networking &amp; Edge:</b> Cloudflare Zero Trust Tunnels, DNSSEC, HSTS, WAF, VLAN/Trunking, TCP/IP, Subnetting, Wireshark, Tailscale.</li>
-      <li><b>Automation &amp; Scripting:</b> Python (Netmiko, Pandas, NetworkX), PowerShell (WMI/RDP), Bash, GitHub CLI, Linux System Administration.</li>
-      <li><b>Enterprise Tools:</b> ServiceNow API, Nginx, Active Directory, Intune/Autopilot.</li>
+      <li><b>Networking &amp; Routing/Switching:</b> L2/L3 switching and routing, VLAN trunking, subnetting, IP management and reclaim, AD DNS, TCP/IP, CDP/LLDP discovery, Wireshark, multi-vendor CLI (Cisco IOS, HP, D-Link, Huawei, Aruba).</li>
+      <li><b>Network Automation:</b> Python (Netmiko, NetworkX, Pandas, Pydantic, SQLite, Graphviz), PowerShell (WMI/WinRM), Bash, Ansible, Chef, Terraform, GitHub Actions CI/CD.</li>
+      <li><b>Observability &amp; ITSM:</b> Splunk (firewall drop analysis, RCA), ServiceNow REST APIs, Tanium Deploy, Active Directory, Intune/Autopilot.</li>
+      <li><b>Systems &amp; Cloud:</b> Ubuntu Linux administration, bare-metal provisioning (Dell Image Assist), systemd, Windows Server, Docker, Nginx, GCP, Oracle Cloud, Cloudflare Zero Trust Tunnels.</li>
     </ul>
   </section>
 
@@ -296,49 +307,41 @@
     <h2>Technical Projects</h2>
     <div class="entry">
       <div class="entry-head">
-        <span class="entry-title">Zero-Trust Cloud Infrastructure &amp; GitOps Pipeline</span>
+        <span class="entry-title">Network Survey Automation &mdash; Field-to-Report Toolkit</span>
+        <span class="entry-date"><a href="https://github.com/roguehunter7/network-survey-automation">github.com/roguehunter7/network-survey-automation</a></span>
+      </div>
+      <ul>
+        <li>Parsed multi-vendor CLI logs through a <b>staged LLM + Pydantic v2 pipeline</b> (14 schema models; MAC tables chunked to 100 rows) over a rate-limit-aware process pool with per-device retry, replacing per-vendor TextFSM/regex; malformed output fails validation, never reaching the database.</li>
+        <li>Inferred topology from incomplete discovery data with <b>NetworkX</b> (roles by centrality, uplinks by shared-MAC similarity) and rendered <b>~90 Graphviz diagrams</b> plus uplink JSON; model uncertainty routed to a human review queue.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <span class="entry-title">Zero-Trust Cloud Infrastructure &amp; GitOps Platform</span>
         <span class="entry-date"><a href="https://sreeramkr.com">sreeramkr.com</a></span>
       </div>
-      <ul>
-        <li><b>Terraform</b> (state-locked) with <b>cost guardrails</b>: custom VPC plus deny-all ingress (0-65535), IAP-only SSH, and a <b>zero-ingress</b> <b>Oracle Cloud Always Free A1.Flex</b> (2 OCPU/12 GB) dev box, with a tenancy budget and quota that cap it at the <b>$0/mo</b> allocation.</li>
-        <li>Keyless <b>CI/CD (GitHub Actions WIF/OIDC)</b>: IAP-SSH deploys for the vault host and <code>wrangler pages deploy</code> for the site under hardened <code>_headers</code> (HSTS, nosniff, frame denial); the Hermes host restores its own state at first boot, so CI never needs a shell on it, and CI renders the ATS-safe resume PDF.</li>
-        <li>All services behind outbound <b>Cloudflare Tunnels</b> with no reachable inbound ports: sshd on loopback, the dashboard auth-gated behind <code>ufw</code>, and both routes behind Access.</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="entry-head">
-        <span class="entry-title">Hermes &amp; Vaultwarden: Self-Hosted Services</span>
-        <span class="entry-date"><a href="https://vault.sreeramkr.com">vault.sreeramkr.com</a></span>
+      <div class="entry-sub">
+        <span>State-locked <b>Terraform</b> across GCP and Oracle Cloud (deny-all ingress, IAP-only SSH, $0/month guardrails), keyless <b>GitHub Actions CI/CD (WIF/OIDC)</b>, services loopback-bound behind outbound <b>Cloudflare Zero Trust Tunnels</b>.</span>
       </div>
-      <ul>
-        <li>Provisioned an <b>AI assistant</b> (Telegram gateway + <b>DeepSeek API</b>, native systemd install with its own uv-managed Python/Node) and a <b>Vaultwarden</b> password vault, both on free-tier VMs: loopback-only services behind outbound <b>Cloudflare Tunnels</b>, zero open ports, outbound polling and LLM traffic only.</li>
-        <li>Secrets in a root-owned <code>0600 .env</code> (Argon2 admin token, signups disabled); nightly CLI-free SQLite backup via the metadata token, auto-pruned to the newest 10.</li>
-        <li>Snapshotted the assistant's state to a private OCI Object Storage bucket every six hours (keyless instance principal); the host restores the newest snapshot at first boot, and a reset wipes the instance and the bucket for a factory-fresh agent.</li>
-      </ul>
     </div>
   </section>
 
   <section>
-    <h2>Certifications &amp; Languages</h2>
-    <ul>
-      <li><b>GATE Qualified (2023):</b> Passed the Graduate Aptitude Test in Engineering in the Electronics &amp; Communication stream.</li>
-      <li><b>Languages:</b> English (Fluent), Malayalam (Native), Tamil (Native), Hindi (Conversational).</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>Education</h2>
+    <h2>Education, Certifications &amp; Languages</h2>
     <div class="entry">
       <div class="entry-head">
-        <span class="entry-title">Bachelor of Technology, Electronics &amp; Communication</span>
-        <span class="entry-date"><b>2020 – 2024</b></span>
+        <span class="entry-title">Bachelor of Technology, Electronics &amp; Communication Engineering</span>
+        <span class="entry-date"><b>2020 &ndash; 2024</b></span>
       </div>
       <div class="entry-sub">
         <span>Adi Shankara Institute of Engineering &amp; Technology</span>
         <span>Kochi, India</span>
       </div>
     </div>
+    <ul>
+      <li><b>Certifications:</b> GATE Qualified (Electronics &amp; Communication, 2023). <b>Languages:</b> English (Fluent), Malayalam (Native), Tamil (Native), Hindi (Conversational).</li>
+    </ul>
   </section>
 
 </body>

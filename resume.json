@@ -2,8 +2,9 @@
   "$comment": "Master resume data, single source of truth. Long-form context + achievements; an LLM (resume.json + JD -> resume.pdf) selects, rewrites and condenses to a 1-page ATS-safe PDF. Add/expand freely; nothing here is 'final resume text'.",
   "meta": {
     "name": "Sreeram K R",
-    "title": "Cloud & Infrastructure Automation Engineer",
-    "updated": "2026-09-19",
+    "title": "Network Engineer - L2/L3 Operations & Network Automation",
+    "updated": "2026-09-21",
+    "availability": "Serving notice period; last working day 2026-09-25",
     "contact": {
       "phone": "+91-7293280942",
       "email": "contact.sreeramkr@gmail.com",
@@ -13,17 +14,19 @@
     },
     "location": "India (Pune / Bangalore; remote-friendly)",
     "target_roles": [
-      "Cloud Infrastructure Engineer",
-      "DevOps / SRE Engineer",
-      "Network Automation Engineer"
+      "Network Engineer (L1/L2 Operations)",
+      "Network Automation Engineer",
+      "Infrastructure / Cloud Engineer"
     ]
   },
 
   "summary": {
-    "text": "Infrastructure & Automation Engineer combining on-premises network routing (L2/L3, Active Directory, VLANs) with cloud-native DevOps architectures. Experienced in building automated deployment pipelines, orchestrating cloud workloads, and bridging the gap between physical networking and secure, zero-trust cloud environments. Currently an engineer at Iron Systems (Honeywell client) and building a zero-ingress, free-tier personal infrastructure stack (Cloudflare Pages + GCP e2-micro + Oracle Cloud Free Tier).",
+    "text": "Network and infrastructure engineer with hands-on L2/L3 operations across a 1,000+ system, 70-subnet enterprise estate: L3-to-L2 migrations, VLAN trunking, Active Directory DNS, and firewall drop-log RCA in Splunk. Automates network operations in Python (Netmiko, NetworkX, SQLite): built and led a 4-site physical switch survey covering 2,000+ network devices, parsed multi-vendor CLI output (Cisco, HP, D-Link, Huawei, Aruba) into a validated schema, and cut the manual baseline from 4 months to under 2. Held 24/7 solo L1/L2 operations for 3 consecutive months with 100% first-contact resolution and zero escalations. Serving notice period, last working day 25 September 2026.",
     "keywords": [
-      "Terraform", "GitHub Actions", "GCP", "IAP", "WIF", "Docker", "Cloudflare", "zero-trust",
-      "network automation", "Netmiko", "PowerShell", "Active Directory", "ServiceNow", "Nginx", "CI/CD"
+      "L2/L3", "routing and switching", "VLAN trunking", "subnetting", "IP address management",
+      "CDP/LLDP", "multi-vendor CLI", "Cisco IOS", "network automation", "Python", "Netmiko", "NetworkX",
+      "Splunk firewall drop analysis", "RCA", "Active Directory DNS", "Wireshark", "SQLite",
+      "Ansible", "Chef", "Terraform", "PowerShell", "ServiceNow", "L1/L2 incident management"
     ]
   },
 
@@ -42,23 +45,27 @@
       ]
     },
     {
-      "category": "Networking & Edge",
+      "category": "Networking & Routing/Switching",
       "items": [
         { "name": "DNS / DNSSEC / HSTS", "level": "advanced", "context": "full zone management incl. TLS hardening" },
         { "name": "Cloudflare Zero Trust Tunnels", "level": "advanced", "context": "outbound-only ingress, zero open ports" },
         { "name": "WAF", "level": "intermediate", "context": "Cloudflare managed rules" },
         { "name": "VLAN / Trunking", "level": "advanced", "context": "L3-to-L2 migrations across 70 subnets" },
         { "name": "TCP/IP, Subnetting, Wireshark", "level": "advanced", "context": "" },
+        { "name": "CDP/LLDP Discovery", "level": "advanced", "context": "read neighbour output and MAC tables to infer L1/L2 topology across a 4-site survey" },
+        { "name": "Multi-Vendor CLI", "level": "advanced", "context": "Cisco IOS, HP, D-Link, Huawei, Aruba switch/AP show output" },
+        { "name": "L1/L2 Incident Management", "level": "advanced", "context": "sole 24/7 overnight engineer for 3 months, 100% first-contact resolution, zero escalations" },
         { "name": "Tailscale", "level": "intermediate", "context": "" }
       ]
     },
     {
       "category": "Automation & Scripting",
       "items": [
-        { "name": "Python", "level": "advanced", "context": "Netmiko (network device automation), Pandas, NetworkX" },
+        { "name": "Python", "level": "advanced", "context": "Netmiko (network device automation), NetworkX (topology inference), Pandas, Pydantic v2 (schema validation), SQLite warehouse, Graphviz diagram generation" },
         { "name": "Go (Golang)", "level": "intermediate", "context": "serverless visitor-tracker API on Cloud Run (earlier phase)" },
         { "name": "PowerShell", "level": "advanced", "context": "enterprise configuration deployment automation (Honeywell)" },
         { "name": "Bash", "level": "advanced", "context": "CI scripts, system provisioning" },
+        { "name": "Ansible / Chef", "level": "advanced", "context": "OS patching and configuration baselines across 1,000+ bare-metal and virtual systems" },
         { "name": "Linux System Administration", "level": "advanced", "context": "Debian, systemd, zram/swap, hardening" },
         { "name": "Kubernetes", "level": "basic", "context": "manifest design, local cluster testing (earlier exploration)" },
         { "name": "GitHub CLI", "level": "intermediate", "context": "" }
@@ -67,6 +74,7 @@
     {
       "category": "Enterprise Tools",
       "items": [
+        { "name": "Splunk", "level": "advanced", "context": "firewall drop analysis, traffic log search, RCA on blocked ports/URLs" },
         { "name": "ServiceNow API", "level": "advanced", "context": "privileged account provisioning automation" },
         { "name": "Tanium Deploy", "level": "advanced", "context": "OS vulnerability patching across 1,000+ endpoints (Honeywell)" },
         { "name": "Windows Autopilot / Intune", "level": "advanced", "context": "hardware-hash extraction, bare-metal imaging, zero-prompt enrollment" },
@@ -87,7 +95,7 @@
       "start": "2025-01",
       "end": null,
       "location": "Pune / Bangalore, India",
-      "context": "Enterprise IT outsourcing for Honeywell (Endpoint Operations + network estate): large-scale system configuration, bare-metal imaging, network access control, deployment operations and platform reliability across a 1,000+ system, 70-subnet estate.",
+      "context": "Enterprise IT outsourcing for Honeywell (Endpoint Operations + network estate): large-scale system configuration, bare-metal imaging, network access control, deployment operations and platform reliability across a 1,000+ system, 70-subnet estate. Also led the Bangalore-client physical network survey: built the automation toolkit, then ran the survey across 4 sites and 2,000+ network devices, delivering in under 2 months against a 4-month manual baseline.",
       "achievements": [
         {
           "what": "Automated configuration management and OS vulnerability patching across 1,000+ distributed systems via Tanium + PowerShell.",
@@ -97,11 +105,11 @@
           "skills_used": ["PowerShell", "Tanium", "Active Directory", "Windows Server"]
         },
         {
-          "what": "Developed a Python automation suite (Netmiko) for switch surveys.",
-          "why": "Manual per-device surveys took too long and wasted address space.",
-          "impact": "Reduced a 4-month manual switch survey by 50%; reclaimed 500+ unused IPs.",
-          "evidence": "Netmiko + Pandas/NetworkX analysis",
-          "skills_used": ["Python", "Netmiko", "Pandas", "NetworkX", "Cisco IOS"]
+          "what": "Developed a Python automation suite (Netmiko) for switch surveys, then extended it into a full field-to-report toolkit (Tkinter capture GUI, SQLite warehouse, NetworkX topology inference, Graphviz diagrams) and led the survey with it across 4 sites and 2,000+ network devices.",
+          "why": "Manual per-device surveys took too long, wasted address space, and could not be audited or re-run.",
+          "impact": "Survey delivered in under 2 months against a 4-month manual baseline; reclaimed 500+ unused IPs; ~90 topology diagrams plus inventory, vendor and port-capacity reports.",
+          "evidence": "network-survey-automation (public, sanitised): 4 sites, ~700 managed switches, 100,000+ MAC-table entries",
+          "skills_used": ["Python", "Netmiko", "NetworkX", "Pandas", "SQLite", "Graphviz", "Cisco IOS"]
         },
         {
           "what": "Automated ServiceNow privileged account provisioning using custom PowerShell (WMI/RDP) tooling.",
@@ -125,11 +133,25 @@
           "skills_used": ["Windows Autopilot", "Intune", "PowerShell", "Windows Server"]
         },
         {
-          "what": "Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets (defining firewall ports/URLs, managing AD DNS).",
-          "why": "Network reorganization to simplify routing and reduce complexity.",
-          "impact": "Clean migration across 70 subnets with no service disruption.",
-          "evidence": "Migration runbooks",
-          "skills_used": ["Active Directory DNS", "L2/L3 switching", "VLAN/trunking"]
+          "what": "Managed DNS Forwarders within Active Directory and facilitated L3-to-L2 network migrations across 70 subnets (defining firewall ports/URLs, managing AD DNS), with RCA on blocked ports and URLs from Splunk firewall drop logs to restore lab application connectivity.",
+          "why": "Network reorganization to simplify routing and reduce complexity; blocked traffic needed a root cause, not a workaround.",
+          "impact": "Clean migration across 70 subnets with no service disruption; blocked lab application traffic root-caused and restored.",
+          "evidence": "Migration runbooks + Splunk drop-log analysis",
+          "skills_used": ["Active Directory DNS", "L2/L3 switching", "VLAN/trunking", "Splunk", "Firewall ACL troubleshooting"]
+        },
+        {
+          "what": "Reconstructed L2 topology where discovery data was incomplete: classified switch roles (Core/Distribution/Access) from graph degree and betweenness centrality, inferred switch-to-switch uplinks from shared MAC tables, de-duplicated LLDP/CDP neighbours across identifier forms, and propagated network segment IDs top-down from the Floor Access Switch.",
+          "why": "Not every link was visible: unmanaged hops hid segments and many external devices reported no hostname, so the topology had to be inferred rather than read from a complete discovery set.",
+          "impact": "Usable L1/L2 topology maps and uplink reports from partial CDP/LLDP and MAC-table data, with an isolated-from-FAS flag per switch.",
+          "evidence": "netsurvey/topology (public sanitised build)",
+          "skills_used": ["CDP/LLDP", "MAC address tables", "NetworkX", "L2 topology", "Python"]
+        },
+        {
+          "what": "Ran 24/7 solo overnight L1/L2 operations for 3 consecutive months, owning the full incident queue: first-line network and endpoint troubleshooting plus bare-metal OS imaging and hardware provisioning for high-priority deployments.",
+          "why": "The estate needed unattended overnight coverage with no L2 backstop on shift.",
+          "impact": "100% first-contact resolution, zero escalations and zero tickets raised to L3.",
+          "evidence": "Overnight rota + incident queue",
+          "skills_used": ["L1/L2 support", "Incident management", "Windows Autopilot", "Intune", "PowerShell", "Active Directory"]
         },
         {
           "what": "Managed enterprise infrastructure operations: automated system configurations, network access control, and platform reliability engineering for high-priority deployments.",
@@ -161,6 +183,41 @@
   ],
 
   "projects": [
+    {
+      "name": "Network Survey Automation - Field-to-Report Toolkit",
+      "url": "https://github.com/roguehunter7/network-survey-automation",
+      "context": "Public, sanitised rebuild of the in-house network survey toolkit used on the Bangalore client estate (synthetic data only): Tkinter field-capture GUI, staged LLM + Pydantic extraction, SQLite warehouse, NetworkX topology inference and Graphviz diagram generation. ~20k LOC Python, source-available non-commercial license.",
+      "achievements": [
+        {
+          "what": "Built a Tkinter field-capture GUI on a deterministic building-floor-wing-area folder convention, so hundreds of console logs captured independently by different surveyors resolve from metadata alone with no manual index.",
+          "why": "Survey metadata was being recorded in different shapes by different people, which made downstream matching slow and inconsistent.",
+          "impact": "Consistent machine-readable metadata and no manual log-to-device mapping across 4 sites.",
+          "evidence": "netsurvey/gui, netsurvey/db/create_log_folders.py",
+          "skills_used": ["Python", "Tkinter", "Survey workflow design"]
+        },
+        {
+          "what": "Parsed raw multi-vendor CLI logs (Cisco, HP, D-Link, Huawei, Aruba) into a strict JSON schema with a staged LLM + Pydantic v2 pipeline: Stage 1A (device fields), Stage 1B (segment association), Stage 2 (MAC table chunked to 100 rows), run over a rate-limit-aware process pool with per-device retry.",
+          "why": "Per-vendor TextFSM/regex templates could not cover a multi-vendor estate captured with different commands, and a single mega-prompt over a full CLI dump was unreliable.",
+          "impact": "Every extracted record validated before it reaches the database; malformed model output fails loudly instead of poisoning the warehouse.",
+          "evidence": "netsurvey/llm/gemini.py (14 Pydantic models), unified_processor.py",
+          "skills_used": ["Python", "Pydantic", "LLM extraction", "ProcessPoolExecutor", "Cisco IOS", "Multi-vendor CLI"]
+        },
+        {
+          "what": "Stored survey data in a normalised 16-table SQLite warehouse (interfaces, VLANs, IP interfaces, MAC and ARP tables, LLDP/CDP neighbours, routing table, segment maps) and drove Excel/CSV reporting off it: device inventory, vendor summary, port capacity, standard/non-standard classification and unassigned-network extraction.",
+          "why": "Spreadsheets could not express the joins the analysis needed across devices, interfaces, MAC tables and neighbours.",
+          "impact": "Auditable survey results and 500+ unused IPs identified for reclaim across 4 sites.",
+          "evidence": "netsurvey/db/create_db.py (schema v2.16.0), netsurvey/reporting",
+          "skills_used": ["SQLite", "SQL", "pandas", "openpyxl", "ipaddress"]
+        },
+        {
+          "what": "Generated ~90 Pydot/Graphviz topology diagrams clustered by inferred switch role, each with a machine-readable uplink JSON sidecar, and routed model uncertainty into a human review queue that keeps validated and reviewed artefacts separate.",
+          "why": "Non-engineers needed readable maps, and review corrections had to survive a re-run of the LLM stage.",
+          "impact": "Repeatable diagrams plus uplink reports at production scale (4 sites, ~700 managed switches, 100,000+ MAC-table entries).",
+          "evidence": "netsurvey/topology, network_diagrams_pydot_final/",
+          "skills_used": ["Graphviz/Pydot", "NetworkX", "Python"]
+        }
+      ]
+    },
     {
       "name": "Zero-Trust Cloud Infrastructure & GitOps Pipeline",
       "url": "https://sreeramkr.com",
@@ -297,13 +354,6 @@
   ],
 
   "certifications": [
-    {
-      "name": "AWS Certified Solutions Architect – Associate (SAA-C03)",
-      "issuer": "AWS",
-      "status": "pending",
-      "date": "Exam scheduled September 5, 2026",
-      "context": ""
-    },
     {
       "name": "GATE Qualified (2023)",
       "issuer": "GATE (Electronics & Communication)",
