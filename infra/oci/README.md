@@ -1,12 +1,9 @@
 # infra/oci: Ubuntu 24.04 Hermes host
 
-No-open-ports Oracle A1.Flex provisioned by GitHub Actions + Terraform. The box
-runs Hermes natively as its own user, and is administered over SSH carried by
-the Cloudflare Tunnel: `ssh.sreeramkr.com` → `ssh://localhost:22`, and the
-Hermes dashboard on `hermes.sreeramkr.com` → `http://localhost:9119`. Cloudflare
-Access gates both routes and `ufw` denies inbound. sshd is loopback-only; the
-dashboard listens on every interface and is reachable only from the box itself,
-because `ufw` drops inbound connections before they arrive (reason below).
+Oracle A1.Flex, no open ports, provisioned by GitHub Actions + Terraform. Hermes runs natively as its
+own user. Admin over SSH via tunnel (`ssh.sreeramkr.com` → `ssh://localhost:22`); dashboard at
+`hermes.sreeramkr.com` → `http://localhost:9119`. Access gates both, `ufw` denies inbound. sshd binds
+loopback; the dashboard binds all interfaces behind `ufw` (reason below).
 
 ## Why Ubuntu 24.04
 
@@ -144,9 +141,8 @@ validate), then applies. Two checkboxes:
 * **`reset`:** every snapshot is deleted, the instance is destroyed, and the new box starts with no state at all. Unrecoverable.
 * **`reset` + `keep_snapshots`:** the instance is destroyed but the snapshots survive, so the rebuilt box restores the newest one, up to six hours old.
 
-CI never logs into the box. A targeted `terraform apply` creates the snapshot
-bucket, dynamic group and policy before the instance is built, and the host
-restores its own state at first boot.
+A targeted `terraform apply` creates the snapshot bucket, dynamic group and policy before the instance
+is built, and the host restores its own state at first boot.
 
 First boot measured on this box: 9 min 12 s from instance start to
 `/var/log/cloud_init_complete`. CI has no way to see that marker, so judge

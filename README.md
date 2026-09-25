@@ -18,10 +18,9 @@ on every commit, a serverless rebuild that cost more than it was worth, a retrea
 ports, a move to the edge, and finally two free-tier boxes running an assistant and a vault. The reversals are
 part of the story, so they stayed in.
 
-The Oracle A1.Flex box does the work. Ubuntu 24.04, Hermes installed natively under systemd as its only
-workload, with the dashboard at `hermes.sreeramkr.com` and SSH at `ssh.sreeramkr.com` both carried over the
-Cloudflare Tunnel and gated by Access. State is snapshotted to a private OCI Object Storage bucket every six
-hours, and a rebuild restores the newest snapshot on first boot.
+The Oracle box does the work: Ubuntu 24.04, Hermes native under systemd, SSH and dashboard over the
+Cloudflare Tunnel behind Access, six-hourly snapshots to OCI Object Storage. Full runbook in
+`infra/oci/README.md`.
 
 The single source of truth for the story is the site's [`/archive`](https://sreeramkr.com/archive).
 Each phase there has its own architecture diagram plus the *why* and *how* behind it, all grounded in the

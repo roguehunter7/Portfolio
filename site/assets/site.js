@@ -46,7 +46,11 @@
     var html = document.documentElement;
     var next = html.dataset.theme === 'light' ? 'dark' : 'light';
     localStorage.setItem('theme', next);
-    applyTheme(next);
+    if (!reducedMotion() && document.startViewTransition) {
+      document.startViewTransition(function () { applyTheme(next); });
+    } else {
+      applyTheme(next);
+    }
   }
 
   function revealEmail() {
@@ -158,8 +162,6 @@
 
     targets.forEach(function (el) { observer.observe(el); });
   }
-
-  window.__portfolioToggle = toggleTheme;
 
   document.addEventListener('DOMContentLoaded', function () {
     var saved = localStorage.getItem('theme');

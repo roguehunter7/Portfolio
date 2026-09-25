@@ -1,3 +1,114 @@
+# Repository Guidelines
+
+Static portfolio + IaC repo. No JS framework, no bundler, no `package.json` (gitignored). Hand-written `site/` served as-is by Cloudflare Pages, plus Terraform for two free-tier hosts.
+
+## Project Overview
+
+Sreeram K R portfolio: 8-phase free-tier cloud case study as static site, plus live infra it documents. Two hosts: OCI A1.Flex Ubuntu 24.04 (native Hermes agent) and GCP e2-micro Debian 13 (dockerised Vaultwarden). All deploys manual (`workflow_dispatch` only).
+
+## Architecture & Data Flow
+
+Four independent slices, no shared runtime:
+
+1. Presentation: `site/*.html` + `site/assets/style.css` + `site/assets/site.js` (vanilla ES5 IIFE). No templating, no fetch/XHR, no client data flow. Diagrams are self-contained Archify docs in `site/diagrams/` embedded as `?embed=1` iframes; `site.js` pushes theme into frames via `documentElement` + `localStorage`.
+2. Site delivery: `scripts/render-pdf.sh` renders `site/resume.html` -> `site/resume.pdf` (headless Chrome, gitignored) then `wrangler pages deploy site` in `.github/workflows/deploy.yml`.
+3. OCI host: `infra/oci/main.tf` `templatefile()` vars -> `infra/oci/cloud-init.yaml.tftpl` (`write_files` b64/gz+b64 + `runcmd: [bash /usr/local/sbin/provision.sh]`) -> `scripts/provision.sh` first-boot. Must stay under 32,000-byte OCI `user_data` cap (~17.6 KB now).
+4. GCP host: `infra/main.tf` (VPC, IAP-only SSH, e2-micro) with inline `metadata_startup_script` installing Docker; `infra/vaultwarden/docker-compose.yml` (vaultwarden 127.0.0.1:8000 + cloudflared) pushed over IAP-SSH by `.github/workflows/vaultwarden-setup.yml`.
+
+Secrets never in repo: CI passes `TF_VAR_*`, writes host `.env` (0600).
+
+## Key Directories
+
+- `site/`: deploy root. `index.html`, `archive.html` (385-line story source of truth, 8x `article#phase-N` + iframes), `resume.html` (self-contained ATS page), `404.html` (self-contained), `_headers`, `robots.txt`, `llms.txt`, `.well-known/security.txt`.
+- `site/assets/`: `style.css` (682-line token stylesheet), `site.js` (~181-line ES5 IIFE), `og.png`.
+- `site/diagrams/phase1-8*.html`: 9 inlined CSS+JS+SVG Archify 2.14.0 viewer docs. `?embed=1` strips chrome, `?present=1` presentation mode.
+- `site/fonts/*.woff2`: Inter + JetBrains Mono 400/500/600, immutable cache — rename on byte change.
+- `infra/main.tf`, `infra/variables.tf` (intentionally empty, static infra): GCP Vaultwarden stack, GCS backend.
+- `infra/oci/`: `main.tf`, `variables.tf` (`TF_VAR_*` inputs), `cloud-init.yaml.tftpl`, `README.md` (only real runbook).
+- `infra/vaultwarden/`: `docker-compose.yml`, `backup.sh`, `restore.sh`.
+- `infra/hermes/config.yaml`: all tasks pinned `deepseek-flash`.
+- `scripts/`: `provision.sh`, `maintenance.sh`, `hermes-backup.sh`, `hermes-restore.sh`, `render-pdf.sh`, `check-cloud-init.py`.
+- `tools/`: `og-source.html` (1200x630 card source, outside `site/` to escape CSP), `diagrams/phase8-fleet.json` (only checked-in Archify spec).
+- `.github/workflows/`: `deploy.yml`, `oci-provision.yml`, `vaultwarden-setup.yml`.
+- `resume.json`: master resume data (not read by any code; LLM input for resume page).
+
+No `src/`, `docs/`, `public/`, `CHANGELOG`.
+
+## Development Commands
+
+No install, no dev server, no build. Preview locally with any static server:
+
+```bash
+# site preview
+python3 -m http.server -d site 8000
+# resume PDF (needs google-chrome/chromium on PATH)
+bash scripts/render-pdf.sh site/resume.html site/resume.pdf
+bash scripts/render-pdf.sh  # same defaults
+# Pages deploy (local equivalent of deploy.yml)
+npx wrangler pages deploy site --project-name=portfolio  # CI pins wrangler@4.120.0
+# QA gate (same as oci-provision.yml checks job)
+for f in scripts/*.sh; do bash -n "$f"; done
+terraform -chdir=infra/oci fmt -check -recursive
+python3 -m pip install --quiet pyyaml && python3 scripts/check-cloud-init.py
+# infra (needs creds via TF_VAR_* / OIDC, backends GCS + OCI Object Storage)
+terraform -chdir=infra init && terraform -chdir=infra apply
+terraform -chdir=infra/oci init -backend-config=... && terraform -chdir=infra/oci apply
+```
+
+## Code Conventions & Common Patterns
+
+- Site: vanilla HTML/CSS/JS only. One shared stylesheet (`:root` tokens, `[data-theme="light"]` overrides, per-component sections, single `prefers-reduced-motion` block). One shared script (`'use strict'` IIFE: theme toggle, iframe theme sync, obfuscated email, copy button, typewriter, `IntersectionObserver` rail/reveal). `resume.html`/`404.html` fully self-contained (inline `<style>`, own theme bootstrap) — do not add shared-css dependency.
+- Diagrams: never hand-edit `site/diagrams/*.html` output; edit `tools/diagrams/*.json` spec if present (only phase8 has one) or regenerate via Archify, keep `?embed=1` iframe contract.
+- Shell: `#!/bin/bash` or `#!/usr/bin/env bash` + `set -euo pipefail` (`maintenance.sh` omits `-e` by design), `[provision]`-style log prefixes, non-fatal maintenance steps, `0600` for secret files, trap cleanup for temp dirs (see `render-pdf.sh`).
+- Terraform: `required_version >= 1.3` (only `infra/oci/main.tf`; `infra/main.tf` has none), providers `hashicorp/google ~> 6.0` (lockfile stale at `~> 6.8`/6.8.0), `oracle/oci ~> 8.0` (locked 8.27.0). `prevent_destroy = true` on backup buckets. Secrets as `sensitive = true` vars fed by `TF_VAR_*`, embedded b64/gz+b64 into cloud-init.
+- Headers: edit `site/_headers`, not code. Global `DENY` framing + `SAMEORIGIN` for `/diagrams/*`, `no-cache` `/resume.pdf`, `immutable` `/fonts/*`, `noindex` on `*.pages.dev`. No CSP by design (comment in file).
+- Fonts: content-stable URLs; byte change requires rename.
+- Lazy rule: reuse existing helper/pattern; no new deps; shortest diff at shared function, not per caller.
+
+## Important Files
+
+- Entry: `site/index.html`, `site/archive.html`, `site/resume.html`.
+- Edge: `site/_headers`, `site/llms.txt`, `site/robots.txt`, `site/.well-known/security.txt`.
+- Shared: `site/assets/site.js`, `site/assets/style.css`.
+- Data: `resume.json` (master, offline only).
+- OCI: `infra/oci/main.tf`, `infra/oci/variables.tf`, `infra/oci/cloud-init.yaml.tftpl`, `infra/oci/README.md`, `infra/oci/.terraform.lock.hcl`.
+- GCP: `infra/main.tf`, `infra/.terraform.lock.hcl`.
+- Hosts: `infra/hermes/config.yaml`, `infra/vaultwarden/docker-compose.yml`, `infra/vaultwarden/backup.sh`, `infra/vaultwarden/restore.sh`.
+- Scripts: `scripts/provision.sh`, `scripts/check-cloud-init.py`, `scripts/render-pdf.sh`.
+- CI: `.github/workflows/deploy.yml`, `.github/workflows/oci-provision.yml` (QA gate), `.github/workflows/vaultwarden-setup.yml`.
+- Meta: `README.md`, `.gitignore` (`*.tfstate*`, `*.tfvars`, `.env*`, `*.pem/*.key`, `site/resume.pdf`, `package*.json`).
+
+## Runtime/Tooling Preferences
+
+No Node/Bun/Python package manager required. Toolchain: `bash` + `python3` (+`pyyaml` only for checker) + `terraform >= 1.3` + headless `google-chrome`/`chromium` + ad-hoc `npx wrangler@4.120.0`. Host-side: `oci-cli==3.90.2` venv (provision path), Docker CE + compose plugin (GCP startup script), `cloudflared` remote-managed tunnels. Never commit `package.json`, lockfiles (except `.terraform.lock.hcl`), `.env`, `*.tfvars`, state, or `site/resume.pdf`.
+
+### Suggested LSPs
+
+- `html` (`vscode-html-language-server`): `site/*.html`, `site/diagrams/*.html`, `tools/og-source.html`.
+- `css` (`vscode-css-language-server`): `site/assets/style.css`, inline `<style>` in `resume.html`/`404.html`.
+- `javascript` (`typescript-native` via installed `tsc --lsp`; plain `typescript-language-server` auto-drops under TS 7+): `site/assets/site.js` (ES5 IIFE; no deps).
+- `json` (`vscode-json-language-server`): `resume.json`, `tools/diagrams/*.json`.
+- `yamlls` (`yaml-language-server`): `infra/hermes/config.yaml`, `infra/oci/cloud-init.yaml.tftpl` (as YAML), `infra/vaultwarden/docker-compose.yml`, `.github/workflows/*.yml` (no npm `github-actions-language-server` exists; YAML server covers them).
+- `terraformls` (`terraform-ls`): `infra/main.tf`, `infra/oci/*.tf`.
+- `bashls` (`bash-language-server` + `shellcheck`): `scripts/*.sh`, `infra/vaultwarden/*.sh`.
+- `pyright` (`pyright`/`basedpyright`): `scripts/check-cloud-init.py` (stdlib + `pyyaml` only).
+- `docker` (`docker-langserver` from `dockerfile-language-server-nodejs`, Dockerfile-only): no Dockerfile in repo, compose file stays with `yamlls`.
+- `marksman` (`marksman`): `README.md`, `infra/oci/README.md`.
+
+## Testing & QA
+
+No test framework, no lint/format/typecheck config, no coverage. Only automated guard is `checks` job in `oci-provision.yml` (hard `needs:` before `provision`):
+
+```bash
+for f in scripts/*.sh; do bash -n "$f"; done
+terraform fmt -check -recursive infra/oci
+python3 scripts/check-cloud-init.py  # YAML parse, decode write_files (text/b64/gz+b64), bash -n embedded .sh, sudoers rules, user_data <= 32000, runcmd == provision.sh
+```
+
+`deploy.yml` fails if rendered PDF empty (`[ -s ]`). `vaultwarden-setup.yml` smoke-verifies via `curl http://localhost:8000/alive` + `.env` key grep + tunnel logs. Gaps AI must know: `infra/vaultwarden/*.sh` outside `scripts/*.sh` glob so skipped by `bash -n`; `restore.sh` has inline `PRAGMA integrity_check` + `users`-table assert; nothing runs on push/PR (all manual); keep rendered cloud-init under cap.
+
+---
+
 # Standing agent policy: appended to every mode
 
 These instructions are appended to whatever prompt, persona, and tool guidance the
